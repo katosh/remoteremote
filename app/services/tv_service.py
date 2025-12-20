@@ -278,12 +278,42 @@ def _create_tv_instance() -> SamsungTV:
         tv_mac = os.environ.get('TV_MAC', '80:47:86:E9:B2:17')
         tv_token_file = os.path.expanduser('~/.tv_token')
 
-    return SamsungTV(
+    print(f"[TV Service] Creating TV instance: ip={tv_ip}, token_file={tv_token_file}", flush=True)
+
+    tv = SamsungTV(
         ip=tv_ip,
         mac=tv_mac,
         token_file=tv_token_file,
         app_name='TVFernbedienung'
     )
+
+    # Fallback: If token file is empty/missing, try to restore from database
+    if not tv.is_paired:
+        try:
+            db_token = ConfigModel.get('tv_token')
+            if db_token:
+                print(f"[TV Service] Restoring token from database to file", flush=True)
+                # Write token to file for future use
+                try:
+                    token_dir = os.path.dirname(tv_token_file)
+                    if token_dir and not os.path.exists(token_dir):
+                        os.makedirs(token_dir, exist_ok=True)
+                    with open(tv_token_file, 'w') as f:
+                        f.write(db_token)
+                    # Reload token into TV instance
+                    tv._token = db_token
+                    print(f"[TV Service] Token restored from database successfully", flush=True)
+                except PermissionError as e:
+                    print(f"[TV Service] Cannot write token file (permission denied): {e}", flush=True)
+                    # Still use the token in memory even if we can't write file
+                    tv._token = db_token
+                except Exception as e:
+                    print(f"[TV Service] Error writing token file: {e}", flush=True)
+                    tv._token = db_token
+        except Exception as e:
+            print(f"[TV Service] Could not restore token from database: {e}", flush=True)
+
+    return tv
 
 
 class TVServiceWrapper:

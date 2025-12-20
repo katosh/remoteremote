@@ -284,15 +284,40 @@ class SamsungTV:
 
     def _load_token(self) -> None:
         """Load token from file if exists"""
-        if os.path.exists(self.token_file):
-            with open(self.token_file) as f:
-                self._token = f.read().strip()
+        try:
+            if os.path.exists(self.token_file):
+                with open(self.token_file) as f:
+                    self._token = f.read().strip()
+                    if self._token:
+                        print(f"[SamsungTV] Token loaded from {self.token_file}", flush=True)
+                    else:
+                        print(f"[SamsungTV] Token file exists but is empty: {self.token_file}", flush=True)
+                        self._token = None
+            else:
+                print(f"[SamsungTV] No token file found at {self.token_file}", flush=True)
+        except PermissionError as e:
+            print(f"[SamsungTV] Permission denied reading token file: {e}", flush=True)
+        except Exception as e:
+            print(f"[SamsungTV] Error loading token: {e}", flush=True)
 
     def _save_token(self, token: str) -> None:
         """Save token to file"""
         self._token = token
-        with open(self.token_file, "w") as f:
-            f.write(token)
+        try:
+            # Ensure directory exists
+            token_dir = os.path.dirname(self.token_file)
+            if token_dir and not os.path.exists(token_dir):
+                os.makedirs(token_dir, exist_ok=True)
+                print(f"[SamsungTV] Created token directory: {token_dir}", flush=True)
+
+            with open(self.token_file, "w") as f:
+                f.write(token)
+            print(f"[SamsungTV] Token saved to {self.token_file}", flush=True)
+        except PermissionError as e:
+            print(f"[SamsungTV] Permission denied saving token: {e}", flush=True)
+            print(f"[SamsungTV] Tip: Check that the user has write access to {self.token_file}", flush=True)
+        except Exception as e:
+            print(f"[SamsungTV] Error saving token: {e}", flush=True)
 
     @property
     def token(self) -> Optional[str]:

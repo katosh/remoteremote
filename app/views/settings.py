@@ -123,20 +123,35 @@ def pair():
     tv = get_tv_service()
 
     try:
+        # Log token file location for debugging
+        token_file = current_app.config.get('TV_TOKEN_FILE', 'unknown')
+        print(f"[Pairing] Token file location: {token_file}", flush=True)
+
         # Pairing im Hintergrund starten
         success = tv.pair(timeout=60)
 
         if success:
-            # Token in Config speichern
+            # Token in Config speichern (backup in database)
             Config.set('tv_token', tv.token)
+
+            # Reinitialize TV service to ensure token is loaded
+            reinit_tv_service()
+
             log_event(
                 level='INFO',
                 category='config',
                 message='TV-Pairing erfolgreich',
+                details={'token_file': token_file},
                 source='manual'
             )
             return jsonify({'success': True, 'message': 'Pairing erfolgreich!'})
         else:
+            log_event(
+                level='WARNING',
+                category='config',
+                message='TV-Pairing fehlgeschlagen - Timeout oder abgelehnt',
+                source='manual'
+            )
             return jsonify({'success': False, 'error': 'Pairing fehlgeschlagen oder Timeout'})
     except Exception as e:
         log_event(
