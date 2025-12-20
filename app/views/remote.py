@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
 from ..models import Scenario
-from ..services.tv_service import get_tv_service, invalidate_status_cache
+from ..services.tv_service import get_tv_service, invalidate_status_cache, get_cached_status
 from ..services.logger import log_event
 
 remote_bp = Blueprint('remote', __name__, url_prefix='/remote')
@@ -18,10 +18,17 @@ def index():
     scenarios = Scenario.query.all()
     expert_mode = request.args.get('expert', '0') == '1'
 
+    # Use cached TV status for fast page load
+    status = get_cached_status()
+    reachable = status['connected']
+    power_state = status['power_state']
+
     return render_template(
         'remote.html',
         scenarios=scenarios,
-        expert_mode=expert_mode
+        expert_mode=expert_mode,
+        reachable=reachable,
+        power_state=power_state
     )
 
 

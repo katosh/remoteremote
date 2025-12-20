@@ -27,27 +27,37 @@ def get_client_ip():
 @auth_bp.before_app_request
 def load_session_from_cookie():
     """Check for persistent session cookie and auto-login"""
-    # Skip if already authenticated
-    if current_user.is_authenticated:
-        # Mark the current session
+    from sqlalchemy.exc import OperationalError
+    from ..models import ensure_tables_exist
+
+    try:
+        # Skip if already authenticated
+        if current_user.is_authenticated:
+            # Mark the current session
+            token = request.cookies.get(SESSION_COOKIE_NAME)
+            if token:
+                session = Session.validate_token(token)
+                if session:
+                    session.is_current = True
+            return
+
+        # Try to load session from cookie
         token = request.cookies.get(SESSION_COOKIE_NAME)
         if token:
             session = Session.validate_token(token)
             if session:
-                session.is_current = True
-        return
-
-    # Try to load session from cookie
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    if token:
-        session = Session.validate_token(token)
-        if session:
-            user = User.query.get(session.user_id)
-            if user:
-                login_user(user, remember=False)
-                session.is_current = True
-                # Store session in g for current request
-                g.current_session = session
+                user = User.query.get(session.user_id)
+                if user:
+                    login_user(user, remember=False)
+                    session.is_current = True
+                    # Store session in g for current request
+                    g.current_session = session
+    except OperationalError:
+        # Database tables missing - try to recover
+        try:
+            ensure_tables_exist()
+        except Exception:
+            pass  # Will be handled by the main request
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])

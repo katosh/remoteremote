@@ -280,15 +280,37 @@ class TVState(db.Model):
         return state
 
 
+def ensure_tables_exist():
+    """Check if tables exist and create them if missing. Returns True if tables were created."""
+    try:
+        # Quick check using raw SQL - faster than inspector
+        db.session.execute(db.text("SELECT 1 FROM users LIMIT 1"))
+        db.session.execute(db.text("SELECT 1 FROM sessions LIMIT 1"))
+        return False  # Tables exist
+    except Exception:
+        # Tables missing - recreate all
+        db.session.rollback()
+        db.create_all()
+        db.session.commit()
+        return True
+
+
 def init_db(app):
     """Datenbank initialisieren und Standarddaten einfügen"""
     with app.app_context():
         db.create_all()
 
         # Verify critical tables exist - if not, something went wrong
-        inspector = db.inspect(db.engine)
         required_tables = ['users', 'sessions', 'config', 'schedules', 'scenarios', 'logs', 'tv_state']
-        existing_tables = inspector.get_table_names()
+
+        # Use fresh connection to check tables
+        try:
+            result = db.session.execute(
+                db.text("SELECT name FROM sqlite_master WHERE type='table'")
+            ).fetchall()
+            existing_tables = [row[0] for row in result]
+        except Exception:
+            existing_tables = []
 
         missing_tables = [t for t in required_tables if t not in existing_tables]
         if missing_tables:
@@ -297,8 +319,15 @@ def init_db(app):
             db.drop_all()
             db.create_all()
 
-            # Verify again
-            existing_tables = inspector.get_table_names()
+            # Verify again with fresh query
+            try:
+                result = db.session.execute(
+                    db.text("SELECT name FROM sqlite_master WHERE type='table'")
+                ).fetchall()
+                existing_tables = [row[0] for row in result]
+            except Exception:
+                existing_tables = []
+
             missing_tables = [t for t in required_tables if t not in existing_tables]
             if missing_tables:
                 raise RuntimeError(f"Failed to create database tables: {missing_tables}")

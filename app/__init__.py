@@ -2,13 +2,14 @@
 TV Remote Web Application - Flask App Factory
 """
 import os
-from flask import Flask
+from flask import Flask, g
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from sqlalchemy.exc import OperationalError
 
-from .models import db, User, init_db
+from .models import db, User, init_db, ensure_tables_exist
 from .config import config
 
 login_manager = LoginManager()
@@ -41,7 +42,30 @@ def create_app(config_name: str = None) -> Flask:
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        try:
+            return User.query.get(int(user_id))
+        except OperationalError:
+            # Database tables missing - try to recreate
+            ensure_tables_exist()
+            return None
+
+    # Before request handler to recover from database errors
+    @app.before_request
+    def check_db_health():
+        """Check database health and recover if needed"""
+        if not hasattr(g, '_db_checked'):
+            g._db_checked = True
+            try:
+                # Quick health check
+                db.session.execute(db.text("SELECT 1"))
+            except OperationalError:
+                # Database issue - try to recreate tables
+                app.logger.warning("Database error detected, attempting recovery...")
+                try:
+                    db.session.rollback()
+                    ensure_tables_exist()
+                except Exception as e:
+                    app.logger.error(f"Database recovery failed: {e}")
 
     # Blueprints registrieren
     from .views import main_bp, auth_bp, remote_bp, schedule_bp, settings_bp, api_bp
