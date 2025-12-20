@@ -28,6 +28,7 @@
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "on"}'
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     hx-on::after-request="setTimeout(() => location.reload(), 3000)"
                     class="btn-remote py-4 flex flex-col items-center gap-2 bg-green-700 hover:bg-green-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,6 +42,7 @@
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "off"}'
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     hx-on::after-request="setTimeout(() => location.reload(), 2000)"
                     {% if not tv_has_token %}disabled{% endif %}
                     class="btn-remote btn-power py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
@@ -53,6 +55,7 @@
 
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     {% if not tv_has_token %}disabled{% endif %}
                     class="btn-remote py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,6 +87,7 @@
             <button hx-post="{{ url_for('remote.channel') }}"
                     hx-vals='{"channel": "{{ channel.number }}"}'
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote py-4 text-center">
                 <span class="block text-lg font-bold">{{ channel.number }}</span>
                 <span class="block text-xs text-gray-400 truncate">{{ channel.name }}</span>

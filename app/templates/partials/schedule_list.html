@@ -8,6 +8,7 @@
             <button hx-post="{{ url_for('schedule.toggle', schedule_id=schedule.id) }}"
                     hx-target="#schedule-list"
                     hx-swap="innerHTML"
+                    hx-disabled-elt="this"
                     class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-tv-accent focus:ring-offset-2 focus:ring-offset-gray-900 {{ 'bg-green-500' if schedule.enabled else 'bg-gray-600' }}"
                     role="switch"
                     aria-checked="{{ 'true' if schedule.enabled else 'false' }}"

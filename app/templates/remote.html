@@ -40,6 +40,7 @@
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "on"}'
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     hx-on::after-request="setTimeout(() => location.reload(), 3000)"
                     class="btn-remote w-20 h-20 rounded-full flex flex-col items-center justify-center bg-green-700 hover:bg-green-600">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,6 +54,7 @@
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "off"}'
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     hx-on::after-request="setTimeout(() => location.reload(), 2000)"
                     {% if not tv_has_token %}disabled{% endif %}
                     class="btn-remote btn-power w-20 h-20 rounded-full flex flex-col items-center justify-center {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
@@ -96,6 +98,7 @@
                 <!-- Up -->
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_UP') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote absolute top-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-t-full">
                     <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
@@ -104,6 +107,7 @@
                 <!-- Down -->
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_DOWN') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-b-full">
                     <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -112,6 +116,7 @@
                 <!-- Left -->
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_LEFT') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote absolute left-0 top-1/2 -translate-y-1/2 w-16 h-16 rounded-l-full">
                     <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -120,6 +125,7 @@
                 <!-- Right -->
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_RIGHT') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote absolute right-0 top-1/2 -translate-y-1/2 w-16 h-16 rounded-r-full">
                     <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -128,6 +134,7 @@
                 <!-- OK/Enter -->
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_ENTER') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-tv-accent hover:bg-indigo-500">
                     OK
                 </button>
@@ -137,6 +144,7 @@
             <div class="flex flex-col items-center gap-2">
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_CHUP') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote btn-nav">
                     <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
@@ -145,6 +153,7 @@
                 <span class="text-xs text-gray-500">CH</span>
                 <button hx-post="{{ url_for('remote.send_key', key='KEY_CHDOWN') }}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         class="btn-remote btn-nav">
                     <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -157,21 +166,25 @@
         <div class="grid grid-cols-4 gap-3">
             <button hx-post="{{ url_for('remote.send_key', key='KEY_RETURN') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Zurück
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_HOME') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Home
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Stumm
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_SOURCE') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Quelle
             </button>
@@ -186,22 +199,26 @@
             {% for num in range(1, 10) %}
             <button hx-post="{{ url_for('remote.send_key', key='KEY_' ~ num) }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav text-xl">
                 {{ num }}
             </button>
             {% endfor %}
             <button hx-post="{{ url_for('remote.send_key', key='KEY_PRECH') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav text-sm">
                 Vorher
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_0') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav text-xl">
                 0
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_CHLIST') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav text-sm">
                 Liste
             </button>
@@ -273,18 +290,22 @@
         <div class="grid grid-cols-4 gap-3">
             <button hx-post="{{ url_for('remote.send_key', key='KEY_RED') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav bg-red-600 hover:bg-red-500">
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_GREEN') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav bg-green-600 hover:bg-green-500">
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_YELLOW') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav bg-yellow-500 hover:bg-yellow-400">
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_BLUE') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-nav bg-blue-600 hover:bg-blue-500">
             </button>
         </div>
@@ -293,6 +314,7 @@
         <div class="grid grid-cols-5 gap-3">
             <button hx-post="{{ url_for('remote.send_key', key='KEY_REWIND') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/>
@@ -300,6 +322,7 @@
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_PLAY') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
@@ -307,6 +330,7 @@
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_PAUSE') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6"/>
@@ -314,6 +338,7 @@
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_STOP') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h12v12H6z"/>
@@ -321,6 +346,7 @@
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_FF') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/>
@@ -332,31 +358,37 @@
         <div class="grid grid-cols-3 gap-3">
             <button hx-post="{{ url_for('remote.send_key', key='KEY_INFO') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Info
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MENU') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Menü
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_TOOLS') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Tools
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_EXIT') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Exit
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_CAPTION') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Untertitel
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_AD') }}"
                     hx-swap="none"
+                    hx-disabled-elt="this"
                     class="btn-remote btn-action">
                 Audio
             </button>
