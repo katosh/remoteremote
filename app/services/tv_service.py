@@ -22,7 +22,7 @@ _status_cache: dict = {
     'info': None,
     'last_check': 0
 }
-CACHE_TTL_SECONDS = 30  # Cache TV status for 30 seconds
+CACHE_TTL_SECONDS = 10  # Cache TV status for 10 seconds (shorter for responsiveness)
 
 
 class MockSamsungTV:
@@ -155,17 +155,74 @@ def invalidate_status_cache():
     _status_cache['last_check'] = 0
 
 
+def set_cached_power_state(power_state: str):
+    """
+    Set the expected power state in cache and database after a power action.
+    Using database ensures state is shared across Flask processes.
+    """
+    global _status_cache
+    _status_cache['power_state'] = power_state
+    if power_state == 'on':
+        # TV is turning on - mark as connected (optimistic)
+        _status_cache['connected'] = True
+    elif power_state in ('off', 'standby'):
+        # TV is off - mark as not connected since it won't respond
+        _status_cache['connected'] = False
+        _status_cache['info'] = None
+    _status_cache['last_check'] = time.time()
+
+    # Also update database for cross-process sharing
+    try:
+        from flask import current_app
+        if current_app:
+            from ..models import TVState, db
+            from datetime import datetime
+            tv_state = TVState.get_instance()
+            tv_state.power_state = power_state
+            tv_state.last_updated = datetime.utcnow()
+            db.session.commit()
+    except (RuntimeError, Exception):
+        pass  # Outside app context or DB error - memory cache still updated
+
+
 def get_cached_status(force_refresh: bool = False) -> dict:
     """
     Get TV status with caching to avoid repeated network calls.
     Returns cached status if still valid, otherwise fetches fresh status.
+    Uses database for cross-process state sharing.
     """
     global _status_cache
 
     now = time.time()
     cache_age = now - _status_cache['last_check']
 
-    # Return cached status if still valid
+    # Check database for recent state updates from other processes
+    db_power_state = None
+    db_updated = None
+    try:
+        from flask import current_app
+        if current_app:
+            from ..models import TVState
+            tv_state = TVState.get_instance()
+            db_power_state = tv_state.power_state
+            db_updated = tv_state.last_updated
+    except (RuntimeError, Exception):
+        pass
+
+    # If database was updated more recently than our cache, use DB state
+    if db_updated and db_power_state:
+        db_age = (now - db_updated.timestamp()) if db_updated else float('inf')
+        if db_age < cache_age and db_age < CACHE_TTL_SECONDS:
+            connected = db_power_state == 'on'
+            return {
+                'connected': connected,
+                'power_state': db_power_state,
+                'info': _status_cache.get('info'),
+                'cached': True,
+                'cache_age': db_age
+            }
+
+    # Return memory cached status if still valid
     if not force_refresh and cache_age < CACHE_TTL_SECONDS and _status_cache['connected'] is not None:
         return {
             'connected': _status_cache['connected'],
@@ -175,7 +232,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
             'cache_age': cache_age
         }
 
-    # Fetch fresh status
+    # Fetch fresh status from TV
     tv = get_tv_service()
     connected = False
     power_state = 'unknown'
@@ -187,9 +244,11 @@ def get_cached_status(force_refresh: bool = False) -> dict:
             connected = True
             power_state = info.power_state
     except Exception:
-        pass
+        # TV not responding - check if we have a recent DB state
+        if db_power_state and db_power_state in ('off', 'standby'):
+            power_state = db_power_state
 
-    # Update cache
+    # Update memory cache
     _status_cache['connected'] = connected
     _status_cache['power_state'] = power_state
     _status_cache['info'] = info
@@ -302,4 +361,4 @@ class TVServiceWrapper:
 
 
 # Export der Key-Enum für einfachen Import
-__all__ = ['get_tv_service', 'reinit_tv_service', 'get_cached_status', 'invalidate_status_cache', 'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper']
+__all__ = ['get_tv_service', 'reinit_tv_service', 'get_cached_status', 'invalidate_status_cache', 'set_cached_power_state', 'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper']

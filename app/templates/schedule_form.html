@@ -67,23 +67,35 @@
             </div>
 
             <!-- Simple Mode -->
-            <div x-show="cronMode === 'simple'" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+            <div x-show="cronMode === 'simple'" class="space-y-4" x-data="{ repeat: 'daily' }">
+                <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">Uhrzeit</label>
-                        <input type="time"
-                               name="time"
-                               value="{{ schedule.cron_expression.split()[1] ~ ':' ~ schedule.cron_expression.split()[0] if schedule and schedule.cron_expression else '07:00' }}"
-                               class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
-                                      focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                        <label class="block text-sm text-gray-400 mb-2">Stunde</label>
+                        <select name="hour"
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                                       focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                            {% for h in range(24) %}
+                            <option value="{{ h }}" {{ 'selected' if schedule and schedule.cron_expression and schedule.cron_expression.split()[1]|int == h else ('selected' if not schedule and h == 7 else '') }}>{{ '%02d'|format(h) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Minute</label>
+                        <select name="minute"
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                                       focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                            {% for m in range(0, 60, 5) %}
+                            <option value="{{ m }}" {{ 'selected' if schedule and schedule.cron_expression and schedule.cron_expression.split()[0]|int == m else ('selected' if not schedule and m == 0 else '') }}>{{ '%02d'|format(m) }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-400 mb-2">Wiederholung</label>
-                        <select name="repeat"
+                        <select name="repeat" x-model="repeat"
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                        focus:outline-none focus:ring-2 focus:ring-tv-accent">
                             <option value="once">Einmalig</option>
-                            <option value="daily">Täglich</option>
+                            <option value="daily" selected>Täglich</option>
                             <option value="weekdays">Mo-Fr</option>
                             <option value="weekends">Sa-So</option>
                             <option value="weekly">Wöchentlich</option>
@@ -91,7 +103,7 @@
                     </div>
                 </div>
 
-                <div x-show="$el.querySelector('[name=repeat]')?.value === 'weekly'">
+                <div x-show="repeat === 'weekly'" x-cloak>
                     <label class="block text-sm text-gray-400 mb-2">Wochentage</label>
                     <div class="flex gap-2">
                         {% for day, name in [('1', 'Mo'), ('2', 'Di'), ('3', 'Mi'), ('4', 'Do'), ('5', 'Fr'), ('6', 'Sa'), ('0', 'So')] %}
@@ -123,7 +135,13 @@
         <div class="bg-tv-dark rounded-xl p-6">
             <h2 class="text-lg font-semibold mb-4">Aktion</h2>
 
-            <div class="flex gap-2 mb-4">
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button type="button"
+                        @click="actionType = 'power'"
+                        :class="actionType === 'power' ? 'bg-tv-accent' : 'bg-gray-700'"
+                        class="px-4 py-2 rounded-lg transition-colors">
+                    Power
+                </button>
                 <button type="button"
                         @click="actionType = 'key'"
                         :class="actionType === 'key' ? 'bg-tv-accent' : 'bg-gray-700'"
@@ -146,8 +164,39 @@
 
             <input type="hidden" name="action_type" :value="actionType">
 
+            <!-- Power Selection -->
+            <div x-show="actionType === 'power'">
+                <label class="block text-sm text-gray-400 mb-2">Power-Aktion</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="relative">
+                        <input type="radio" name="power_action" value="on" checked class="sr-only peer">
+                        <div class="p-4 bg-gray-800 border-2 border-gray-700 rounded-xl text-center cursor-pointer
+                                    peer-checked:border-tv-accent peer-checked:bg-tv-accent/20 transition-colors">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+                            </svg>
+                            <span class="font-medium">Einschalten</span>
+                            <p class="text-xs text-gray-400 mt-1">Wake-on-LAN</p>
+                        </div>
+                    </label>
+                    <label class="relative">
+                        <input type="radio" name="power_action" value="off" class="sr-only peer">
+                        <div class="p-4 bg-gray-800 border-2 border-gray-700 rounded-xl text-center cursor-pointer
+                                    peer-checked:border-tv-accent peer-checked:bg-tv-accent/20 transition-colors">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+                            </svg>
+                            <span class="font-medium">Ausschalten</span>
+                            <p class="text-xs text-gray-400 mt-1">Power off</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <!-- Key Selection -->
-            <div x-show="actionType === 'key'">
+            <div x-show="actionType === 'key'" x-cloak>
                 <label class="block text-sm text-gray-400 mb-2">Taste</label>
                 <select name="key"
                         class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white

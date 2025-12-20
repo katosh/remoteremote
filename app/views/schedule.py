@@ -35,25 +35,56 @@ def create():
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description', '')
-        schedule_type = request.form.get('schedule_type')  # 'once', 'recurring'
-        action_type = request.form.get('action_type')  # 'key', 'sequence', 'scenario'
+        action_type = request.form.get('action_type')  # 'power', 'key', 'sequence', 'scenario'
 
-        # Zeitplan-Daten
-        if schedule_type == 'once':
-            run_datetime = request.form.get('run_datetime')
-            next_run = datetime.fromisoformat(run_datetime) if run_datetime else None
-            cron_expression = None
-        else:
-            cron_expression = request.form.get('cron_expression')
-            next_run = calculate_next_run(cron_expression) if cron_expression else None
+        # Build cron expression from simple mode or use custom
+        cron_expression = request.form.get('cron_expression')
+        if not cron_expression or cron_expression == '0 7 * * *':
+            # Simple mode - build cron from hour/minute/repeat
+            hour = request.form.get('hour', '7')
+            minute = request.form.get('minute', '0')
+            repeat = request.form.get('repeat', 'daily')
+
+            if repeat == 'once':
+                # For one-time, set next_run directly
+                from datetime import timedelta
+                import pytz
+                tz = pytz.timezone('Europe/Berlin')
+                now = datetime.now(tz)
+                run_time = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
+                if run_time <= now:
+                    run_time += timedelta(days=1)
+                next_run = run_time
+                cron_expression = None
+            elif repeat == 'daily':
+                cron_expression = f"{minute} {hour} * * *"
+            elif repeat == 'weekdays':
+                cron_expression = f"{minute} {hour} * * 1-5"
+            elif repeat == 'weekends':
+                cron_expression = f"{minute} {hour} * * 0,6"
+            elif repeat == 'weekly':
+                weekdays = request.form.getlist('weekdays')
+                days = ','.join(weekdays) if weekdays else '1'
+                cron_expression = f"{minute} {hour} * * {days}"
+            else:
+                cron_expression = f"{minute} {hour} * * *"
+
+        # Calculate next run for recurring schedules
+        if cron_expression:
+            next_run = calculate_next_run(cron_expression)
+        elif 'next_run' not in locals():
+            next_run = None
 
         # Aktionsdaten
         action_data = {}
-        if action_type == 'key':
-            action_data['key'] = request.form.get('action_key')
+        if action_type == 'power':
+            action_data['action'] = request.form.get('power_action', 'on')
+        elif action_type == 'key':
+            action_data['key'] = request.form.get('key')
         elif action_type == 'sequence':
-            keys = request.form.getlist('sequence_keys')
-            action_data['keys'] = keys
+            keys_str = request.form.get('sequence_keys', '')
+            action_data['keys'] = [k.strip() for k in keys_str.split(',') if k.strip()]
+            action_data['delay'] = int(request.form.get('sequence_delay', 300)) / 1000
         elif action_type == 'scenario':
             action_data['scenario_id'] = int(request.form.get('scenario_id'))
 
@@ -100,24 +131,56 @@ def edit(schedule_id: int):
         schedule.name = request.form.get('name')
         schedule.description = request.form.get('description', '')
 
-        schedule_type = request.form.get('schedule_type')
-        if schedule_type == 'once':
-            run_datetime = request.form.get('run_datetime')
-            schedule.next_run = datetime.fromisoformat(run_datetime) if run_datetime else None
-            schedule.cron_expression = None
+        # Build cron expression from simple mode or use custom
+        cron_expression = request.form.get('cron_expression')
+        if not cron_expression or cron_expression == schedule.cron_expression:
+            # Simple mode - build cron from hour/minute/repeat
+            hour = request.form.get('hour', '7')
+            minute = request.form.get('minute', '0')
+            repeat = request.form.get('repeat', 'daily')
+
+            if repeat == 'once':
+                # For one-time, set next_run directly
+                from datetime import timedelta
+                import pytz
+                tz = pytz.timezone('Europe/Berlin')
+                now = datetime.now(tz)
+                run_time = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
+                if run_time <= now:
+                    run_time += timedelta(days=1)
+                schedule.next_run = run_time
+                schedule.cron_expression = None
+            elif repeat == 'daily':
+                schedule.cron_expression = f"{minute} {hour} * * *"
+            elif repeat == 'weekdays':
+                schedule.cron_expression = f"{minute} {hour} * * 1-5"
+            elif repeat == 'weekends':
+                schedule.cron_expression = f"{minute} {hour} * * 0,6"
+            elif repeat == 'weekly':
+                weekdays = request.form.getlist('weekdays')
+                days = ','.join(weekdays) if weekdays else '1'
+                schedule.cron_expression = f"{minute} {hour} * * {days}"
+            else:
+                schedule.cron_expression = f"{minute} {hour} * * *"
         else:
-            schedule.cron_expression = request.form.get('cron_expression')
+            schedule.cron_expression = cron_expression
+
+        # Calculate next run for recurring schedules
+        if schedule.cron_expression:
             schedule.next_run = calculate_next_run(schedule.cron_expression)
 
         action_type = request.form.get('action_type')
         schedule.action_type = action_type
 
         action_data = {}
-        if action_type == 'key':
-            action_data['key'] = request.form.get('action_key')
+        if action_type == 'power':
+            action_data['action'] = request.form.get('power_action', 'on')
+        elif action_type == 'key':
+            action_data['key'] = request.form.get('key')
         elif action_type == 'sequence':
-            keys = request.form.getlist('sequence_keys')
-            action_data['keys'] = keys
+            keys_str = request.form.get('sequence_keys', '')
+            action_data['keys'] = [k.strip() for k in keys_str.split(',') if k.strip()]
+            action_data['delay'] = int(request.form.get('sequence_delay', 300)) / 1000
         elif action_type == 'scenario':
             action_data['scenario_id'] = int(request.form.get('scenario_id'))
 

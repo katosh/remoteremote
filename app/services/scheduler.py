@@ -154,6 +154,8 @@ def execute_schedule(schedule):
 
         if schedule.action_type == 'key':
             _execute_key_action(action_data)
+        elif schedule.action_type == 'power':
+            _execute_power_action(action_data)
         elif schedule.action_type == 'sequence':
             _execute_sequence_action(action_data)
         elif schedule.action_type == 'scenario':
@@ -202,6 +204,22 @@ def _execute_key_action(action_data: dict):
     if key:
         tv = get_tv_service()
         tv.send_key(key)
+
+
+def _execute_power_action(action_data: dict):
+    """Power on (Wake-on-LAN) oder Power off ausführen"""
+    from .tv_service import get_tv_service, set_cached_power_state
+
+    action = action_data.get('action', 'on')
+    tv = get_tv_service()
+
+    if action == 'on':
+        # Wake-on-LAN - funktioniert ohne Token
+        tv.power_on()
+        set_cached_power_state('on')
+    elif action == 'off':
+        tv.power_off()
+        set_cached_power_state('standby')
 
 
 def _execute_sequence_action(action_data: dict):

@@ -11,9 +11,15 @@
                 <h3 class="font-medium">{{ schedule.name }}</h3>
                 <p class="text-sm text-gray-400">
                     {% if schedule.next_run %}
-                    Nächste Ausführung: {{ schedule.next_run.strftime('%d.%m. %H:%M') }}
+                    Nächste Ausführung: {{ schedule.next_run.strftime('%d.%m. %H:%M') }} Uhr
                     {% elif schedule.cron_expression %}
+                    {% set parts = schedule.cron_expression.split() %}
+                    {% if parts|length >= 2 %}
+                    {{ '%02d:%02d'|format(parts[1]|int, parts[0]|int) }} Uhr
+                    {% if parts[4] == '*' %}täglich{% elif parts[4] == '1-5' %}Mo-Fr{% elif parts[4] == '0,6' %}Sa-So{% else %}{{ parts[4] }}{% endif %}
+                    {% else %}
                     {{ schedule.cron_expression }}
+                    {% endif %}
                     {% else %}
                     Einmalig
                     {% endif %}

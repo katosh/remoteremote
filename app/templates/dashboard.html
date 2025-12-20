@@ -24,11 +24,24 @@
         </p>
         {% endif %}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {% if reachable and power_state == 'on' %}
+            <!-- Wake-on-LAN always available -->
+            <button hx-post="{{ url_for('remote.power') }}"
+                    hx-vals='{"action": "on"}'
+                    hx-swap="none"
+                    hx-on::after-request="setTimeout(() => location.reload(), 3000)"
+                    class="btn-remote py-4 flex flex-col items-center gap-2 bg-green-700 hover:bg-green-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+                </svg>
+                <span class="text-sm">Einschalten</span>
+            </button>
+
+            <!-- Power off (requires token) -->
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "off"}'
                     hx-swap="none"
-                    hx-on::after-request="setTimeout(() => location.reload(), 1000)"
+                    hx-on::after-request="setTimeout(() => location.reload(), 2000)"
                     {% if not tv_has_token %}disabled{% endif %}
                     class="btn-remote btn-power py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,19 +50,6 @@
                 </svg>
                 <span class="text-sm">Ausschalten</span>
             </button>
-            {% else %}
-            <button hx-post="{{ url_for('remote.power') }}"
-                    hx-vals='{"action": "on"}'
-                    hx-swap="none"
-                    hx-on::after-request="setTimeout(() => location.reload(), 3000)"
-                    class="btn-remote btn-power py-4 flex flex-col items-center gap-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-                </svg>
-                <span class="text-sm">Einschalten</span>
-            </button>
-            {% endif %}
 
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
                     hx-swap="none"
@@ -62,17 +62,6 @@
                           d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
                 </svg>
                 <span class="text-sm">Stumm</span>
-            </button>
-
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_HOME') }}"
-                    hx-swap="none"
-                    {% if not tv_has_token %}disabled{% endif %}
-                    class="btn-remote py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                <span class="text-sm">Home</span>
             </button>
 
             <a href="{{ url_for('remote.index') }}"

@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
 from ..models import Scenario
-from ..services.tv_service import get_tv_service, invalidate_status_cache, get_cached_status
+from ..services.tv_service import get_tv_service, invalidate_status_cache, set_cached_power_state, get_cached_status
 from ..services.logger import log_event
 
 remote_bp = Blueprint('remote', __name__, url_prefix='/remote')
@@ -77,21 +77,24 @@ def power():
         if action == 'on':
             tv.power_on()
             message = 'TV eingeschaltet (Wake-on-LAN)'
+            # Set cache to expected state - TV will be starting up
+            set_cached_power_state('on')
         elif action == 'off':
             tv.power_off()
             message = 'TV ausgeschaltet'
+            # Set cache to expected state - TV is now off/standby
+            set_cached_power_state('standby')
         else:
             # Toggle basierend auf aktuellem Status
             info = tv.get_info()
             if info and info.power_state == 'on':
                 tv.power_off()
                 message = 'TV ausgeschaltet'
+                set_cached_power_state('standby')
             else:
                 tv.power_on()
                 message = 'TV eingeschaltet (Wake-on-LAN)'
-
-        # Invalidate cache so next page load gets fresh status
-        invalidate_status_cache()
+                set_cached_power_state('on')
 
         log_event(
             level='INFO',

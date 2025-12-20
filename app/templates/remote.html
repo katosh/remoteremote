@@ -36,14 +36,32 @@
     <!-- Normal Mode Controls -->
     <div x-show="!expertMode" class="space-y-6">
         <!-- Power Row -->
-        <div class="flex justify-center">
+        <div class="flex justify-center gap-4">
+            <!-- Wake-on-LAN always available -->
             <button hx-post="{{ url_for('remote.power') }}"
+                    hx-vals='{"action": "on"}'
                     hx-swap="none"
-                    class="btn-remote btn-power w-20 h-20 rounded-full flex items-center justify-center">
+                    hx-on::after-request="setTimeout(() => location.reload(), 3000)"
+                    class="btn-remote w-20 h-20 rounded-full flex flex-col items-center justify-center bg-green-700 hover:bg-green-600">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                 </svg>
+                <span class="text-xs mt-1">Ein</span>
+            </button>
+
+            <!-- Power off (requires token) -->
+            <button hx-post="{{ url_for('remote.power') }}"
+                    hx-vals='{"action": "off"}'
+                    hx-swap="none"
+                    hx-on::after-request="setTimeout(() => location.reload(), 2000)"
+                    {% if not tv_has_token %}disabled{% endif %}
+                    class="btn-remote btn-power w-20 h-20 rounded-full flex flex-col items-center justify-center {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+                </svg>
+                <span class="text-xs mt-1">Aus</span>
             </button>
         </div>
 
