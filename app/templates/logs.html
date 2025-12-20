@@ -64,7 +64,7 @@
 
     <!-- Log List -->
     <div id="log-list"
-         hx-get="{{ url_for('api.logs') }}"
+         hx-get="{{ url_for('api.recent_logs') }}"
          hx-trigger="load, refresh"
          hx-vals="js:{category: category, level: level, search: search}"
          hx-swap="innerHTML"
@@ -82,7 +82,7 @@
     <!-- Load More -->
     <div class="mt-6 text-center">
         <button id="load-more"
-                hx-get="{{ url_for('api.logs') }}"
+                hx-get="{{ url_for('api.recent_logs') }}"
                 hx-vals="js:{category: category, level: level, search: search, offset: document.querySelectorAll('#log-list > div').length}"
                 hx-target="#log-list"
                 hx-swap="beforeend"

@@ -3,7 +3,7 @@ Tests for authentication and session management
 """
 import pytest
 from app.models import User, Session
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class TestSetup:
@@ -175,3 +175,95 @@ class TestSessionManagement:
         assert response.status_code == 200
         data = response.get_json()
         assert 'sessions' in data
+
+
+class TestPasswordHashing:
+    """Test password hashing compatibility - catches issues like scrypt unavailability"""
+
+    def test_password_hash_generation(self):
+        """Password hashing should work with the configured method"""
+        password = 'testpassword123'
+        # This uses the same method as the app
+        hash_value = generate_password_hash(password, method='pbkdf2:sha256')
+        assert hash_value is not None
+        assert hash_value != password
+        assert hash_value.startswith('pbkdf2:sha256:')
+
+    def test_password_hash_verification(self):
+        """Password verification should work"""
+        password = 'testpassword123'
+        hash_value = generate_password_hash(password, method='pbkdf2:sha256')
+        assert check_password_hash(hash_value, password) is True
+        assert check_password_hash(hash_value, 'wrongpassword') is False
+
+    def test_setup_creates_verifiable_password(self, client, app, db):
+        """Password set during setup should be verifiable"""
+        password = 'mySecurePassword123'
+        response = client.post('/auth/setup', data={
+            'password': password,
+            'password_confirm': password
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            user = User.query.first()
+            assert user is not None
+            # Verify the stored password can be checked
+            assert check_password_hash(user.password_hash, password) is True
+            assert check_password_hash(user.password_hash, 'wrongpassword') is False
+
+    def test_password_change_creates_verifiable_password(self, auth_client, app, test_user):
+        """Changed password should be verifiable"""
+        new_password = 'newSecurePassword456'
+        response = auth_client.post('/settings/password', data={
+            'current_password': 'testpassword123',
+            'new_password': new_password,
+            'confirm_password': new_password
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            user = User.query.first()
+            assert check_password_hash(user.password_hash, new_password) is True
+
+
+class TestCriticalEndpoints:
+    """Smoke tests for critical endpoints - catches template/import errors"""
+
+    def test_setup_page_renders(self, client, app, db):
+        """Setup page should render without errors"""
+        response = client.get('/auth/setup')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
+
+    def test_login_page_renders(self, client, app, test_user):
+        """Login page should render without errors"""
+        response = client.get('/auth/login')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
+
+    def test_dashboard_renders(self, auth_client, app):
+        """Dashboard should render without errors"""
+        response = auth_client.get('/dashboard')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
+
+    def test_remote_page_renders(self, auth_client, app):
+        """Remote control page should render without errors"""
+        response = auth_client.get('/remote/')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
+
+    def test_settings_page_renders(self, auth_client, app):
+        """Settings page should render without errors"""
+        response = auth_client.get('/settings/')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
+
+    def test_schedule_page_renders(self, auth_client, app):
+        """Schedule page should render without errors"""
+        response = auth_client.get('/schedule/')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data

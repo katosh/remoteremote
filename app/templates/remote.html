@@ -21,7 +21,7 @@
 
     <!-- TV Status Mini -->
     <div class="bg-tv-dark rounded-xl p-4 mb-6 flex items-center justify-between"
-         hx-get="{{ url_for('api.tv_status_mini') }}"
+         hx-get="{{ url_for('api.tv_status') }}"
          hx-trigger="every 10s"
          hx-swap="innerHTML">
         <div class="flex items-center gap-3">
@@ -219,7 +219,7 @@
                        class="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-500
                               focus:outline-none focus:ring-2 focus:ring-tv-accent">
                 <button @click="if(channel) { $dispatch('htmx:trigger', {value: channel}); channel=''; }"
-                        hx-post="{{ url_for('remote.switch_channel', channel=0) }}"
+                        hx-post="{{ url_for('remote.channel') }}"
                         hx-vals="js:{channel: channel}"
                         hx-swap="none"
                         class="btn-remote px-6">

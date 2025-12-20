@@ -10,7 +10,7 @@
     <div class="bg-tv-dark rounded-xl p-6">
         <h2 class="text-lg font-semibold mb-4">TV-Konfiguration</h2>
 
-        <form method="POST" action="{{ url_for('settings.save_tv_config') }}" class="space-y-4">
+        <form method="POST" action="{{ url_for('settings.update_tv') }}" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
             <div>
@@ -43,7 +43,7 @@
                     Speichern
                 </button>
                 <button type="button"
-                        hx-post="{{ url_for('settings.discover_tv') }}"
+                        hx-post="{{ url_for('settings.discover') }}"
                         hx-target="#discovery-result"
                         class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
                     TV suchen
@@ -64,7 +64,7 @@
         </div>
 
         <div class="space-y-3">
-            <button hx-post="{{ url_for('settings.pair_tv') }}"
+            <button hx-post="{{ url_for('settings.pair') }}"
                     hx-target="#pairing-result"
                     class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
                 {{ 'Neu koppeln' if has_token else 'Kopplung starten' }}
@@ -127,13 +127,13 @@
         <h2 class="text-lg font-semibold mb-4">Backup</h2>
 
         <div class="space-y-3">
-            <button hx-post="{{ url_for('settings.create_backup') }}"
+            <button hx-post="{{ url_for('settings.backup') }}"
                     hx-target="#backup-result"
                     class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
                 Backup erstellen
             </button>
 
-            <a href="{{ url_for('settings.download_backup') }}"
+            <a href="#" onclick="alert('Backup-Download noch nicht implementiert')"
                class="block w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-center transition-colors">
                 Letztes Backup herunterladen
             </a>

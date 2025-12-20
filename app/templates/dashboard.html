@@ -65,7 +65,8 @@
         <h2 class="text-lg font-semibold mb-4">Favoriten</h2>
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {% for channel in favorites %}
-            <button hx-post="{{ url_for('remote.switch_channel', channel=channel.number) }}"
+            <button hx-post="{{ url_for('remote.channel') }}"
+                    hx-vals='{"channel": "{{ channel.number }}"}'
                     hx-swap="none"
                     class="btn-remote py-4 text-center">
                 <span class="block text-lg font-bold">{{ channel.number }}</span>
@@ -95,7 +96,7 @@
     <div class="bg-tv-dark rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold">Letzte Aktivitäten</h2>
-            <a href="{{ url_for('settings.logs_view') }}" class="text-tv-accent text-sm hover:underline">
+            <a href="{{ url_for('settings.logs') }}" class="text-tv-accent text-sm hover:underline">
                 Alle anzeigen
             </a>
         </div>

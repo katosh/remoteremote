@@ -23,7 +23,7 @@
 
         <div class="flex items-center gap-2">
             <!-- Toggle Button -->
-            <button hx-post="{{ url_for('schedule.schedule_toggle', schedule_id=schedule.id) }}"
+            <button hx-post="{{ url_for('schedule.toggle', schedule_id=schedule.id) }}"
                     hx-swap="none"
                     hx-target="closest div"
                     class="p-2 rounded-lg hover:bg-gray-700 transition-colors {{ 'text-green-400' if schedule.enabled else 'text-gray-500' }}">
@@ -37,7 +37,7 @@
             </button>
 
             <!-- Edit Button -->
-            <a href="{{ url_for('schedule.schedule_edit', schedule_id=schedule.id) }}"
+            <a href="{{ url_for('schedule.edit', schedule_id=schedule.id) }}"
                class="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -55,7 +55,7 @@
               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
     </svg>
     <p>Keine Zeitpläne vorhanden</p>
-    <a href="{{ url_for('schedule.schedule_create') }}" class="text-tv-accent hover:underline mt-2 inline-block">
+    <a href="{{ url_for('schedule.create') }}" class="text-tv-accent hover:underline mt-2 inline-block">
         Ersten Zeitplan erstellen
     </a>
 </div>

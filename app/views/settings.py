@@ -66,7 +66,7 @@ def update_tv():
     )
 
     flash('TV-Einstellungen wurden aktualisiert.', 'success')
-    return redirect(url_for('settings.index'))
+    return redirect(url_for('settings.settings_view'))
 
 
 @settings_bp.route('/password', methods=['POST'])
@@ -81,15 +81,15 @@ def change_password():
 
     if not check_password_hash(user.password_hash, current_password):
         flash('Aktuelles Passwort ist falsch.', 'error')
-        return redirect(url_for('settings.index'))
+        return redirect(url_for('settings.settings_view'))
 
     if len(new_password) < 8:
         flash('Das neue Passwort muss mindestens 8 Zeichen lang sein.', 'error')
-        return redirect(url_for('settings.index'))
+        return redirect(url_for('settings.settings_view'))
 
     if new_password != confirm_password:
         flash('Die neuen Passwörter stimmen nicht überein.', 'error')
-        return redirect(url_for('settings.index'))
+        return redirect(url_for('settings.settings_view'))
 
     user.password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
     db.session.commit()
@@ -102,7 +102,7 @@ def change_password():
     )
 
     flash('Passwort wurde erfolgreich geändert.', 'success')
-    return redirect(url_for('settings.index'))
+    return redirect(url_for('settings.settings_view'))
 
 
 @settings_bp.route('/discover', methods=['POST'])
