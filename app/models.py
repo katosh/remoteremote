@@ -285,6 +285,25 @@ def init_db(app):
     with app.app_context():
         db.create_all()
 
+        # Repair corrupted tv_state if needed (e.g., wrong type in datetime fields)
+        try:
+            # Use raw SQL to check and fix corrupted datetime fields
+            result = db.session.execute(
+                db.text("SELECT id, last_confirmed FROM tv_state WHERE id = 1")
+            ).fetchone()
+            if result and result[1] is not None:
+                # If last_confirmed is not a valid datetime string, reset it
+                try:
+                    if isinstance(result[1], str) and result[1] in ('on', 'off', 'standby', 'unknown'):
+                        db.session.execute(
+                            db.text("UPDATE tv_state SET last_confirmed = NULL, last_updated = NULL WHERE id = 1")
+                        )
+                        db.session.commit()
+                except Exception:
+                    pass
+        except Exception:
+            pass  # Table might not exist yet
+
         # Prüfen ob Szenarien existieren, sonst Standardszenarien einfügen
         if Scenario.query.filter_by(is_builtin=True).count() == 0:
             _create_default_scenarios()

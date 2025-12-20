@@ -2,8 +2,8 @@
 <div class="flex items-center justify-between">
     <div class="flex items-center gap-4">
         <!-- Connection Status -->
-        <div class="w-16 h-16 rounded-2xl {{ 'bg-green-500/20' if status and status.connected else 'bg-red-500/20' }} flex items-center justify-center">
-            {% if status and status.connected %}
+        <div class="w-16 h-16 rounded-2xl {{ 'bg-green-500/20' if reachable else 'bg-red-500/20' }} flex items-center justify-center">
+            {% if reachable %}
             <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -17,12 +17,12 @@
         </div>
 
         <div>
-            <h2 class="text-xl font-semibold">{{ status.info.name if status and status.info else 'Samsung TV' }}</h2>
+            <h2 class="text-xl font-semibold">{{ tv_info.name if tv_info else 'Samsung TV' }}</h2>
             <p class="text-gray-400">
-                {% if status and status.connected %}
-                    {% if status.power_state == 'on' %}
+                {% if reachable %}
+                    {% if power_state == 'on' %}
                         Eingeschaltet
-                    {% elif status.power_state == 'standby' %}
+                    {% elif power_state == 'standby' %}
                         Standby
                     {% else %}
                         Verbunden
@@ -35,31 +35,31 @@
     </div>
 
     <!-- Wake TV Button when not connected -->
-    {% if not status or not status.connected %}
+    {% if not reachable %}
     <button hx-post="{{ url_for('remote.power') }}"
             hx-vals='{"action": "on"}'
             hx-swap="none"
             class="btn-remote bg-tv-accent hover:bg-indigo-600 px-4 py-2 rounded-lg flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 3v9m0 0a9 9 0 100 9 9 9 0 000-9z"/>
+                  d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
         </svg>
         <span>TV aufwecken</span>
     </button>
     {% endif %}
 
     <!-- Quick Stats -->
-    {% if status and status.connected %}
+    {% if reachable and tv_state %}
     <div class="hidden sm:flex gap-6 text-center">
-        {% if status.estimated_volume is not none %}
+        {% if tv_state.estimated_volume is not none %}
         <div>
-            <div class="text-2xl font-bold">{{ status.estimated_volume }}%</div>
+            <div class="text-2xl font-bold">{{ tv_state.estimated_volume }}%</div>
             <div class="text-xs text-gray-500">Lautstärke*</div>
         </div>
         {% endif %}
-        {% if status.estimated_channel %}
+        {% if tv_state.estimated_channel %}
         <div>
-            <div class="text-2xl font-bold">{{ status.estimated_channel }}</div>
+            <div class="text-2xl font-bold">{{ tv_state.estimated_channel }}</div>
             <div class="text-xs text-gray-500">Kanal*</div>
         </div>
         {% endif %}
@@ -67,6 +67,6 @@
     {% endif %}
 </div>
 
-{% if status and (status.estimated_volume is not none or status.estimated_channel) %}
+{% if tv_state and (tv_state.estimated_volume is not none or tv_state.estimated_channel) %}
 <p class="text-xs text-gray-600 mt-4">* Geschätzte Werte basierend auf gesendeten Befehlen</p>
 {% endif %}

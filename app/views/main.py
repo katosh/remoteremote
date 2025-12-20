@@ -1,6 +1,7 @@
 """
 Haupt-Views (Dashboard, etc.)
 """
+from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required
 
@@ -31,7 +32,7 @@ def dashboard():
         tv_info = tv_service.get_info()
         if tv_info:
             tv_state.power_state = tv_info.power_state
-            tv_state.last_confirmed = tv_info.power_state
+            tv_state.last_confirmed = datetime.utcnow()
     except Exception:
         pass
 

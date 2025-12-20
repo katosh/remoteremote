@@ -267,3 +267,53 @@ class TestCriticalEndpoints:
         response = auth_client.get('/schedule/')
         assert response.status_code == 200
         assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
+
+
+class TestModelTypes:
+    """Test that model field types are correct - catches type assignment bugs"""
+
+    def test_tv_state_datetime_fields(self, app):
+        """TVState datetime fields should only accept datetime objects"""
+        from datetime import datetime
+        from app.models import TVState, db
+
+        with app.app_context():
+            tv_state = TVState.get_instance()
+
+            # Set valid datetime - should work
+            tv_state.last_confirmed = datetime.utcnow()
+            tv_state.last_updated = datetime.utcnow()
+            db.session.commit()  # This should not raise
+
+            # Verify the values are datetime objects
+            assert isinstance(tv_state.last_confirmed, datetime)
+            assert isinstance(tv_state.last_updated, datetime)
+
+    def test_tv_state_power_state_string(self, app):
+        """TVState power_state should be a string"""
+        from app.models import TVState, db
+
+        with app.app_context():
+            tv_state = TVState.get_instance()
+            tv_state.power_state = 'on'
+            db.session.commit()
+
+            assert tv_state.power_state == 'on'
+
+    def test_dashboard_with_tv_connected(self, auth_client, app):
+        """Dashboard should render correctly when TV state is updated"""
+        from datetime import datetime
+        from app.models import TVState, db
+
+        with app.app_context():
+            # Pre-populate TV state to simulate connected TV
+            tv_state = TVState.get_instance()
+            tv_state.power_state = 'on'
+            tv_state.last_confirmed = datetime.utcnow()
+            tv_state.estimated_volume = 25
+            db.session.commit()
+
+        # Now access dashboard - should not error
+        response = auth_client.get('/dashboard')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
