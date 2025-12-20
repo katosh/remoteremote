@@ -20,7 +20,7 @@
 
     <!-- Form -->
     <form method="POST" class="space-y-6">
-        {{ form.hidden_tag() if form else '' }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
         <!-- Name -->
         <div class="bg-tv-dark rounded-xl p-6">

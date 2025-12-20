@@ -11,7 +11,7 @@
         <h2 class="text-lg font-semibold mb-4">TV-Konfiguration</h2>
 
         <form method="POST" action="{{ url_for('settings.save_tv_config') }}" class="space-y-4">
-            {{ form.hidden_tag() if form else '' }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
             <div>
                 <label for="tv_ip" class="block text-sm text-gray-400 mb-2">TV IP-Adresse</label>
