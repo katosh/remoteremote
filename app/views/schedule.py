@@ -278,6 +278,13 @@ def toggle(schedule_id: int):
         source='manual'
     )
 
+    # For HTMX requests, return the updated schedule list
+    if request.headers.get('HX-Request'):
+        enabled = Schedule.query.filter(Schedule.enabled == True).order_by(Schedule.next_run).all()
+        disabled = Schedule.query.filter(Schedule.enabled == False).order_by(Schedule.name).all()
+        schedules = enabled + disabled
+        return render_template('partials/schedule_list.html', schedules=schedules, compact=False)
+
     return jsonify({'success': True, 'enabled': schedule.enabled})
 
 

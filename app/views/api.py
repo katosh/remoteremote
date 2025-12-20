@@ -78,19 +78,42 @@ def tv_info():
 @api_bp.route('/schedules/upcoming')
 @login_required
 def upcoming_schedules():
-    """Nächste geplante Aktionen (für HTMX)"""
+    """Nächste geplante Aktionen (für Dashboard - nur aktive)"""
     schedules = Schedule.query.filter(
         Schedule.enabled == True,
         Schedule.next_run != None
     ).order_by(Schedule.next_run).limit(5).all()
 
     if request.headers.get('HX-Request'):
-        return render_template('partials/schedule_list.html', schedules=schedules)
+        return render_template('partials/schedule_list.html', schedules=schedules, compact=True)
 
     return jsonify({
         'schedules': [{
             'id': s.id,
             'name': s.name,
+            'next_run': s.next_run.isoformat() if s.next_run else None,
+            'action_type': s.action_type
+        } for s in schedules]
+    })
+
+
+@api_bp.route('/schedules/all')
+@login_required
+def all_schedules():
+    """Alle Zeitpläne (für Zeitplan-Seite - aktive und inaktive)"""
+    # Show enabled first (sorted by next_run), then disabled
+    enabled = Schedule.query.filter(Schedule.enabled == True).order_by(Schedule.next_run).all()
+    disabled = Schedule.query.filter(Schedule.enabled == False).order_by(Schedule.name).all()
+    schedules = enabled + disabled
+
+    if request.headers.get('HX-Request'):
+        return render_template('partials/schedule_list.html', schedules=schedules, compact=False)
+
+    return jsonify({
+        'schedules': [{
+            'id': s.id,
+            'name': s.name,
+            'enabled': s.enabled,
             'next_run': s.next_run.isoformat() if s.next_run else None,
             'action_type': s.action_type
         } for s in schedules]

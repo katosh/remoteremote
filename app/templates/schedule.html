@@ -17,9 +17,10 @@
     </div>
 
     <!-- Schedule List -->
-    <div class="space-y-4"
-         hx-get="{{ url_for('api.upcoming_schedules') }}"
-         hx-trigger="load"
+    <div id="schedule-list"
+         class="space-y-4"
+         hx-get="{{ url_for('api.all_schedules') }}"
+         hx-trigger="load, refresh from:body"
          hx-swap="innerHTML">
         <!-- Loading state -->
         <div class="bg-tv-dark rounded-xl p-8 text-center text-gray-400">
