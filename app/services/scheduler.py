@@ -22,6 +22,7 @@ def get_scheduler() -> Optional[BackgroundScheduler]:
 def init_scheduler(app):
     """Scheduler initialisieren und starten"""
     global _scheduler
+    from .logger import log_event
 
     timezone = pytz.timezone(app.config.get('TIMEZONE', 'Europe/Berlin'))
 
@@ -31,6 +32,16 @@ def init_scheduler(app):
     # Bestehende Zeitpläne laden
     with app.app_context():
         _load_schedules(app)
+
+        # Log scheduler initialization
+        jobs = _scheduler.get_jobs()
+        log_event(
+            level='INFO',
+            category='system',
+            message=f'Scheduler initialisiert mit {len(jobs)} Jobs',
+            details={'jobs': [j.id for j in jobs]},
+            source='system'
+        )
 
     # Tägliche Log-Bereinigung
     _scheduler.add_job(
@@ -97,13 +108,17 @@ def add_schedule(schedule, app=None):
         from flask import current_app
         app = current_app._get_current_object()
 
-    _scheduler.add_job(
+    job = _scheduler.add_job(
         func=_execute_schedule_job,
         trigger=trigger,
         id=job_id,
         replace_existing=True,
         kwargs={'schedule_id': schedule.id, 'app': app}
     )
+
+    # Log job registration
+    next_run = job.next_run_time.strftime('%d.%m.%Y %H:%M:%S') if job.next_run_time else 'unbekannt'
+    print(f"[Scheduler] Job '{job_id}' registriert - Nächste Ausführung: {next_run}", flush=True)
 
 
 def update_schedule(schedule, app=None):
@@ -136,12 +151,16 @@ def calculate_next_run(cron_expression: str) -> Optional[datetime]:
 
 def _execute_schedule_job(schedule_id: int, app):
     """Job-Wrapper für Zeitplan-Ausführung"""
+    print(f"[Scheduler] Führe Job 'schedule_{schedule_id}' aus...", flush=True)
     with app.app_context():
         from ..models import Schedule
 
         schedule = Schedule.query.get(schedule_id)
         if schedule and schedule.enabled:
+            print(f"[Scheduler] Starte Zeitplan: {schedule.name}", flush=True)
             execute_schedule(schedule)
+        else:
+            print(f"[Scheduler] Zeitplan {schedule_id} nicht gefunden oder deaktiviert", flush=True)
 
 
 def execute_schedule(schedule):

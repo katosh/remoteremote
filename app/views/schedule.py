@@ -185,12 +185,19 @@ def edit(schedule_id: int):
             action_data['scenario_id'] = int(request.form.get('scenario_id'))
 
         schedule.set_action_data(action_data)
+
+        # Handle enabled toggle
+        schedule.enabled = 'enabled' in request.form
+
         db.session.commit()
 
         # Im Scheduler aktualisieren
         scheduler = get_scheduler()
         if scheduler:
-            scheduler.update_schedule(schedule)
+            if schedule.enabled:
+                scheduler.update_schedule(schedule)
+            else:
+                scheduler.remove_schedule(schedule.id)
 
         log_event(
             level='INFO',
@@ -230,6 +237,13 @@ def delete(schedule_id: int):
     )
 
     flash(f'Zeitplan "{name}" wurde gelöscht.', 'success')
+
+    # For HTMX requests, use HX-Redirect header
+    if request.headers.get('HX-Request'):
+        response = jsonify({'success': True})
+        response.headers['HX-Redirect'] = url_for('schedule.index')
+        return response
+
     return redirect(url_for('schedule.index'))
 
 

@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-6" x-data="{
-    actionType: '{{ schedule.action_type if schedule else 'key' }}',
-    cronMode: '{{ 'custom' if schedule and schedule.cron_expression else 'simple' }}'
+    actionType: '{{ schedule.action_type if schedule else 'power' }}',
+    cronMode: 'simple'
 }">
     <!-- Header -->
     <div class="flex items-center gap-4 mb-6">
@@ -269,20 +269,25 @@
             </div>
         </div>
 
-        <!-- Enabled Toggle -->
+        {% if schedule %}
+        <!-- Enabled Toggle (only when editing) -->
         <div class="bg-tv-dark rounded-xl p-6">
-            <label class="flex items-center justify-between cursor-pointer">
+            <label class="flex items-center justify-between cursor-pointer" x-data="{ enabled: {{ 'true' if schedule.enabled else 'false' }} }">
                 <span class="text-lg">Aktiviert</span>
-                <div class="relative">
+                <div class="relative" @click="enabled = !enabled">
                     <input type="checkbox"
                            name="enabled"
-                           {% if not schedule or schedule.enabled %}checked{% endif %}
-                           class="sr-only">
-                    <div class="w-12 h-7 bg-gray-700 rounded-full shadow-inner peer-checked:bg-tv-accent transition-colors"></div>
-                    <div class="absolute w-5 h-5 bg-white rounded-full shadow left-1 top-1 peer-checked:translate-x-5 transition-transform"></div>
+                           x-bind:checked="enabled"
+                           :value="enabled ? 'on' : ''"
+                           class="sr-only peer">
+                    <div class="w-12 h-7 rounded-full shadow-inner transition-colors"
+                         :class="enabled ? 'bg-tv-accent' : 'bg-gray-700'"></div>
+                    <div class="absolute w-5 h-5 bg-white rounded-full shadow top-1 transition-transform"
+                         :class="enabled ? 'left-6' : 'left-1'"></div>
                 </div>
             </label>
         </div>
+        {% endif %}
 
         <!-- Submit -->
         <div class="flex gap-4">
@@ -292,7 +297,7 @@
             </button>
             {% if schedule %}
             <button type="button"
-                    hx-delete="{{ url_for('schedule.delete', schedule_id=schedule.id) }}"
+                    hx-post="{{ url_for('schedule.delete', schedule_id=schedule.id) }}"
                     hx-confirm="Zeitplan wirklich löschen?"
                     class="px-6 py-4 bg-red-600 hover:bg-red-500 rounded-xl font-medium transition-colors">
                 Löschen
