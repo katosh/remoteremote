@@ -1,0 +1,292 @@
+"""
+Scheduler-Service für geplante Aktionen
+"""
+import random
+import time
+from datetime import datetime
+from typing import Optional
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+import pytz
+
+# Globale Scheduler-Instanz
+_scheduler: Optional[BackgroundScheduler] = None
+
+
+def get_scheduler() -> Optional[BackgroundScheduler]:
+    """Scheduler-Instanz abrufen"""
+    return _scheduler
+
+
+def init_scheduler(app):
+    """Scheduler initialisieren und starten"""
+    global _scheduler
+
+    timezone = pytz.timezone(app.config.get('TIMEZONE', 'Europe/Berlin'))
+
+    _scheduler = BackgroundScheduler(timezone=timezone)
+    _scheduler.start()
+
+    # Bestehende Zeitpläne laden
+    with app.app_context():
+        _load_schedules(app)
+
+    # Tägliche Log-Bereinigung
+    _scheduler.add_job(
+        func=_cleanup_logs_job,
+        trigger='cron',
+        hour=3,
+        minute=0,
+        id='cleanup_logs',
+        replace_existing=True,
+        kwargs={'app': app}
+    )
+
+    return _scheduler
+
+
+def shutdown_scheduler():
+    """Scheduler beenden"""
+    global _scheduler
+    if _scheduler:
+        _scheduler.shutdown()
+        _scheduler = None
+
+
+def _load_schedules(app):
+    """Alle aktiven Zeitpläne aus der Datenbank laden"""
+    from ..models import Schedule
+
+    schedules = Schedule.query.filter_by(enabled=True).all()
+
+    for schedule in schedules:
+        add_schedule(schedule, app)
+
+
+def add_schedule(schedule, app=None):
+    """Zeitplan zum Scheduler hinzufügen"""
+    if not _scheduler:
+        return
+
+    job_id = f'schedule_{schedule.id}'
+
+    # Bestehenden Job entfernen falls vorhanden
+    if _scheduler.get_job(job_id):
+        _scheduler.remove_job(job_id)
+
+    if not schedule.enabled:
+        return
+
+    # Trigger erstellen
+    if schedule.cron_expression:
+        trigger = CronTrigger.from_crontab(
+            schedule.cron_expression,
+            timezone=_scheduler.timezone
+        )
+    elif schedule.next_run:
+        trigger = DateTrigger(
+            run_date=schedule.next_run,
+            timezone=_scheduler.timezone
+        )
+    else:
+        return
+
+    # App-Kontext für den Job
+    if app is None:
+        from flask import current_app
+        app = current_app._get_current_object()
+
+    _scheduler.add_job(
+        func=_execute_schedule_job,
+        trigger=trigger,
+        id=job_id,
+        replace_existing=True,
+        kwargs={'schedule_id': schedule.id, 'app': app}
+    )
+
+
+def update_schedule(schedule, app=None):
+    """Zeitplan im Scheduler aktualisieren"""
+    remove_schedule(schedule.id)
+    add_schedule(schedule, app)
+
+
+def remove_schedule(schedule_id: int):
+    """Zeitplan aus dem Scheduler entfernen"""
+    if not _scheduler:
+        return
+
+    job_id = f'schedule_{schedule_id}'
+    if _scheduler.get_job(job_id):
+        _scheduler.remove_job(job_id)
+
+
+def calculate_next_run(cron_expression: str) -> Optional[datetime]:
+    """Nächste Ausführungszeit berechnen"""
+    if not cron_expression:
+        return None
+
+    try:
+        trigger = CronTrigger.from_crontab(cron_expression)
+        return trigger.get_next_fire_time(None, datetime.now())
+    except Exception:
+        return None
+
+
+def _execute_schedule_job(schedule_id: int, app):
+    """Job-Wrapper für Zeitplan-Ausführung"""
+    with app.app_context():
+        from ..models import Schedule
+
+        schedule = Schedule.query.get(schedule_id)
+        if schedule and schedule.enabled:
+            execute_schedule(schedule)
+
+
+def execute_schedule(schedule):
+    """Zeitplan ausführen"""
+    from ..models import db
+    from .logger import log_event
+
+    try:
+        action_data = schedule.get_action_data()
+
+        if schedule.action_type == 'key':
+            _execute_key_action(action_data)
+        elif schedule.action_type == 'sequence':
+            _execute_sequence_action(action_data)
+        elif schedule.action_type == 'scenario':
+            _execute_scenario_action(action_data)
+
+        schedule.last_run = datetime.utcnow()
+        schedule.last_result = 'success'
+
+        # Nächste Ausführungszeit aktualisieren
+        if schedule.cron_expression:
+            schedule.next_run = calculate_next_run(schedule.cron_expression)
+        else:
+            # Einmalige Ausführung - deaktivieren
+            schedule.enabled = False
+            schedule.next_run = None
+
+        db.session.commit()
+
+        log_event(
+            level='INFO',
+            category='schedule',
+            message=f'Zeitplan ausgeführt: {schedule.name}',
+            details={'schedule_id': schedule.id, 'action_type': schedule.action_type},
+            source='schedule'
+        )
+
+    except Exception as e:
+        schedule.last_run = datetime.utcnow()
+        schedule.last_result = f'error: {str(e)}'
+        db.session.commit()
+
+        log_event(
+            level='ERROR',
+            category='schedule',
+            message=f'Fehler bei Zeitplan: {schedule.name}',
+            details={'schedule_id': schedule.id, 'error': str(e)},
+            source='schedule'
+        )
+
+
+def _execute_key_action(action_data: dict):
+    """Einzelne Taste senden"""
+    from .tv_service import get_tv_service
+
+    key = action_data.get('key')
+    if key:
+        tv = get_tv_service()
+        tv.send_key(key)
+
+
+def _execute_sequence_action(action_data: dict):
+    """Tastensequenz senden"""
+    from .tv_service import get_tv_service
+
+    keys = action_data.get('keys', [])
+    delay = action_data.get('delay', 0.3)
+
+    tv = get_tv_service()
+    for key in keys:
+        tv.send_key(key)
+        time.sleep(delay)
+
+
+def _execute_scenario_action(action_data: dict):
+    """Szenario ausführen"""
+    from ..models import Scenario
+
+    scenario_id = action_data.get('scenario_id')
+    if scenario_id:
+        scenario = Scenario.query.get(scenario_id)
+        if scenario:
+            execute_scenario(scenario)
+
+
+def execute_scenario(scenario):
+    """
+    Szenario mit allen Schritten ausführen.
+    Unterstützt zufällige Verzögerungen für natürliches Verhalten.
+    """
+    from .tv_service import get_tv_service
+    from .logger import log_event
+
+    tv = get_tv_service()
+    steps = scenario.get_steps()
+
+    for step in steps:
+        action = step.get('action')
+        delay = step.get('delay', 0)
+
+        # Zufällige Verzögerung wenn aktiviert
+        if scenario.randomize_delays and delay > 0:
+            min_delay = max(scenario.min_delay_ms, delay * 0.5)
+            max_delay = min(scenario.max_delay_ms, delay * 1.5)
+            delay = random.randint(int(min_delay), int(max_delay))
+
+        # Aktion ausführen
+        try:
+            if action == 'key':
+                key = step.get('key')
+                tv.send_key(key)
+            elif action == 'power_on':
+                tv.power_on()
+            elif action == 'power_off':
+                tv.power_off()
+            elif action == 'channel':
+                channel = step.get('channel')
+                tv.channel(channel)
+            elif action == 'volume':
+                level = step.get('level')
+                # Volume auf bestimmtes Level setzen (geschätzt)
+                # Da wir kein Feedback haben, senden wir entsprechend viele Up/Down
+                pass  # TODO: Implementieren wenn Volume-Tracking vorhanden
+            elif action == 'mute':
+                tv.mute()
+            elif action == 'wait':
+                pass  # Nur warten
+
+        except Exception as e:
+            log_event(
+                level='WARNING',
+                category='action',
+                message=f'Fehler bei Szenario-Schritt: {action}',
+                details={'scenario': scenario.name, 'step': step, 'error': str(e)},
+                source='schedule'
+            )
+
+        # Verzögerung vor nächstem Schritt
+        if delay > 0:
+            time.sleep(delay / 1000)  # Delay ist in ms
+
+
+def _cleanup_logs_job(app):
+    """Job für tägliche Log-Bereinigung"""
+    with app.app_context():
+        from .logger import cleanup_old_logs
+        cleanup_old_logs()

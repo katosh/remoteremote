@@ -1,0 +1,67 @@
+# Caddyfile für TV Remote Control
+#
+# Installation (macOS/Linux):
+#   brew install caddy
+#   # oder: https://caddyserver.com/docs/install
+#
+# Nutzung:
+#   caddy run --config Caddyfile
+#
+# Die Domain muss auf diesen Server zeigen (DNS A-Record)
+
+# Ersetzen Sie 'tv.example.com' mit Ihrer Domain
+tv.example.com {
+    # Automatisches HTTPS via Let's Encrypt
+    # Caddy kümmert sich um Zertifikatserneuerung
+
+    # Reverse Proxy zur Flask-App
+    reverse_proxy localhost:5000
+
+    # Security Headers
+    header {
+        # HSTS - HTTPS erzwingen
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # Clickjacking-Schutz
+        X-Frame-Options "DENY"
+
+        # XSS-Schutz
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+
+        # Referrer Policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        # Content Security Policy
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+
+        # Server-Version verstecken
+        -Server
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/tvremote.log
+        format json
+    }
+
+    # Rate Limiting (optional, benötigt Caddy-Modul)
+    # rate_limit {
+    #     zone static_zone {
+    #         key {remote_host}
+    #         events 100
+    #         window 1m
+    #     }
+    # }
+
+    # Kompression
+    encode gzip zstd
+}
+
+# Entwicklungs-Konfiguration (localhost mit selbstsigniertem Zertifikat)
+# Auskommentieren für lokales HTTPS-Testing:
+#
+# localhost:8443 {
+#     tls internal
+#     reverse_proxy localhost:5000
+# }

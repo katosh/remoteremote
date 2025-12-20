@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Fernbedienung - TV Fernbedienung{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-6" x-data="{ expertMode: false }">
+    <!-- Mode Toggle -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold">Fernbedienung</h1>
+        <label class="flex items-center cursor-pointer">
+            <span class="text-sm text-gray-400 mr-2">Experten</span>
+            <div class="relative">
+                <input type="checkbox" x-model="expertMode" class="sr-only">
+                <div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner"
+                     :class="{ 'bg-tv-accent': expertMode }"></div>
+                <div class="absolute w-4 h-4 bg-white rounded-full shadow left-1 top-1 transition-transform"
+                     :class="{ 'translate-x-4': expertMode }"></div>
+            </div>
+        </label>
+    </div>
+
+    <!-- TV Status Mini -->
+    <div class="bg-tv-dark rounded-xl p-4 mb-6 flex items-center justify-between"
+         hx-get="{{ url_for('api.tv_status_mini') }}"
+         hx-trigger="every 10s"
+         hx-swap="innerHTML">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full {{ 'bg-green-500' if status and status.connected else 'bg-red-500' }}"></div>
+            <span class="text-sm">{{ 'Verbunden' if status and status.connected else 'Nicht verbunden' }}</span>
+        </div>
+        {% if status and status.estimated_volume is not none %}
+        <div class="text-sm text-gray-400">Vol: {{ status.estimated_volume }}%</div>
+        {% endif %}
+    </div>
+
+    <!-- Normal Mode Controls -->
+    <div x-show="!expertMode" class="space-y-6">
+        <!-- Power Row -->
+        <div class="flex justify-center">
+            <button hx-post="{{ url_for('remote.power_toggle') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-power w-20 h-20 rounded-full flex items-center justify-center">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 3v9m0 0a9 9 0 100 9 9 9 0 000-9z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Volume & Navigation -->
+        <div class="flex justify-between items-center">
+            <!-- Volume Controls -->
+            <div class="flex flex-col items-center gap-2">
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_VOLUP') }}"
+                        hx-swap="none"
+                        class="btn-remote btn-nav">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                    </svg>
+                </button>
+                <span class="text-xs text-gray-500">VOL</span>
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_VOLDOWN') }}"
+                        hx-swap="none"
+                        class="btn-remote btn-nav">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- D-Pad Navigation -->
+            <div class="relative w-48 h-48">
+                <!-- Up -->
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_UP') }}"
+                        hx-swap="none"
+                        class="btn-remote absolute top-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-t-full">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                    </svg>
+                </button>
+                <!-- Down -->
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_DOWN') }}"
+                        hx-swap="none"
+                        class="btn-remote absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-b-full">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <!-- Left -->
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_LEFT') }}"
+                        hx-swap="none"
+                        class="btn-remote absolute left-0 top-1/2 -translate-y-1/2 w-16 h-16 rounded-l-full">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <!-- Right -->
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_RIGHT') }}"
+                        hx-swap="none"
+                        class="btn-remote absolute right-0 top-1/2 -translate-y-1/2 w-16 h-16 rounded-r-full">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <!-- OK/Enter -->
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_ENTER') }}"
+                        hx-swap="none"
+                        class="btn-remote absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-tv-accent hover:bg-indigo-500">
+                    OK
+                </button>
+            </div>
+
+            <!-- Channel Controls -->
+            <div class="flex flex-col items-center gap-2">
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_CHUP') }}"
+                        hx-swap="none"
+                        class="btn-remote btn-nav">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                    </svg>
+                </button>
+                <span class="text-xs text-gray-500">CH</span>
+                <button hx-post="{{ url_for('remote.send_key', key='KEY_CHDOWN') }}"
+                        hx-swap="none"
+                        class="btn-remote btn-nav">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Control Row -->
+        <div class="grid grid-cols-4 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_RETURN') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Zurück
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_HOME') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Home
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Stumm
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_SOURCE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Quelle
+            </button>
+        </div>
+
+        <!-- Streaming Apps -->
+        <div class="grid grid-cols-4 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_NETFLIX') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action bg-red-800 hover:bg-red-700">
+                Netflix
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_AMAZON') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action bg-blue-800 hover:bg-blue-700">
+                Prime
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_YOUTUBE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                YouTube
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_GUIDE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Guide
+            </button>
+        </div>
+    </div>
+
+    <!-- Expert Mode Controls -->
+    <div x-show="expertMode" x-cloak class="space-y-6">
+        <!-- Number Pad -->
+        <div class="grid grid-cols-3 gap-3">
+            {% for num in range(1, 10) %}
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_' ~ num) }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav text-xl">
+                {{ num }}
+            </button>
+            {% endfor %}
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_PRECH') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav text-sm">
+                Vorher
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_0') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav text-xl">
+                0
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_CHLIST') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav text-sm">
+                Liste
+            </button>
+        </div>
+
+        <!-- Direct Channel Input -->
+        <div class="bg-gray-800 rounded-xl p-4" x-data="{ channel: '' }">
+            <label class="block text-sm text-gray-400 mb-2">Direkt zu Kanal:</label>
+            <div class="flex gap-2">
+                <input type="number"
+                       x-model="channel"
+                       min="1"
+                       max="9999"
+                       placeholder="Kanalnummer"
+                       class="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-500
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                <button @click="if(channel) { $dispatch('htmx:trigger', {value: channel}); channel=''; }"
+                        hx-post="{{ url_for('remote.switch_channel', channel=0) }}"
+                        hx-vals="js:{channel: channel}"
+                        hx-swap="none"
+                        class="btn-remote px-6">
+                    Go
+                </button>
+            </div>
+        </div>
+
+        <!-- Color Buttons -->
+        <div class="grid grid-cols-4 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_RED') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav bg-red-600 hover:bg-red-500">
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_GREEN') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav bg-green-600 hover:bg-green-500">
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_YELLOW') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav bg-yellow-500 hover:bg-yellow-400">
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_BLUE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-nav bg-blue-600 hover:bg-blue-500">
+            </button>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="grid grid-cols-5 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_REWIND') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_PLAY') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_PAUSE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_STOP') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h12v12H6z"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_FF') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Special Keys -->
+        <div class="grid grid-cols-3 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_INFO') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Info
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_MENU') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Menü
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_TOOLS') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Tools
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_EXIT') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Exit
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_CAPTION') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Untertitel
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_AD') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                Audio
+            </button>
+        </div>
+
+        <!-- More Streaming Apps -->
+        <div class="grid grid-cols-4 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_NETFLIX') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action bg-red-800 hover:bg-red-700">
+                Netflix
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_AMAZON') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action bg-blue-800 hover:bg-blue-700">
+                Prime
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_YOUTUBE') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action">
+                YouTube
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_DISNEY') }}"
+                    hx-swap="none"
+                    class="btn-remote btn-action bg-blue-900 hover:bg-blue-800">
+                Disney+
+            </button>
+        </div>
+    </div>
+
+    <!-- Scenarios -->
+    <div class="mt-8">
+        <h2 class="text-lg font-semibold mb-4">Szenarien</h2>
+        <div class="grid grid-cols-2 gap-3">
+            {% for scenario in scenarios %}
+            <button hx-post="{{ url_for('remote.run_scenario', scenario_id=scenario.id) }}"
+                    hx-swap="none"
+                    class="btn-remote py-4 text-left px-4">
+                <span class="block font-medium">{{ scenario.name }}</span>
+                <span class="block text-xs text-gray-400">{{ scenario.description }}</span>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+{% endblock %}

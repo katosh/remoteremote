@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Einstellungen - TV Fernbedienung{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <h1 class="text-2xl font-bold mb-6">Einstellungen</h1>
+
+    <!-- TV Configuration -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">TV-Konfiguration</h2>
+
+        <form method="POST" action="{{ url_for('settings.save_tv_config') }}" class="space-y-4">
+            {{ form.hidden_tag() if form else '' }}
+
+            <div>
+                <label for="tv_ip" class="block text-sm text-gray-400 mb-2">TV IP-Adresse</label>
+                <input type="text"
+                       name="tv_ip"
+                       id="tv_ip"
+                       value="{{ config.tv_ip or '' }}"
+                       pattern="^(\d{1,3}\.){3}\d{1,3}$"
+                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent"
+                       placeholder="192.168.178.103">
+            </div>
+
+            <div>
+                <label for="tv_mac" class="block text-sm text-gray-400 mb-2">TV MAC-Adresse (für Wake-on-LAN)</label>
+                <input type="text"
+                       name="tv_mac"
+                       id="tv_mac"
+                       value="{{ config.tv_mac or '' }}"
+                       pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent"
+                       placeholder="80:47:86:E9:B2:17">
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="flex-1 py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
+                    Speichern
+                </button>
+                <button type="button"
+                        hx-post="{{ url_for('settings.discover_tv') }}"
+                        hx-target="#discovery-result"
+                        class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
+                    TV suchen
+                </button>
+            </div>
+
+            <div id="discovery-result"></div>
+        </form>
+    </div>
+
+    <!-- Token Management -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">TV-Kopplung</h2>
+
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-4 h-4 rounded-full {{ 'bg-green-500' if has_token else 'bg-yellow-500' }}"></div>
+            <span>{{ 'Token vorhanden' if has_token else 'Kein Token - Kopplung erforderlich' }}</span>
+        </div>
+
+        <div class="space-y-3">
+            <button hx-post="{{ url_for('settings.pair_tv') }}"
+                    hx-target="#pairing-result"
+                    class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
+                {{ 'Neu koppeln' if has_token else 'Kopplung starten' }}
+            </button>
+        </div>
+
+        <div id="pairing-result" class="mt-4"></div>
+
+        <p class="text-sm text-gray-500 mt-4">
+            Bei der Kopplung wird eine Verbindung zum TV hergestellt. Bestätigen Sie die Anfrage auf dem TV-Bildschirm.
+        </p>
+    </div>
+
+    <!-- Password Change -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Passwort ändern</h2>
+
+        <form method="POST" action="{{ url_for('settings.change_password') }}" class="space-y-4">
+            <div>
+                <label for="current_password" class="block text-sm text-gray-400 mb-2">Aktuelles Passwort</label>
+                <input type="password"
+                       name="current_password"
+                       id="current_password"
+                       required
+                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent">
+            </div>
+
+            <div>
+                <label for="new_password" class="block text-sm text-gray-400 mb-2">Neues Passwort</label>
+                <input type="password"
+                       name="new_password"
+                       id="new_password"
+                       required
+                       minlength="8"
+                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent">
+            </div>
+
+            <div>
+                <label for="confirm_password" class="block text-sm text-gray-400 mb-2">Neues Passwort bestätigen</label>
+                <input type="password"
+                       name="confirm_password"
+                       id="confirm_password"
+                       required
+                       minlength="8"
+                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent">
+            </div>
+
+            <button type="submit"
+                    class="w-full py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
+                Passwort ändern
+            </button>
+        </form>
+    </div>
+
+    <!-- Backup -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Backup</h2>
+
+        <div class="space-y-3">
+            <button hx-post="{{ url_for('settings.create_backup') }}"
+                    hx-target="#backup-result"
+                    class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
+                Backup erstellen
+            </button>
+
+            <a href="{{ url_for('settings.download_backup') }}"
+               class="block w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-center transition-colors">
+                Letztes Backup herunterladen
+            </a>
+        </div>
+
+        <div id="backup-result" class="mt-4"></div>
+    </div>
+
+    <!-- Logs Link -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <a href="{{ url_for('settings.logs_view') }}"
+           class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
+            <span>Aktivitätsprotokoll</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- Scenarios Link -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <a href="{{ url_for('settings.scenarios_view') }}"
+           class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
+            <span>Szenarien verwalten</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- System Info -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">System</h2>
+
+        <dl class="space-y-2 text-sm">
+            <div class="flex justify-between">
+                <dt class="text-gray-400">Version</dt>
+                <dd>1.0.0</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-gray-400">Zeitzone</dt>
+                <dd>Europe/Berlin</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-gray-400">Log-Aufbewahrung</dt>
+                <dd>365 Tage</dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Logout -->
+    <a href="{{ url_for('auth.logout') }}"
+       class="block w-full py-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-center transition-colors">
+        Abmelden
+    </a>
+</div>
+{% endblock %}

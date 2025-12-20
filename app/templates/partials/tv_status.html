@@ -1,0 +1,58 @@
+<!-- TV Status Partial - wird via HTMX aktualisiert -->
+<div class="flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <!-- Connection Status -->
+        <div class="w-16 h-16 rounded-2xl {{ 'bg-green-500/20' if status and status.connected else 'bg-red-500/20' }} flex items-center justify-center">
+            {% if status and status.connected %}
+            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {% else %}
+            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
+            </svg>
+            {% endif %}
+        </div>
+
+        <div>
+            <h2 class="text-xl font-semibold">{{ status.info.name if status and status.info else 'Samsung TV' }}</h2>
+            <p class="text-gray-400">
+                {% if status and status.connected %}
+                    {% if status.power_state == 'on' %}
+                        Eingeschaltet
+                    {% elif status.power_state == 'standby' %}
+                        Standby
+                    {% else %}
+                        Verbunden
+                    {% endif %}
+                {% else %}
+                    Nicht erreichbar
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    {% if status and status.connected %}
+    <div class="hidden sm:flex gap-6 text-center">
+        {% if status.estimated_volume is not none %}
+        <div>
+            <div class="text-2xl font-bold">{{ status.estimated_volume }}%</div>
+            <div class="text-xs text-gray-500">Lautstärke*</div>
+        </div>
+        {% endif %}
+        {% if status.estimated_channel %}
+        <div>
+            <div class="text-2xl font-bold">{{ status.estimated_channel }}</div>
+            <div class="text-xs text-gray-500">Kanal*</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% if status and (status.estimated_volume is not none or status.estimated_channel) %}
+<p class="text-xs text-gray-600 mt-4">* Geschätzte Werte basierend auf gesendeten Befehlen</p>
+{% endif %}
