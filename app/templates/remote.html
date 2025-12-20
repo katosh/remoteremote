@@ -417,21 +417,19 @@
 <style>
     [x-cloak] { display: none !important; }
 
-    /* Button press feedback */
+    /* Button press feedback - subtle opacity pulse, no position shift */
     .btn-remote {
-        transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+        transition: opacity 0.1s ease, filter 0.1s ease;
     }
 
     .btn-remote:active,
     .btn-remote.btn-pressed {
-        transform: scale(0.9);
-        opacity: 0.7;
+        opacity: 0.5;
     }
 
     .btn-remote.btn-success {
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.5);
-        transform: scale(1);
         opacity: 1;
+        filter: brightness(1.3);
     }
 
     /* Vertical volume slider */
