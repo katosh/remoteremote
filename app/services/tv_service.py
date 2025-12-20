@@ -3,7 +3,8 @@ TV-Service - Wrapper um samsung_tv.py mit Konfigurationsverwaltung
 """
 import os
 import sys
-from typing import Optional
+import time
+from typing import Optional, Tuple
 from flask import current_app
 
 # Pfad zum samsung_tv.py Modul hinzufügen
@@ -13,6 +14,15 @@ from samsung_tv import SamsungTV, Key, TVInfo
 
 # Globale TV-Instanz
 _tv_instance: Optional[SamsungTV] = None
+
+# Cache for TV status to avoid repeated checks
+_status_cache: dict = {
+    'connected': None,
+    'power_state': None,
+    'info': None,
+    'last_check': 0
+}
+CACHE_TTL_SECONDS = 30  # Cache TV status for 30 seconds
 
 
 class MockSamsungTV:
@@ -136,6 +146,62 @@ def reinit_tv_service():
     """TV-Service neu initialisieren (nach Konfigurationsänderung)"""
     global _tv_instance
     _tv_instance = _create_tv_instance()
+    invalidate_status_cache()
+
+
+def invalidate_status_cache():
+    """Invalidate the status cache to force a fresh check"""
+    global _status_cache
+    _status_cache['last_check'] = 0
+
+
+def get_cached_status(force_refresh: bool = False) -> dict:
+    """
+    Get TV status with caching to avoid repeated network calls.
+    Returns cached status if still valid, otherwise fetches fresh status.
+    """
+    global _status_cache
+
+    now = time.time()
+    cache_age = now - _status_cache['last_check']
+
+    # Return cached status if still valid
+    if not force_refresh and cache_age < CACHE_TTL_SECONDS and _status_cache['connected'] is not None:
+        return {
+            'connected': _status_cache['connected'],
+            'power_state': _status_cache['power_state'],
+            'info': _status_cache['info'],
+            'cached': True,
+            'cache_age': cache_age
+        }
+
+    # Fetch fresh status
+    tv = get_tv_service()
+    connected = False
+    power_state = 'unknown'
+    info = None
+
+    try:
+        info = tv.get_info()
+        if info:
+            connected = True
+            power_state = info.power_state
+    except Exception:
+        pass
+
+    # Update cache
+    _status_cache['connected'] = connected
+    _status_cache['power_state'] = power_state
+    _status_cache['info'] = info
+    _status_cache['last_check'] = now
+
+    return {
+        'connected': connected,
+        'power_state': power_state,
+        'info': info,
+        'cached': False,
+        'cache_age': 0
+    }
 
 
 def _create_tv_instance() -> SamsungTV:
@@ -236,4 +302,4 @@ class TVServiceWrapper:
 
 
 # Export der Key-Enum für einfachen Import
-__all__ = ['get_tv_service', 'reinit_tv_service', 'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper']
+__all__ = ['get_tv_service', 'reinit_tv_service', 'get_cached_status', 'invalidate_status_cache', 'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper']

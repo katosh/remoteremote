@@ -67,12 +67,14 @@ def create_app(config_name: str = None) -> Flask:
                 'tv_has_token': False
             }
 
-        from .services.tv_service import get_tv_service
+        from .services.tv_service import get_tv_service, get_cached_status
         try:
             tv = get_tv_service()
+            # Use cached status to avoid slow network calls on every page load
+            status = get_cached_status()
             return {
                 'app_name': app.config['APP_NAME'],
-                'tv_connected': tv.is_connected() if tv else False,
+                'tv_connected': status['connected'],
                 'tv_has_token': tv.is_paired if tv else False
             }
         except Exception:

@@ -5,8 +5,8 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required
 
-from ..models import User, Schedule, Log, TVState
-from ..services.tv_service import get_tv_service
+from ..models import User, Schedule, Log, TVState, db
+from ..services.tv_service import get_cached_status
 
 main_bp = Blueprint('main', __name__)
 
@@ -24,17 +24,20 @@ def index():
 @login_required
 def dashboard():
     """Hauptübersicht"""
-    tv_service = get_tv_service()
-    tv_info = None
+    # Use cached status to avoid slow network calls
+    status = get_cached_status()
+    tv_info = status.get('info')
     tv_state = TVState.get_instance()
 
-    try:
-        tv_info = tv_service.get_info()
-        if tv_info:
-            tv_state.power_state = tv_info.power_state
-            tv_state.last_confirmed = datetime.utcnow()
-    except Exception:
-        pass
+    # Update state if we got fresh info
+    if tv_info and not status.get('cached'):
+        tv_state.power_state = tv_info.power_state
+        tv_state.last_confirmed = datetime.utcnow()
+        db.session.commit()
+
+    # Determine if TV is reachable and power state
+    reachable = status['connected']
+    power_state = status['power_state']
 
     # Nächste geplante Aktionen
     upcoming_schedules = Schedule.query.filter(
@@ -51,6 +54,8 @@ def dashboard():
         'dashboard.html',
         tv_info=tv_info,
         tv_state=tv_state,
+        reachable=reachable,
+        power_state=power_state,
         upcoming_schedules=upcoming_schedules,
         recent_logs=recent_logs
     )

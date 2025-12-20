@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
 from ..models import Scenario
-from ..services.tv_service import get_tv_service
+from ..services.tv_service import get_tv_service, invalidate_status_cache
 from ..services.logger import log_event
 
 remote_bp = Blueprint('remote', __name__, url_prefix='/remote')
@@ -26,10 +26,13 @@ def index():
 
 
 @remote_bp.route('/send-key', methods=['POST'])
+@remote_bp.route('/send-key/<key>', methods=['POST'])
 @login_required
-def send_key():
+def send_key(key=None):
     """Taste an TV senden"""
-    key = request.form.get('key')
+    # Accept key from URL path, query params, or form data
+    if key is None:
+        key = request.args.get('key') or request.form.get('key')
     if not key:
         return jsonify({'success': False, 'error': 'Keine Taste angegeben'}), 400
 
@@ -79,6 +82,9 @@ def power():
             else:
                 tv.power_on()
                 message = 'TV eingeschaltet (Wake-on-LAN)'
+
+        # Invalidate cache so next page load gets fresh status
+        invalidate_status_cache()
 
         log_event(
             level='INFO',
