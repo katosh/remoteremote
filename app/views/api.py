@@ -14,25 +14,24 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 @login_required
 def tv_status():
     """Aktueller TV-Status (für HTMX Polling)"""
-    tv = get_tv_service()
+    from ..services.tv_service import get_cached_status
+
+    mini = request.args.get('mini') == '1'
     tv_state = TVState.get_instance()
 
-    power_state = 'unknown'
-    reachable = False
-
-    try:
-        info = tv.get_info()
-        if info:
-            power_state = info.power_state
-            reachable = True
-            tv_state.power_state = power_state
-            tv_state.last_confirmed = db.func.now()
-            db.session.commit()
-    except Exception:
-        pass
+    # Use cached status for fast response
+    cached = get_cached_status()
+    power_state = cached['power_state']
+    reachable = cached['connected']
 
     # HTMX erwartet HTML, normale Requests bekommen JSON
     if request.headers.get('HX-Request'):
+        if mini:
+            # Mini status for remote view
+            return f'''<div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full { 'bg-green-500' if reachable else 'bg-red-500' }"></div>
+                <span class="text-sm">{ 'Verbunden' if reachable else 'Nicht verbunden' }</span>
+            </div>'''
         return render_template(
             'partials/tv_status.html',
             power_state=power_state,
