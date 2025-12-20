@@ -269,6 +269,39 @@ class TestCriticalEndpoints:
         assert b'<!DOCTYPE html>' in response.data or b'<html' in response.data
 
 
+class TestDatabaseInitialization:
+    """Test database initialization - catches missing table issues"""
+
+    def test_all_required_tables_exist(self, app):
+        """All required database tables should be created on init"""
+        from app.models import db
+
+        with app.app_context():
+            inspector = db.inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+
+            required_tables = ['users', 'sessions', 'config', 'schedules', 'scenarios', 'logs', 'tv_state']
+            for table in required_tables:
+                assert table in existing_tables, f"Required table '{table}' is missing"
+
+    def test_default_scenarios_created(self, app):
+        """Default scenarios should be created on init"""
+        from app.models import Scenario
+
+        with app.app_context():
+            builtin_count = Scenario.query.filter_by(is_builtin=True).count()
+            assert builtin_count > 0, "No builtin scenarios were created"
+
+    def test_tv_state_singleton_exists(self, app):
+        """TVState singleton should exist after init"""
+        from app.models import TVState
+
+        with app.app_context():
+            tv_state = TVState.get_instance()
+            assert tv_state is not None
+            assert tv_state.id == 1
+
+
 class TestModelTypes:
     """Test that model field types are correct - catches type assignment bugs"""
 

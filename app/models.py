@@ -285,6 +285,24 @@ def init_db(app):
     with app.app_context():
         db.create_all()
 
+        # Verify critical tables exist - if not, something went wrong
+        inspector = db.inspect(db.engine)
+        required_tables = ['users', 'sessions', 'config', 'schedules', 'scenarios', 'logs', 'tv_state']
+        existing_tables = inspector.get_table_names()
+
+        missing_tables = [t for t in required_tables if t not in existing_tables]
+        if missing_tables:
+            # Tables are missing even after create_all - try to recreate
+            app.logger.warning(f"Missing tables after create_all: {missing_tables}. Attempting recreation...")
+            db.drop_all()
+            db.create_all()
+
+            # Verify again
+            existing_tables = inspector.get_table_names()
+            missing_tables = [t for t in required_tables if t not in existing_tables]
+            if missing_tables:
+                raise RuntimeError(f"Failed to create database tables: {missing_tables}")
+
         # Repair corrupted tv_state if needed (e.g., wrong type in datetime fields)
         try:
             # Use raw SQL to check and fix corrupted datetime fields
