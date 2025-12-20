@@ -101,14 +101,25 @@ def upcoming_schedules():
 @login_required
 def recent_logs():
     """Letzte Log-Einträge (für HTMX)"""
-    limit = request.args.get('limit', 10, type=int)
+    limit = request.args.get('limit', 50, type=int)
+    offset = request.args.get('offset', 0, type=int)
     category = request.args.get('category', '')
+    level = request.args.get('level', '')
+    search = request.args.get('search', '')
+
+    # Limit max entries per request
+    limit = min(limit, 100)
 
     query = Log.query
+
     if category:
         query = query.filter(Log.category == category)
+    if level:
+        query = query.filter(Log.level == level)
+    if search:
+        query = query.filter(Log.message.ilike(f'%{search}%'))
 
-    logs = query.order_by(Log.timestamp.desc()).limit(limit).all()
+    logs = query.order_by(Log.timestamp.desc()).offset(offset).limit(limit).all()
 
     if request.headers.get('HX-Request'):
         return render_template('partials/log_entries.html', logs=logs)

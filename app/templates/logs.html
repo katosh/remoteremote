@@ -3,11 +3,7 @@
 {% block title %}Aktivitätsprotokoll - TV Fernbedienung{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-6" x-data="{
-    category: '',
-    level: '',
-    search: ''
-}">
+<div class="max-w-4xl mx-auto px-4 py-6" x-data="logsPage()">
     <!-- Header -->
     <div class="flex items-center gap-4 mb-6">
         <a href="{{ url_for('settings.settings_view') }}"
@@ -25,7 +21,7 @@
             <div>
                 <label class="block text-sm text-gray-400 mb-2">Kategorie</label>
                 <select x-model="category"
-                        @change="htmx.trigger('#log-list', 'refresh')"
+                        @change="loadLogs()"
                         class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white
                                focus:outline-none focus:ring-2 focus:ring-tv-accent">
                     <option value="">Alle</option>
@@ -40,7 +36,7 @@
             <div>
                 <label class="block text-sm text-gray-400 mb-2">Level</label>
                 <select x-model="level"
-                        @change="htmx.trigger('#log-list', 'refresh')"
+                        @change="loadLogs()"
                         class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white
                                focus:outline-none focus:ring-2 focus:ring-tv-accent">
                     <option value="">Alle</option>
@@ -54,7 +50,7 @@
                 <label class="block text-sm text-gray-400 mb-2">Suche</label>
                 <input type="text"
                        x-model="search"
-                       @input.debounce.300ms="htmx.trigger('#log-list', 'refresh')"
+                       @input.debounce.300ms="loadLogs()"
                        placeholder="Nachricht suchen..."
                        class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white
                               placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tv-accent">
@@ -63,12 +59,7 @@
     </div>
 
     <!-- Log List -->
-    <div id="log-list"
-         hx-get="{{ url_for('api.recent_logs') }}"
-         hx-trigger="load, refresh"
-         hx-vals="js:{category: category, level: level, search: search}"
-         hx-swap="innerHTML"
-         class="space-y-2">
+    <div id="log-list" class="space-y-2" x-html="logsHtml">
         <!-- Loading -->
         <div class="bg-tv-dark rounded-xl p-8 text-center text-gray-400">
             <svg class="animate-spin h-8 w-8 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
@@ -80,14 +71,12 @@
     </div>
 
     <!-- Load More -->
-    <div class="mt-6 text-center">
-        <button id="load-more"
-                hx-get="{{ url_for('api.recent_logs') }}"
-                hx-vals="js:{category: category, level: level, search: search, offset: document.querySelectorAll('#log-list > div').length}"
-                hx-target="#log-list"
-                hx-swap="beforeend"
-                class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
-            Mehr laden
+    <div class="mt-6 text-center" x-show="hasMore">
+        <button @click="loadMore()"
+                :disabled="loading"
+                class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors disabled:opacity-50">
+            <span x-show="!loading">Mehr laden</span>
+            <span x-show="loading">Laden...</span>
         </button>
     </div>
 
@@ -95,8 +84,77 @@
     <div class="mt-6 text-center">
         <a href="{{ url_for('settings.export_logs') }}"
            class="text-tv-accent hover:underline">
-            Als CSV exportieren
+            Als JSON exportieren
         </a>
     </div>
 </div>
+
+<script>
+function logsPage() {
+    return {
+        category: '',
+        level: '',
+        search: '',
+        logsHtml: '',
+        offset: 0,
+        hasMore: true,
+        loading: false,
+
+        init() {
+            this.loadLogs();
+        },
+
+        async loadLogs() {
+            this.offset = 0;
+            this.loading = true;
+            const url = this.buildUrl();
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'HX-Request': 'true'
+                    }
+                });
+                this.logsHtml = await response.text();
+                this.hasMore = this.logsHtml.includes('bg-tv-dark');
+            } catch (e) {
+                this.logsHtml = '<div class="bg-tv-dark rounded-xl p-8 text-center text-red-400">Fehler beim Laden</div>';
+            }
+            this.loading = false;
+        },
+
+        async loadMore() {
+            this.loading = true;
+            this.offset += 50;
+            const url = this.buildUrl();
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'HX-Request': 'true'
+                    }
+                });
+                const newHtml = await response.text();
+                if (newHtml.includes('bg-tv-dark')) {
+                    this.logsHtml += newHtml;
+                } else {
+                    this.hasMore = false;
+                }
+            } catch (e) {
+                console.error('Failed to load more logs:', e);
+            }
+            this.loading = false;
+        },
+
+        buildUrl() {
+            const params = new URLSearchParams();
+            if (this.category) params.set('category', this.category);
+            if (this.level) params.set('level', this.level);
+            if (this.search) params.set('search', this.search);
+            if (this.offset) params.set('offset', this.offset);
+            return '{{ url_for("api.recent_logs") }}?' + params.toString();
+        }
+    }
+}
+</script>
 {% endblock %}
