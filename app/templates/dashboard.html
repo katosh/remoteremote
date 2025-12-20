@@ -13,14 +13,24 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="bg-tv-dark rounded-2xl p-6">
+    <div class="bg-tv-dark rounded-2xl p-6" id="quick-actions">
         <h2 class="text-lg font-semibold mb-4">Schnellaktionen</h2>
+        {% if not tv_has_token %}
+        <p class="text-yellow-400 text-sm mb-4">
+            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/>
+            </svg>
+            TV-Steuerung nicht verfügbar. Bitte zuerst <a href="{{ url_for('settings.settings_view') }}" class="underline">TV koppeln</a>.
+        </p>
+        {% endif %}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {% if reachable and power_state == 'on' %}
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "off"}'
                     hx-swap="none"
-                    class="btn-remote btn-power py-4 flex flex-col items-center gap-2">
+                    hx-on::after-request="setTimeout(() => location.reload(), 1000)"
+                    {% if not tv_has_token %}disabled{% endif %}
+                    class="btn-remote btn-power py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
@@ -31,6 +41,7 @@
             <button hx-post="{{ url_for('remote.power') }}"
                     hx-vals='{"action": "on"}'
                     hx-swap="none"
+                    hx-on::after-request="setTimeout(() => location.reload(), 3000)"
                     class="btn-remote btn-power py-4 flex flex-col items-center gap-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -42,7 +53,8 @@
 
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
                     hx-swap="none"
-                    class="btn-remote py-4 flex flex-col items-center gap-2">
+                    {% if not tv_has_token %}disabled{% endif %}
+                    class="btn-remote py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
@@ -54,7 +66,8 @@
 
             <button hx-post="{{ url_for('remote.send_key', key='KEY_HOME') }}"
                     hx-swap="none"
-                    class="btn-remote py-4 flex flex-col items-center gap-2">
+                    {% if not tv_has_token %}disabled{% endif %}
+                    class="btn-remote py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
