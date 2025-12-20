@@ -198,8 +198,8 @@ def edit(schedule_id: int):
 
         schedule.set_action_data(action_data)
 
-        # Handle enabled toggle
-        schedule.enabled = 'enabled' in request.form
+        # Handle enabled toggle - check the value, not just presence (hidden input always exists)
+        schedule.enabled = request.form.get('enabled') == 'on'
 
         db.session.commit()
 

@@ -211,7 +211,7 @@
                 <label class="block text-sm text-gray-400 mb-2">Power-Aktion</label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="relative">
-                        <input type="radio" name="power_action" value="on" checked class="sr-only peer">
+                        <input type="radio" name="power_action" value="on" {{ 'checked' if not schedule or schedule.action_type != 'power' or schedule.get_action_data().get('action', 'on') == 'on' else '' }} class="sr-only peer">
                         <div class="p-4 bg-gray-800 border-2 border-gray-700 rounded-xl text-center cursor-pointer
                                     peer-checked:border-tv-accent peer-checked:bg-tv-accent/20 transition-colors">
                             <svg class="w-8 h-8 mx-auto mb-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,7 +223,7 @@
                         </div>
                     </label>
                     <label class="relative">
-                        <input type="radio" name="power_action" value="off" class="sr-only peer">
+                        <input type="radio" name="power_action" value="off" {{ 'checked' if schedule and schedule.action_type == 'power' and schedule.get_action_data().get('action') == 'off' else '' }} class="sr-only peer">
                         <div class="p-4 bg-gray-800 border-2 border-gray-700 rounded-xl text-center cursor-pointer
                                     peer-checked:border-tv-accent peer-checked:bg-tv-accent/20 transition-colors">
                             <svg class="w-8 h-8 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
