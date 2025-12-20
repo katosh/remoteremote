@@ -15,9 +15,116 @@ from samsung_tv import SamsungTV, Key, TVInfo
 _tv_instance: Optional[SamsungTV] = None
 
 
+class MockSamsungTV:
+    """Mock TV for testing"""
+    is_paired = False
+
+    def __init__(self):
+        self.ip = '192.168.1.1'
+        self.mac = '00:00:00:00:00:00'
+        self._volume = 20
+        self._muted = False
+
+    def get_info(self):
+        return None
+
+    def is_connected(self):
+        return False
+
+    def is_on(self):
+        return False
+
+    def ping(self, timeout=2.0):
+        return False
+
+    def send_key(self, key, delay=0.3):
+        return True
+
+    def send_keys(self, keys, delay=0.3):
+        return True
+
+    def hold_key(self, key, seconds=1.0):
+        return True
+
+    def send_text(self, text):
+        return True
+
+    def move_cursor(self, x, y, duration=0):
+        return True
+
+    def power_on(self, close_menu=False, wait_time=5.0):
+        return True
+
+    def power_off(self):
+        return True
+
+    def close_menu(self):
+        return True
+
+    def mute(self):
+        self._muted = not self._muted
+        return True
+
+    def volume_up(self, steps=1):
+        self._volume = min(100, self._volume + steps)
+        return True
+
+    def volume_down(self, steps=1):
+        self._volume = max(0, self._volume - steps)
+        return True
+
+    def get_volume(self):
+        return self._volume
+
+    def set_volume(self, volume):
+        self._volume = max(0, min(100, volume))
+        return True
+
+    def get_mute_status(self):
+        return self._muted
+
+    def set_mute(self, muted):
+        self._muted = muted
+        return True
+
+    def channel_up(self):
+        return True
+
+    def channel_down(self):
+        return True
+
+    def channel(self, num):
+        return True
+
+    def run_app(self, app_id):
+        return True
+
+    def close_app(self, app_id):
+        return True
+
+    def get_app_status(self, app_id):
+        return None
+
+    def home(self):
+        return True
+
+    def back(self):
+        return True
+
+    def exit(self):
+        return True
+
+
 def get_tv_service() -> SamsungTV:
     """TV-Service-Instanz abrufen oder erstellen"""
     global _tv_instance
+
+    # Return mock for testing
+    try:
+        if current_app.config.get('TESTING'):
+            return MockSamsungTV()
+    except RuntimeError:
+        pass
 
     if _tv_instance is None:
         _tv_instance = _create_tv_instance()

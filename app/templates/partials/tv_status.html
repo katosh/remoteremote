@@ -34,6 +34,20 @@
         </div>
     </div>
 
+    <!-- Wake TV Button when not connected -->
+    {% if not status or not status.connected %}
+    <button hx-post="{{ url_for('remote.power') }}"
+            hx-vals='{"action": "on"}'
+            hx-swap="none"
+            class="btn-remote bg-tv-accent hover:bg-indigo-600 px-4 py-2 rounded-lg flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3v9m0 0a9 9 0 100 9 9 9 0 000-9z"/>
+        </svg>
+        <span>TV aufwecken</span>
+    </button>
+    {% endif %}
+
     <!-- Quick Stats -->
     {% if status and status.connected %}
     <div class="hidden sm:flex gap-6 text-center">

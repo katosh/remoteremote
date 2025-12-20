@@ -112,6 +112,20 @@ class Key(str, Enum):
     PAGE_DOWN = "KEY_PAGEDOWN"
 
 
+class App(str, Enum):
+    """Common Samsung TV app IDs"""
+    NETFLIX = "Netflix"
+    YOUTUBE = "YouTube"
+    AMAZON_PRIME = "Amazon Prime Video"
+    DISNEY_PLUS = "Disney+"
+    APPLE_TV = "Apple TV"
+    SPOTIFY = "Spotify"
+    BROWSER = "org.tizen.browser"
+    SETTINGS = "com.samsung.tv.settings"
+    SMART_HUB = "com.samsung.tv.smarthub"
+    TV_PLUS = "com.samsung.tv.tvplus"
+
+
 @dataclass
 class TVInfo:
     """TV device information"""
@@ -141,6 +155,93 @@ class TVInfo:
             resolution=device.get('resolution', 'Unknown'),
             uuid=data.get('id', 'Unknown'),
         )
+
+
+class SamsungUPnP:
+    """
+    UPnP interface for Samsung TV volume control.
+
+    Uses SOAP protocol on port 9197 to get/set volume directly.
+    This allows setting a specific volume value instead of just up/down.
+    """
+
+    UPNP_PORT = 9197
+    UPNP_TIMEOUT = 2.0
+
+    def __init__(self, ip: str):
+        self.ip = ip
+
+    def _soap_request(self, action: str, arguments: str, protocol: str = "RenderingControl") -> Optional[str]:
+        """Send a SOAP request to the TV."""
+        import http.client
+
+        headers = {
+            "SOAPAction": f'"urn:schemas-upnp-org:service:{protocol}:1#{action}"',
+            "Content-Type": "text/xml; charset=utf-8",
+        }
+
+        body = f'''<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <s:Body>
+        <u:{action} xmlns:u="urn:schemas-upnp-org:service:{protocol}:1">
+            <InstanceID>0</InstanceID>
+            {arguments}
+        </u:{action}>
+    </s:Body>
+</s:Envelope>'''
+
+        try:
+            conn = http.client.HTTPConnection(self.ip, self.UPNP_PORT, timeout=self.UPNP_TIMEOUT)
+            conn.request("POST", f"/upnp/control/{protocol}1", body, headers)
+            response = conn.getresponse()
+            data = response.read().decode('utf-8')
+            conn.close()
+            return data
+        except Exception as e:
+            return None
+
+    def get_volume(self) -> Optional[int]:
+        """Get current volume level (0-100)."""
+        response = self._soap_request("GetVolume", "<Channel>Master</Channel>")
+        if response is None:
+            return None
+
+        # Parse XML response to extract volume
+        import re
+        match = re.search(r'<CurrentVolume>(\d+)</CurrentVolume>', response)
+        if match:
+            return int(match.group(1))
+        return None
+
+    def set_volume(self, volume: int) -> bool:
+        """Set volume level (0-100)."""
+        volume = max(0, min(100, volume))
+        response = self._soap_request(
+            "SetVolume",
+            f"<Channel>Master</Channel><DesiredVolume>{volume}</DesiredVolume>"
+        )
+        return response is not None
+
+    def get_mute(self) -> Optional[bool]:
+        """Get current mute status."""
+        response = self._soap_request("GetMute", "<Channel>Master</Channel>")
+        if response is None:
+            return None
+
+        import re
+        match = re.search(r'<CurrentMute>(\d+)</CurrentMute>', response)
+        if match:
+            return int(match.group(1)) != 0
+        return None
+
+    def set_mute(self, muted: bool) -> bool:
+        """Set mute status."""
+        value = "1" if muted else "0"
+        response = self._soap_request(
+            "SetMute",
+            f"<Channel>Master</Channel><DesiredMute>{value}</DesiredMute>"
+        )
+        return response is not None
 
 
 class SamsungTV:
@@ -178,6 +279,7 @@ class SamsungTV:
         self.token_file = token_file or os.path.expanduser("~/.tv_token")
         self.mac = mac
         self._token: Optional[str] = None
+        self._upnp = SamsungUPnP(ip)  # UPnP for volume control
         self._load_token()
 
     def _load_token(self) -> None:
@@ -293,15 +395,45 @@ class SamsungTV:
 
         return ssock, response
 
+    def _rest_request(self, endpoint: str = "", method: str = "GET", port: int = 8001, timeout: float = 5.0) -> Optional[Dict]:
+        """
+        Make a REST API request to the TV.
+
+        Args:
+            endpoint: API endpoint (e.g., "", "applications/Netflix")
+            method: HTTP method (GET, POST, PUT, DELETE)
+            port: Port number (8001 for REST API)
+            timeout: Request timeout in seconds
+        """
+        import http.client
+        import urllib.parse
+
+        try:
+            if port == self.port:  # SSL port (8002)
+                conn = http.client.HTTPSConnection(self.ip, port, timeout=timeout, context=self._get_ssl_context())
+            else:
+                conn = http.client.HTTPConnection(self.ip, port, timeout=timeout)
+
+            url = f"/api/v2/{endpoint}"
+            conn.request(method, url)
+            response = conn.getresponse()
+            data = response.read().decode('utf-8')
+            conn.close()
+
+            if response.status == 200:
+                return json.loads(data)
+            return None
+        except Exception:
+            return None
+
     def get_info(self) -> Optional[TVInfo]:
         """Get TV information via REST API"""
-        import subprocess
-        result = subprocess.run(
-            ["curl", "-sk", f"https://{self.ip}:{self.port}/api/v2/"],
-            capture_output=True, text=True, timeout=10
-        )
-        if result.returncode == 0:
-            data = json.loads(result.stdout)
+        # Try port 8001 first (REST API), then fall back to SSL port
+        data = self._rest_request("", port=8001)
+        if data is None:
+            data = self._rest_request("", port=self.port)
+
+        if data:
             # Also extract MAC if we don't have it
             if not self.mac:
                 self.mac = data.get('device', {}).get('wifiMac')
@@ -314,6 +446,44 @@ class SamsungTV:
         if info:
             return info.power_state == "on"
         return False
+
+    def ping(self, timeout: float = 2.0) -> bool:
+        """Check if TV is reachable on the network."""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            result = sock.connect_ex((self.ip, 8001))
+            sock.close()
+            return result == 0
+        except Exception:
+            return False
+
+    # REST API for App Control
+
+    def get_app_status(self, app_id: str) -> Optional[Dict]:
+        """Get status of an installed app."""
+        return self._rest_request(f"applications/{app_id}")
+
+    def run_app(self, app_id: str) -> bool:
+        """Launch an app by ID (e.g., 'Netflix', 'YouTube')."""
+        result = self._rest_request(f"applications/{app_id}", method="POST")
+        return result is not None
+
+    def close_app(self, app_id: str) -> bool:
+        """Close a running app by ID."""
+        result = self._rest_request(f"applications/{app_id}", method="DELETE")
+        return result is not None
+
+    def install_app(self, app_id: str) -> bool:
+        """Install an app from the store."""
+        result = self._rest_request(f"applications/{app_id}", method="PUT")
+        return result is not None
+
+    def get_installed_apps(self) -> Optional[List[Dict]]:
+        """Get list of installed apps (requires WebSocket connection)."""
+        # This requires WebSocket - not available via REST
+        # TODO: Implement via WebSocket
+        return None
 
     def pair(self, timeout: int = 60) -> bool:
         """
@@ -416,14 +586,172 @@ class SamsungTV:
             self.send_key(key, delay)
         return True
 
+    def hold_key(self, key: Union[Key, str], seconds: float = 1.0) -> bool:
+        """
+        Press and hold a key for specified duration.
+
+        Useful for volume control (hold to rapidly change) or navigation.
+        """
+        if not self._token:
+            raise RuntimeError("Not paired - call pair() first")
+
+        key_str = key.value if isinstance(key, Key) else key
+
+        try:
+            ssock, response = self._create_connection()
+
+            frames = self._parse_ws_frames(response)
+            for frame in frames:
+                if frame.get('event') == 'ms.channel.unauthorized':
+                    ssock.close()
+                    raise PermissionError("Unauthorized - token may be expired")
+
+            time.sleep(0.2)
+
+            # Press key
+            press_payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "Cmd": "Press",
+                    "DataOfCmd": key_str,
+                    "Option": "false",
+                    "TypeOfRemote": "SendRemoteKey"
+                }
+            })
+            ssock.send(self._make_ws_frame(press_payload))
+
+            # Hold for duration
+            time.sleep(seconds)
+
+            # Release key
+            release_payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "Cmd": "Release",
+                    "DataOfCmd": key_str,
+                    "Option": "false",
+                    "TypeOfRemote": "SendRemoteKey"
+                }
+            })
+            ssock.send(self._make_ws_frame(release_payload))
+
+            time.sleep(0.1)
+            ssock.close()
+            return True
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to hold key: {e}")
+
+    def send_text(self, text: str) -> bool:
+        """
+        Send text input to the TV (for search fields, etc).
+        """
+        if not self._token:
+            raise RuntimeError("Not paired - call pair() first")
+
+        try:
+            ssock, response = self._create_connection()
+
+            frames = self._parse_ws_frames(response)
+            for frame in frames:
+                if frame.get('event') == 'ms.channel.unauthorized':
+                    ssock.close()
+                    raise PermissionError("Unauthorized - token may be expired")
+
+            time.sleep(0.2)
+
+            # Send text as base64
+            text_b64 = base64.b64encode(text.encode()).decode()
+            payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "Cmd": text_b64,
+                    "DataOfCmd": "base64",
+                    "TypeOfRemote": "SendInputString"
+                }
+            })
+            ssock.send(self._make_ws_frame(payload))
+
+            time.sleep(0.2)
+
+            # Send input end
+            end_payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "TypeOfRemote": "SendInputEnd"
+                }
+            })
+            ssock.send(self._make_ws_frame(end_payload))
+
+            time.sleep(0.1)
+            ssock.close()
+            return True
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to send text: {e}")
+
+    def move_cursor(self, x: int, y: int, duration: int = 0) -> bool:
+        """
+        Move the cursor/pointer to a specific position.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            duration: Animation duration in ms
+        """
+        if not self._token:
+            raise RuntimeError("Not paired - call pair() first")
+
+        try:
+            ssock, response = self._create_connection()
+
+            frames = self._parse_ws_frames(response)
+            for frame in frames:
+                if frame.get('event') == 'ms.channel.unauthorized':
+                    ssock.close()
+                    raise PermissionError("Unauthorized - token may be expired")
+
+            time.sleep(0.2)
+
+            payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "Cmd": "Move",
+                    "Position": {"x": x, "y": y, "Time": str(duration)},
+                    "TypeOfRemote": "ProcessMouseDevice"
+                }
+            })
+            ssock.send(self._make_ws_frame(payload))
+
+            time.sleep(0.1)
+            ssock.close()
+            return True
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to move cursor: {e}")
+
+    def open_browser(self, url: str) -> bool:
+        """Open the TV's built-in browser with the specified URL."""
+        return self.run_app("org.tizen.browser")
+        # Note: URL passing requires WebSocket app launch with metaTag
+
     # Convenience methods
 
     def power_off(self) -> bool:
         """Turn TV off"""
         return self.send_key(Key.POWER)
 
-    def power_on(self) -> bool:
-        """Turn TV on via Wake-on-LAN"""
+    def power_on(self, close_menu: bool = False, wait_time: float = 5.0) -> bool:
+        """
+        Turn TV on via Wake-on-LAN.
+
+        Args:
+            close_menu: If True, send EXIT key after TV wakes up to close Smart Hub
+            wait_time: Seconds to wait before closing menu (TV needs time to boot)
+
+        Note: To permanently disable Smart Hub on startup, go to:
+        Settings → General & Privacy → Start Screen Options → Disable "Start with Smart Hub Home"
+        """
         if not self.mac:
             info = self.get_info()
             if not info or not self.mac:
@@ -436,7 +764,23 @@ class SamsungTV:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.sendto(magic, ('255.255.255.255', 9))
         sock.close()
+
+        if close_menu:
+            time.sleep(wait_time)
+            self.close_menu()
+
         return True
+
+    def close_menu(self) -> bool:
+        """
+        Close Smart Hub / Home menu by sending EXIT key.
+
+        Useful after Wake-on-LAN if TV is set to start with Smart Hub.
+        """
+        try:
+            return self.send_key(Key.EXIT)
+        except Exception:
+            return False
 
     def mute(self) -> bool:
         """Toggle mute"""
@@ -453,6 +797,24 @@ class SamsungTV:
         for _ in range(steps):
             self.send_key(Key.VOLUME_DOWN)
         return True
+
+    # UPnP-based volume control (direct value setting)
+
+    def get_volume(self) -> Optional[int]:
+        """Get current volume level (0-100) via UPnP"""
+        return self._upnp.get_volume()
+
+    def set_volume(self, volume: int) -> bool:
+        """Set volume to specific level (0-100) via UPnP"""
+        return self._upnp.set_volume(volume)
+
+    def get_mute_status(self) -> Optional[bool]:
+        """Get current mute status via UPnP"""
+        return self._upnp.get_mute()
+
+    def set_mute(self, muted: bool) -> bool:
+        """Set mute status via UPnP"""
+        return self._upnp.set_mute(muted)
 
     def channel_up(self) -> bool:
         """Next channel"""
@@ -551,23 +913,39 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Samsung TV Remote Control Library")
         print("\nUsage: python samsung_tv.py <command>")
-        print("\nCommands:")
-        print("  info       - Get TV info")
-        print("  pair       - Pair with TV")
-        print("  key <KEY>  - Send specific key (e.g., KEY_MUTE)")
-        print("  mute       - Toggle mute")
-        print("  volup [n]  - Volume up (optional: n steps)")
-        print("  voldown [n]- Volume down")
-        print("  chup       - Channel up")
-        print("  chdown     - Channel down")
-        print("  ch <num>   - Go to channel number")
-        print("  power      - Toggle power")
-        print("  on         - Wake-on-LAN")
-        print("  home       - Smart Hub")
-        print("  back       - Return/Back")
-        print("  exit       - Exit menu")
-        print("  play/pause/stop/rw/ff - Media controls")
+        print("\nBasic Commands:")
+        print("  info         - Get TV info")
+        print("  ping         - Check if TV is reachable")
+        print("  pair         - Pair with TV")
+        print("  key <KEY>    - Send specific key (e.g., KEY_MUTE)")
+        print("\nPower:")
+        print("  power        - Toggle power")
+        print("  on           - Wake-on-LAN")
+        print("  on --close   - Wake and close Smart Hub")
+        print("\nVolume (UPnP - direct values):")
+        print("  volume       - Get current volume")
+        print("  volume <n>   - Set volume to n (0-100)")
+        print("  mute         - Toggle mute")
+        print("  muted        - Get mute status")
+        print("  volup [n]    - Volume up (optional: n steps)")
+        print("  voldown [n]  - Volume down")
+        print("\nChannels:")
+        print("  chup         - Channel up")
+        print("  chdown       - Channel down")
+        print("  ch <num>     - Go to channel number")
+        print("\nApps:")
+        print("  app <id>     - Launch app by ID")
+        print("  appclose <id>- Close app by ID")
+        print("  appstatus <id>- Get app status")
+        print("\nNavigation:")
+        print("  home         - Smart Hub")
+        print("  back         - Return/Back")
+        print("  exit         - Exit menu")
+        print("  text <str>   - Send text input")
+        print("\nMedia:")
+        print("  play/pause/stop/rw/ff")
         print("\nAvailable keys:", ", ".join(k.name for k in Key))
+        print("Available apps:", ", ".join(a.name for a in App))
         sys.exit(0)
 
     cmd = sys.argv[1].lower()
@@ -630,8 +1008,66 @@ if __name__ == "__main__":
             print("Power toggle sent")
 
         elif cmd == "on":
-            tv.power_on()
-            print("Wake-on-LAN sent")
+            close_menu = "--close" in sys.argv
+            tv.power_on(close_menu=close_menu)
+            if close_menu:
+                print("Wake-on-LAN sent (will close menu after boot)")
+            else:
+                print("Wake-on-LAN sent")
+
+        elif cmd == "ping":
+            if tv.ping():
+                print("TV is reachable")
+            else:
+                print("TV is not reachable")
+
+        elif cmd == "volume":
+            if len(sys.argv) > 2:
+                vol = int(sys.argv[2])
+                if tv.set_volume(vol):
+                    print(f"Volume set to {vol}")
+                else:
+                    print("Failed to set volume (UPnP not available?)")
+            else:
+                vol = tv.get_volume()
+                if vol is not None:
+                    print(f"Volume: {vol}")
+                else:
+                    print("Could not get volume (UPnP not available?)")
+
+        elif cmd == "muted":
+            muted = tv.get_mute_status()
+            if muted is not None:
+                print(f"Muted: {muted}")
+            else:
+                print("Could not get mute status")
+
+        elif cmd == "app" and len(sys.argv) > 2:
+            app_id = sys.argv[2]
+            if tv.run_app(app_id):
+                print(f"Launched app: {app_id}")
+            else:
+                print(f"Failed to launch app: {app_id}")
+
+        elif cmd == "appclose" and len(sys.argv) > 2:
+            app_id = sys.argv[2]
+            if tv.close_app(app_id):
+                print(f"Closed app: {app_id}")
+            else:
+                print(f"Failed to close app: {app_id}")
+
+        elif cmd == "appstatus" and len(sys.argv) > 2:
+            app_id = sys.argv[2]
+            status = tv.get_app_status(app_id)
+            if status:
+                print(f"App status: {json.dumps(status, indent=2)}")
+            else:
+                print(f"Could not get app status: {app_id}")
+
+        elif cmd == "text" and len(sys.argv) > 2:
+            text = " ".join(sys.argv[2:])
+            tv.send_text(text)
+            print(f"Sent text: {text}")
 
         elif cmd == "home":
             tv.home()
