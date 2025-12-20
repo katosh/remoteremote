@@ -80,6 +80,15 @@ def create_app(config_name: str = None) -> Flask:
     # Datenbank initialisieren
     init_db(app)
 
+    # Scheduler initialisieren (nicht in Tests, und nur einmal bei Werkzeug Reloader)
+    if not app.config.get('TESTING'):
+        # Bei Werkzeug Reloader: nur im Child-Prozess starten (WERKZEUG_RUN_MAIN='true')
+        # Bei Produktion: immer starten (WERKZEUG_RUN_MAIN nicht gesetzt)
+        werkzeug_main = os.environ.get('WERKZEUG_RUN_MAIN')
+        if werkzeug_main is None or werkzeug_main == 'true':
+            from .services.scheduler import init_scheduler
+            init_scheduler(app)
+
     # Kontext-Prozessor für Templates
     @app.context_processor
     def inject_globals():

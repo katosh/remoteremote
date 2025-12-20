@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, jsonify, flash, redirect,
 from flask_login import login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ..models import db, Config, User, Log, Scenario, Session
+from ..models import db, Config, User, Log, Session
 from ..services.tv_service import get_tv_service, reinit_tv_service
 from ..services.logger import log_event
 from ..services.discovery import discover_samsung_tvs
@@ -231,76 +231,6 @@ def backup():
             source='manual'
         )
         return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@settings_bp.route('/scenarios')
-@login_required
-def scenarios():
-    """Szenarien verwalten"""
-    scenarios = Scenario.query.all()
-    return render_template('scenarios.html', scenarios=scenarios)
-
-
-@settings_bp.route('/scenarios/create', methods=['POST'])
-@login_required
-def create_scenario():
-    """Neues Szenario erstellen"""
-    import json
-
-    name = request.form.get('name')
-    description = request.form.get('description', '')
-    steps = request.form.get('steps')  # JSON string
-    randomize = request.form.get('randomize_delays') == 'on'
-    min_delay = int(request.form.get('min_delay_ms', 500))
-    max_delay = int(request.form.get('max_delay_ms', 2000))
-
-    scenario = Scenario(
-        name=name,
-        description=description,
-        steps=steps,
-        is_builtin=False,
-        randomize_delays=randomize,
-        min_delay_ms=min_delay,
-        max_delay_ms=max_delay
-    )
-
-    db.session.add(scenario)
-    db.session.commit()
-
-    log_event(
-        level='INFO',
-        category='config',
-        message=f'Szenario erstellt: {name}',
-        details={'scenario_id': scenario.id},
-        source='manual'
-    )
-
-    flash(f'Szenario "{name}" wurde erstellt.', 'success')
-    return redirect(url_for('settings.scenarios'))
-
-
-@settings_bp.route('/scenarios/<int:scenario_id>/delete', methods=['POST'])
-@login_required
-def delete_scenario(scenario_id: int):
-    """Szenario löschen (nur benutzerdefinierte)"""
-    scenario = Scenario.query.get_or_404(scenario_id)
-
-    if scenario.is_builtin:
-        return jsonify({'success': False, 'error': 'Vordefinierte Szenarien können nicht gelöscht werden.'}), 400
-
-    name = scenario.name
-    db.session.delete(scenario)
-    db.session.commit()
-
-    log_event(
-        level='INFO',
-        category='config',
-        message=f'Szenario gelöscht: {name}',
-        details={'scenario_id': scenario_id},
-        source='manual'
-    )
-
-    return jsonify({'success': True})
 
 
 # ============= Session Management =============

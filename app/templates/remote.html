@@ -67,21 +67,27 @@
 
         <!-- Volume & Navigation -->
         <div class="flex justify-between items-center">
-            <!-- Volume Controls -->
-            <div class="flex flex-col items-center gap-2">
-                <button hx-post="{{ url_for('remote.send_key', key='KEY_VOLUP') }}"
-                        hx-swap="none"
-                        class="btn-remote btn-nav">
-                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                    </svg>
-                </button>
-                <span class="text-xs text-gray-500">VOL</span>
-                <button hx-post="{{ url_for('remote.send_key', key='KEY_VOLDOWN') }}"
-                        hx-swap="none"
-                        class="btn-remote btn-nav">
-                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            <!-- Volume Slider (UPnP) -->
+            <div class="flex flex-col items-center" x-data="volumeControl()">
+                <button @click="setVolume(Math.min(100, parseInt(volume) + 5))"
+                        class="btn-remote w-10 h-8 text-sm font-bold">+</button>
+                <div class="h-24 flex items-center py-1">
+                    <input type="range" min="0" max="100" x-model="volume"
+                           @change="setVolume(volume)"
+                           class="volume-slider-vertical accent-tv-accent"
+                           orient="vertical">
+                </div>
+                <span class="text-xs font-bold my-1" x-text="volume + '%'">--%</span>
+                <button @click="setVolume(Math.max(0, volume - 5))"
+                        class="btn-remote w-10 h-8 text-sm font-bold">−</button>
+                <button @click="toggleMute()"
+                        class="btn-remote w-10 h-7 text-xs mt-1"
+                        :class="muted ? 'bg-red-600' : ''">
+                    <svg class="w-3 h-3 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path x-show="!muted" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15z"/>
+                        <path x-show="muted" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
                     </svg>
                 </button>
             </div>
@@ -174,17 +180,20 @@
 
         <!-- Streaming Apps -->
         <div class="grid grid-cols-4 gap-3">
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_NETFLIX') }}"
+            <button hx-post="{{ url_for('remote.app_control') }}"
+                    hx-vals='{"action": "run", "app_id": "Netflix"}'
                     hx-swap="none"
                     class="btn-remote btn-action bg-red-800 hover:bg-red-700">
                 Netflix
             </button>
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_AMAZON') }}"
+            <button hx-post="{{ url_for('remote.app_control') }}"
+                    hx-vals='{"action": "run", "app_id": "Amazon Prime Video"}'
                     hx-swap="none"
                     class="btn-remote btn-action bg-blue-800 hover:bg-blue-700">
                 Prime
             </button>
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_YOUTUBE') }}"
+            <button hx-post="{{ url_for('remote.app_control') }}"
+                    hx-vals='{"action": "run", "app_id": "YouTube"}'
                     hx-swap="none"
                     class="btn-remote btn-action">
                 YouTube
@@ -226,23 +235,87 @@
         </div>
 
         <!-- Direct Channel Input -->
-        <div class="bg-gray-800 rounded-xl p-4" x-data="{ channel: '' }">
+        <div class="bg-gray-800 rounded-xl p-4">
             <label class="block text-sm text-gray-400 mb-2">Direkt zu Kanal:</label>
-            <div class="flex gap-2">
+            <form class="flex gap-2" hx-post="{{ url_for('remote.channel') }}" hx-swap="none"
+                  @submit.prevent="$el.requestSubmit()">
+                <input type="hidden" name="action" value="set">
                 <input type="number"
-                       x-model="channel"
+                       name="channel"
                        min="1"
                        max="9999"
                        placeholder="Kanalnummer"
+                       required
                        class="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-500
                               focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                <button @click="if(channel) { $dispatch('htmx:trigger', {value: channel}); channel=''; }"
-                        hx-post="{{ url_for('remote.channel') }}"
-                        hx-vals="js:{channel: channel}"
-                        hx-swap="none"
-                        class="btn-remote px-6">
-                    Go
+                <button type="submit" class="btn-remote px-6">Go</button>
+            </form>
+        </div>
+
+        <!-- Direct Volume Control (UPnP) -->
+        <div class="bg-gray-800 rounded-xl p-4" x-data="volumeControl()">
+            <div class="flex items-center justify-between mb-3">
+                <label class="text-sm text-gray-400">Lautstärke (UPnP)</label>
+                <div class="flex items-center gap-2">
+                    <span class="text-lg font-bold" x-text="volume + '%'">--</span>
+                    <button @click="refreshVolume()" class="text-gray-400 hover:text-white p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex gap-3 items-center">
+                <button @click="setVolume(Math.max(0, volume - 5))" class="btn-remote w-10 h-10 text-xl font-bold">−</button>
+                <input type="range" min="0" max="100" x-model="volume" @change="setVolume(volume)"
+                       class="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-tv-accent">
+                <button @click="setVolume(Math.min(100, parseInt(volume) + 5))" class="btn-remote w-10 h-10 text-xl font-bold">+</button>
+            </div>
+            <div class="flex gap-2 mt-3">
+                <button @click="setVolume(10)" class="btn-remote flex-1 py-2 text-sm">10%</button>
+                <button @click="setVolume(25)" class="btn-remote flex-1 py-2 text-sm">25%</button>
+                <button @click="setVolume(50)" class="btn-remote flex-1 py-2 text-sm">50%</button>
+                <button @click="toggleMute()" class="btn-remote flex-1 py-2 text-sm" :class="muted ? 'bg-red-600' : ''">
+                    <span x-text="muted ? 'Ton an' : 'Stumm'">Stumm</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Text Input -->
+        <div class="bg-gray-800 rounded-xl p-4">
+            <label class="block text-sm text-gray-400 mb-2">Text eingeben (für Suchfelder):</label>
+            <form class="flex gap-2" hx-post="{{ url_for('remote.send_text') }}" hx-swap="none"
+                  @submit.prevent="$el.requestSubmit(); $el.reset();">
+                <input type="text"
+                       name="text"
+                       placeholder="Text eingeben..."
+                       required
+                       class="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-500
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                <button type="submit" class="btn-remote px-6">Senden</button>
+            </form>
+        </div>
+
+        <!-- App Launcher -->
+        <div class="bg-gray-800 rounded-xl p-4">
+            <label class="block text-sm text-gray-400 mb-2">App starten:</label>
+            <div class="grid grid-cols-4 gap-2">
+                <button hx-post="{{ url_for('remote.app_control') }}"
+                        hx-vals='{"action": "run", "app_id": "Netflix"}'
+                        hx-swap="none"
+                        class="btn-remote py-3 text-xs bg-red-800 hover:bg-red-700">Netflix</button>
+                <button hx-post="{{ url_for('remote.app_control') }}"
+                        hx-vals='{"action": "run", "app_id": "YouTube"}'
+                        hx-swap="none"
+                        class="btn-remote py-3 text-xs">YouTube</button>
+                <button hx-post="{{ url_for('remote.app_control') }}"
+                        hx-vals='{"action": "run", "app_id": "Amazon Prime Video"}'
+                        hx-swap="none"
+                        class="btn-remote py-3 text-xs bg-blue-800 hover:bg-blue-700">Prime</button>
+                <button hx-post="{{ url_for('remote.app_control') }}"
+                        hx-vals='{"action": "run", "app_id": "Disney+"}'
+                        hx-swap="none"
+                        class="btn-remote py-3 text-xs bg-blue-900 hover:bg-blue-800">Disney+</button>
             </div>
         </div>
 
@@ -339,48 +412,123 @@
             </button>
         </div>
 
-        <!-- More Streaming Apps -->
-        <div class="grid grid-cols-4 gap-3">
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_NETFLIX') }}"
-                    hx-swap="none"
-                    class="btn-remote btn-action bg-red-800 hover:bg-red-700">
-                Netflix
-            </button>
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_AMAZON') }}"
-                    hx-swap="none"
-                    class="btn-remote btn-action bg-blue-800 hover:bg-blue-700">
-                Prime
-            </button>
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_YOUTUBE') }}"
-                    hx-swap="none"
-                    class="btn-remote btn-action">
-                YouTube
-            </button>
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_DISNEY') }}"
-                    hx-swap="none"
-                    class="btn-remote btn-action bg-blue-900 hover:bg-blue-800">
-                Disney+
-            </button>
-        </div>
-    </div>
-
-    <!-- Scenarios -->
-    <div class="mt-8">
-        <h2 class="text-lg font-semibold mb-4">Szenarien</h2>
-        <div class="grid grid-cols-2 gap-3">
-            {% for scenario in scenarios %}
-            <button hx-post="{{ url_for('remote.run_scenario', scenario_id=scenario.id) }}"
-                    hx-swap="none"
-                    class="btn-remote py-4 text-left px-4">
-                <span class="block font-medium">{{ scenario.name }}</span>
-                <span class="block text-xs text-gray-400">{{ scenario.description }}</span>
-            </button>
-            {% endfor %}
-        </div>
     </div>
 </div>
 
 <style>
     [x-cloak] { display: none !important; }
+
+    /* Vertical volume slider */
+    .volume-slider-vertical {
+        writing-mode: vertical-lr;
+        direction: rtl;
+        -webkit-appearance: slider-vertical;
+        appearance: slider-vertical;
+        width: 24px;
+        height: 100%;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .volume-slider-vertical::-webkit-slider-runnable-track {
+        width: 8px;
+        background: #374151;
+        border-radius: 4px;
+    }
+
+    .volume-slider-vertical::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #4f46e5;
+        border-radius: 50%;
+        cursor: pointer;
+        margin-left: -6px;
+    }
+
+    .volume-slider-vertical::-moz-range-track {
+        width: 8px;
+        background: #374151;
+        border-radius: 4px;
+    }
+
+    .volume-slider-vertical::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #4f46e5;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+    }
 </style>
+
+<script>
+    // Get CSRF token from meta tag
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]').content;
+    }
+
+    // Volume control via UPnP
+    function volumeControl() {
+        return {
+            volume: 20,
+            muted: false,
+            loading: false,
+
+            init() {
+                this.refreshVolume();
+            },
+
+            async refreshVolume() {
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'get');
+                    const response = await fetch('{{ url_for("remote.volume") }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCsrfToken() },
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.volume = data.volume;
+                        this.muted = data.muted || false;
+                    }
+                } catch (e) {
+                    console.log('Could not get volume:', e);
+                }
+            },
+
+            async setVolume(value) {
+                this.volume = parseInt(value);
+                const formData = new FormData();
+                formData.append('action', 'set');
+                formData.append('value', this.volume);
+                try {
+                    await fetch('{{ url_for("remote.volume") }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCsrfToken() },
+                        body: formData
+                    });
+                } catch (e) {
+                    console.log('Could not set volume:', e);
+                }
+            },
+
+            async toggleMute() {
+                const formData = new FormData();
+                formData.append('action', 'mute');
+                try {
+                    await fetch('{{ url_for("remote.volume") }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCsrfToken() },
+                        body: formData
+                    });
+                    this.muted = !this.muted;
+                } catch (e) {
+                    console.log('Could not toggle mute:', e);
+                }
+            }
+        };
+    }
+</script>
 {% endblock %}

@@ -8,10 +8,31 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 instance_dir = os.path.join(os.path.dirname(basedir), 'instance')
 
 
+def get_or_create_secret_key():
+    """Get SECRET_KEY from env, file, or generate and save a new one."""
+    # 1. Check environment variable
+    if os.environ.get('SECRET_KEY'):
+        return os.environ.get('SECRET_KEY')
+
+    # 2. Check/create file-based key (persists across restarts)
+    key_file = os.path.join(instance_dir, '.secret_key')
+    os.makedirs(instance_dir, exist_ok=True)
+
+    if os.path.exists(key_file):
+        with open(key_file, 'r') as f:
+            return f.read().strip()
+
+    # 3. Generate new key and save it
+    new_key = os.urandom(32).hex()
+    with open(key_file, 'w') as f:
+        f.write(new_key)
+    return new_key
+
+
 class Config:
     """Basis-Konfiguration"""
     # Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(32).hex()
+    SECRET_KEY = get_or_create_secret_key()
 
     # Datenbank
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \

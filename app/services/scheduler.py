@@ -171,7 +171,9 @@ def execute_schedule(schedule):
     try:
         action_data = schedule.get_action_data()
 
-        if schedule.action_type == 'key':
+        if schedule.action_type == 'startup':
+            _execute_startup_action(action_data)
+        elif schedule.action_type == 'key':
             _execute_key_action(action_data)
         elif schedule.action_type == 'power':
             _execute_power_action(action_data)
@@ -239,6 +241,59 @@ def _execute_power_action(action_data: dict):
     elif action == 'off':
         tv.power_off()
         set_cached_power_state('standby')
+
+
+def _execute_startup_action(action_data: dict):
+    """
+    TV einschalten und optional Kanal und Lautstärke setzen.
+    Wartet nach dem Einschalten, bis TV bereit ist.
+    """
+    from .tv_service import get_tv_service, set_cached_power_state
+    from .logger import log_event
+
+    tv = get_tv_service()
+    wait_time = action_data.get('wait', 15)
+    channel = action_data.get('channel')
+    volume = action_data.get('volume')
+
+    # 1. TV einschalten (Wake-on-LAN)
+    print(f"[Startup] Schalte TV ein...", flush=True)
+    tv.power_on()
+    set_cached_power_state('on')
+
+    # 2. Warten bis TV bereit ist
+    print(f"[Startup] Warte {wait_time}s bis TV bereit ist...", flush=True)
+    time.sleep(wait_time)
+
+    # 3. Optional: Lautstärke setzen (via UPnP - schnell)
+    if volume is not None:
+        print(f"[Startup] Setze Lautstärke auf {volume}%...", flush=True)
+        try:
+            tv.set_volume(volume)
+        except Exception as e:
+            log_event(
+                level='WARNING',
+                category='schedule',
+                message=f'Lautstärke konnte nicht gesetzt werden: {e}',
+                details={'volume': volume, 'error': str(e)},
+                source='schedule'
+            )
+
+    # 4. Optional: Kanal wechseln
+    if channel is not None:
+        print(f"[Startup] Wechsle zu Kanal {channel}...", flush=True)
+        try:
+            tv.channel(channel)
+        except Exception as e:
+            log_event(
+                level='WARNING',
+                category='schedule',
+                message=f'Kanal konnte nicht gewechselt werden: {e}',
+                details={'channel': channel, 'error': str(e)},
+                source='schedule'
+            )
+
+    print(f"[Startup] Fertig.", flush=True)
 
 
 def _execute_sequence_action(action_data: dict):

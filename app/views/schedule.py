@@ -5,9 +5,9 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required
 
-from ..models import db, Schedule, Scenario
+from ..models import db, Schedule
 from ..services.logger import log_event
-from ..services.scheduler import get_scheduler, calculate_next_run
+from ..services.scheduler import calculate_next_run, add_schedule, update_schedule, remove_schedule
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
@@ -17,12 +17,10 @@ schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 def index():
     """Zeitplan-Übersicht"""
     schedules = Schedule.query.order_by(Schedule.next_run).all()
-    scenarios = Scenario.query.all()
 
     return render_template(
         'schedule.html',
-        schedules=schedules,
-        scenarios=scenarios
+        schedules=schedules
     )
 
 
@@ -30,8 +28,6 @@ def index():
 @login_required
 def create():
     """Neuen Zeitplan erstellen"""
-    scenarios = Scenario.query.all()
-
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description', '')
@@ -77,7 +73,17 @@ def create():
 
         # Aktionsdaten
         action_data = {}
-        if action_type == 'power':
+        if action_type == 'startup':
+            # Power on + optional channel + optional volume
+            channel = request.form.get('startup_channel')
+            volume = request.form.get('startup_volume')
+            wait = request.form.get('startup_wait', '15')
+            if channel:
+                action_data['channel'] = int(channel)
+            if volume:
+                action_data['volume'] = int(volume)
+            action_data['wait'] = int(wait)
+        elif action_type == 'power':
             action_data['action'] = request.form.get('power_action', 'on')
         elif action_type == 'key':
             action_data['key'] = request.form.get('key')
@@ -102,9 +108,7 @@ def create():
         db.session.commit()
 
         # Im Scheduler registrieren
-        scheduler = get_scheduler()
-        if scheduler:
-            scheduler.add_schedule(schedule)
+        add_schedule(schedule)
 
         log_event(
             level='INFO',
@@ -117,7 +121,7 @@ def create():
         flash(f'Zeitplan "{name}" wurde erstellt.', 'success')
         return redirect(url_for('schedule.index'))
 
-    return render_template('schedule_form.html', schedule=None, scenarios=scenarios)
+    return render_template('schedule_form.html', schedule=None)
 
 
 @schedule_bp.route('/<int:schedule_id>/edit', methods=['GET', 'POST'])
@@ -125,7 +129,6 @@ def create():
 def edit(schedule_id: int):
     """Zeitplan bearbeiten"""
     schedule = Schedule.query.get_or_404(schedule_id)
-    scenarios = Scenario.query.all()
 
     if request.method == 'POST':
         schedule.name = request.form.get('name')
@@ -173,7 +176,16 @@ def edit(schedule_id: int):
         schedule.action_type = action_type
 
         action_data = {}
-        if action_type == 'power':
+        if action_type == 'startup':
+            channel = request.form.get('startup_channel')
+            volume = request.form.get('startup_volume')
+            wait = request.form.get('startup_wait', '15')
+            if channel:
+                action_data['channel'] = int(channel)
+            if volume:
+                action_data['volume'] = int(volume)
+            action_data['wait'] = int(wait)
+        elif action_type == 'power':
             action_data['action'] = request.form.get('power_action', 'on')
         elif action_type == 'key':
             action_data['key'] = request.form.get('key')
@@ -192,12 +204,10 @@ def edit(schedule_id: int):
         db.session.commit()
 
         # Im Scheduler aktualisieren
-        scheduler = get_scheduler()
-        if scheduler:
-            if schedule.enabled:
-                scheduler.update_schedule(schedule)
-            else:
-                scheduler.remove_schedule(schedule.id)
+        if schedule.enabled:
+            update_schedule(schedule)
+        else:
+            remove_schedule(schedule.id)
 
         log_event(
             level='INFO',
@@ -210,7 +220,7 @@ def edit(schedule_id: int):
         flash(f'Zeitplan "{schedule.name}" wurde aktualisiert.', 'success')
         return redirect(url_for('schedule.index'))
 
-    return render_template('schedule_form.html', schedule=schedule, scenarios=scenarios)
+    return render_template('schedule_form.html', schedule=schedule)
 
 
 @schedule_bp.route('/<int:schedule_id>/delete', methods=['POST'])
@@ -221,9 +231,7 @@ def delete(schedule_id: int):
     name = schedule.name
 
     # Aus Scheduler entfernen
-    scheduler = get_scheduler()
-    if scheduler:
-        scheduler.remove_schedule(schedule_id)
+    remove_schedule(schedule_id)
 
     db.session.delete(schedule)
     db.session.commit()
@@ -256,12 +264,10 @@ def toggle(schedule_id: int):
     db.session.commit()
 
     # Im Scheduler aktualisieren
-    scheduler = get_scheduler()
-    if scheduler:
-        if schedule.enabled:
-            scheduler.add_schedule(schedule)
-        else:
-            scheduler.remove_schedule(schedule_id)
+    if schedule.enabled:
+        add_schedule(schedule)
+    else:
+        remove_schedule(schedule_id)
 
     status = 'aktiviert' if schedule.enabled else 'deaktiviert'
     log_event(
