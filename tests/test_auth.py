@@ -40,6 +40,56 @@ class TestSetup:
         # Error should be shown on the page
         assert b'stimmen nicht' in response.data.lower() or b'setup' in response.data.lower()
 
+    def test_setup_password_too_short(self, client, app, db):
+        """Setup should reject passwords shorter than 8 characters"""
+        response = client.post('/auth/setup', data={
+            'password': 'short',
+            'password_confirm': 'short'
+        })
+
+        assert response.status_code == 200
+        # Should show error, user should not be created
+        with app.app_context():
+            user = User.query.first()
+            assert user is None
+
+    def test_setup_redirects_when_user_exists(self, client, test_user, app):
+        """Setup should redirect to login when user already exists"""
+        response = client.get('/auth/setup')
+        assert response.status_code == 302
+        assert '/auth/login' in response.location
+
+    def test_setup_then_login_works(self, client, app, db):
+        """Password set during setup should work for immediate login"""
+        password = 'myTestPassword123'
+
+        # Setup
+        response = client.post('/auth/setup', data={
+            'password': password,
+            'password_confirm': password
+        }, follow_redirects=False)
+        assert response.status_code == 302
+
+        # Login with same password
+        response = client.post('/auth/login', data={
+            'password': password
+        }, follow_redirects=False)
+        assert response.status_code == 302
+        assert '/dashboard' in response.location or '/' in response.location
+
+    def test_root_redirects_to_setup_when_no_user(self, client, app, db):
+        """Root URL should redirect to setup when no user exists"""
+        response = client.get('/')
+        assert response.status_code == 302
+        assert '/auth/setup' in response.location
+
+    def test_root_redirects_to_dashboard_when_user_exists(self, client, test_user, app):
+        """Root URL should redirect to dashboard (then login) when user exists"""
+        response = client.get('/')
+        assert response.status_code == 302
+        # Should go to dashboard (which will redirect to login if not authenticated)
+        assert '/dashboard' in response.location
+
 
 class TestLogin:
     """Test login functionality"""
@@ -75,6 +125,41 @@ class TestLogin:
         cookies = response.headers.getlist('Set-Cookie')
         session_cookie = [c for c in cookies if 'tvremote_session' in c]
         assert len(session_cookie) > 0
+
+    def test_login_empty_password(self, client, test_user, app):
+        """Empty password should fail login"""
+        response = client.post('/auth/login', data={
+            'password': ''
+        })
+        assert response.status_code == 200
+        # Should stay on login page with error
+
+    def test_login_redirects_to_setup_when_no_user(self, client, app, db):
+        """Login page should work even when no user exists (shows login form)"""
+        # When no user exists, login page should still render
+        # (setup link should be available)
+        response = client.get('/auth/login')
+        assert response.status_code == 200
+
+    def test_authenticated_user_redirected_from_login(self, auth_client, app):
+        """Already authenticated user should be redirected from login page"""
+        response = auth_client.get('/auth/login')
+        assert response.status_code == 302
+        assert '/dashboard' in response.location
+
+    def test_session_persists_across_requests(self, client, test_user, app):
+        """Session should persist after login"""
+        # Login
+        response = client.post('/auth/login', data={
+            'password': 'testpassword123',
+            'remember': True
+        }, follow_redirects=False)
+        assert response.status_code == 302
+
+        # Access protected page
+        response = client.get('/dashboard')
+        assert response.status_code == 200
+        assert b'<!DOCTYPE html>' in response.data
 
 
 class TestLogout:
