@@ -91,7 +91,7 @@ def change_password():
         flash('Die neuen Passwörter stimmen nicht überein.', 'error')
         return redirect(url_for('settings.index'))
 
-    user.password_hash = generate_password_hash(new_password)
+    user.password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
     db.session.commit()
 
     log_event(

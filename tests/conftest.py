@@ -64,7 +64,7 @@ def test_user(app):
     with app.app_context():
         user = User(
             username='admin',
-            password_hash=generate_password_hash('testpassword123')
+            password_hash=generate_password_hash('testpassword123', method='pbkdf2:sha256')
         )
         db.session.add(user)
         db.session.commit()
