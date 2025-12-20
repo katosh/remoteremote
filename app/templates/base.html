@@ -119,11 +119,11 @@
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint == 'main.dashboard' else '' }}">
                         Dashboard
                     </a>
-                    <a href="{{ url_for('remote.remote_view') }}"
+                    <a href="{{ url_for('remote.index') }}"
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'remote' in request.endpoint else '' }}">
                         Fernbedienung
                     </a>
-                    <a href="{{ url_for('schedule.schedule_list') }}"
+                    <a href="{{ url_for('schedule.index') }}"
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'schedule' in request.endpoint else '' }}">
                         Zeitpläne
                     </a>
@@ -155,11 +155,11 @@
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint == 'main.dashboard' else '' }}">
                     Dashboard
                 </a>
-                <a href="{{ url_for('remote.remote_view') }}"
+                <a href="{{ url_for('remote.index') }}"
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'remote' in request.endpoint else '' }}">
                     Fernbedienung
                 </a>
-                <a href="{{ url_for('schedule.schedule_list') }}"
+                <a href="{{ url_for('schedule.index') }}"
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'schedule' in request.endpoint else '' }}">
                     Zeitpläne
                 </a>
@@ -215,7 +215,7 @@
                 </svg>
                 <span class="text-xs mt-1">Home</span>
             </a>
-            <a href="{{ url_for('remote.remote_view') }}"
+            <a href="{{ url_for('remote.index') }}"
                class="flex flex-col items-center px-3 py-1 {{ 'text-tv-accent' if request.endpoint and 'remote' in request.endpoint else 'text-gray-400' }}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -223,7 +223,7 @@
                 </svg>
                 <span class="text-xs mt-1">Remote</span>
             </a>
-            <a href="{{ url_for('schedule.schedule_list') }}"
+            <a href="{{ url_for('schedule.index') }}"
                class="flex flex-col items-center px-3 py-1 {{ 'text-tv-accent' if request.endpoint and 'schedule' in request.endpoint else 'text-gray-400' }}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

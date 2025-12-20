@@ -59,13 +59,28 @@ def create_app(config_name: str = None) -> Flask:
     # Kontext-Prozessor für Templates
     @app.context_processor
     def inject_globals():
+        # In test mode, don't try to connect to real TV
+        if app.config.get('TESTING'):
+            return {
+                'app_name': app.config['APP_NAME'],
+                'tv_connected': False,
+                'tv_has_token': False
+            }
+
         from .services.tv_service import get_tv_service
-        tv = get_tv_service()
-        return {
-            'app_name': app.config['APP_NAME'],
-            'tv_connected': tv.is_connected() if tv else False,
-            'tv_has_token': tv.is_paired if tv else False
-        }
+        try:
+            tv = get_tv_service()
+            return {
+                'app_name': app.config['APP_NAME'],
+                'tv_connected': tv.is_connected() if tv else False,
+                'tv_has_token': tv.is_paired if tv else False
+            }
+        except Exception:
+            return {
+                'app_name': app.config['APP_NAME'],
+                'tv_connected': False,
+                'tv_has_token': False
+            }
 
     # Error Handler
     @app.errorhandler(404)

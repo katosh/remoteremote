@@ -89,3 +89,7 @@ Caddyfile.local
 tmp/
 temp/
 *.tmp
+
+# Personal notes and test scripts
+PROJECT_NOTES.md
+tv_test.py

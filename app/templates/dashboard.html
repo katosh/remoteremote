@@ -16,7 +16,7 @@
     <div class="bg-tv-dark rounded-2xl p-6">
         <h2 class="text-lg font-semibold mb-4">Schnellaktionen</h2>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button hx-post="{{ url_for('remote.power_toggle') }}"
+            <button hx-post="{{ url_for('remote.power') }}"
                     hx-swap="none"
                     class="btn-remote btn-power py-4 flex flex-col items-center gap-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@
                 <span class="text-sm">Home</span>
             </button>
 
-            <a href="{{ url_for('remote.remote_view') }}"
+            <a href="{{ url_for('remote.index') }}"
                class="btn-remote py-4 flex flex-col items-center gap-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -80,7 +80,7 @@
     <div class="bg-tv-dark rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold">Nächste Zeitpläne</h2>
-            <a href="{{ url_for('schedule.schedule_list') }}" class="text-tv-accent text-sm hover:underline">
+            <a href="{{ url_for('schedule.index') }}" class="text-tv-accent text-sm hover:underline">
                 Alle anzeigen
             </a>
         </div>
