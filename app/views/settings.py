@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, jsonify, flash, redirect,
 from flask_login import login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ..models import db, Config, User, Log, Scenario
+from ..models import db, Config, User, Log, Scenario, Session
 from ..services.tv_service import get_tv_service, reinit_tv_service
 from ..services.logger import log_event
 from ..services.discovery import discover_samsung_tvs
@@ -15,21 +15,31 @@ settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
 @settings_bp.route('/')
 @login_required
-def index():
+def settings_view():
     """Einstellungen-Übersicht"""
+    from flask_login import current_user
+
     tv = get_tv_service()
     tv_info = None
+    has_token = False
     try:
         tv_info = tv.get_info()
+        has_token = tv.is_paired
     except Exception:
         pass
 
+    # Count active sessions
+    session_count = Session.query.filter_by(user_id=current_user.id).count()
+
     return render_template(
         'settings.html',
-        tv_ip=Config.get('tv_ip', current_app.config['TV_IP']),
-        tv_mac=Config.get('tv_mac', current_app.config['TV_MAC']),
+        config={
+            'tv_ip': Config.get('tv_ip', current_app.config.get('TV_IP', '')),
+            'tv_mac': Config.get('tv_mac', current_app.config.get('TV_MAC', ''))
+        },
         tv_info=tv_info,
-        has_token=tv.is_paired
+        has_token=has_token,
+        session_count=session_count
     )
 
 
@@ -291,3 +301,125 @@ def delete_scenario(scenario_id: int):
     )
 
     return jsonify({'success': True})
+
+
+# ============= Session Management =============
+
+@settings_bp.route('/sessions')
+@login_required
+def sessions_view():
+    """Aktive Sessions anzeigen"""
+    from flask_login import current_user
+    from ..views.auth import SESSION_COOKIE_NAME
+    import hashlib
+
+    # Get current session token to mark it
+    current_token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_token_hash = None
+    if current_token:
+        current_token_hash = hashlib.sha256(current_token.encode()).hexdigest()
+
+    # Get all active sessions for user
+    sessions = Session.query.filter_by(user_id=current_user.id)\
+        .order_by(Session.last_used.desc()).all()
+
+    # Mark current session
+    for session in sessions:
+        session.is_current = (session.token_hash == current_token_hash)
+
+    return render_template('sessions.html', sessions=sessions)
+
+
+@settings_bp.route('/sessions/<int:session_id>/revoke', methods=['POST'])
+@login_required
+def revoke_session(session_id: int):
+    """Einzelne Session widerrufen"""
+    from flask_login import current_user
+    from ..views.auth import SESSION_COOKIE_NAME
+    import hashlib
+
+    session = Session.query.get_or_404(session_id)
+
+    # Ensure session belongs to current user
+    if session.user_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Nicht autorisiert'}), 403
+
+    # Check if this is the current session
+    current_token = request.cookies.get(SESSION_COOKIE_NAME)
+    if current_token:
+        current_token_hash = hashlib.sha256(current_token.encode()).hexdigest()
+        if session.token_hash == current_token_hash:
+            return jsonify({'success': False, 'error': 'Aktuelle Session kann nicht widerrufen werden. Nutzen Sie "Abmelden".'}), 400
+
+    device_name = session.device_name
+    session.revoke()
+
+    log_event(
+        level='INFO',
+        category='auth',
+        message=f'Session widerrufen: {device_name}',
+        details={'session_id': session_id},
+        source='manual'
+    )
+
+    return jsonify({'success': True, 'message': f'Session "{device_name}" wurde widerrufen.'})
+
+
+@settings_bp.route('/sessions/revoke-all', methods=['POST'])
+@login_required
+def revoke_all_sessions():
+    """Alle Sessions außer der aktuellen widerrufen"""
+    from flask_login import current_user
+    from ..views.auth import SESSION_COOKIE_NAME
+    import hashlib
+
+    current_token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_token_hash = None
+    if current_token:
+        current_token_hash = hashlib.sha256(current_token.encode()).hexdigest()
+
+    # Get all sessions for user
+    sessions = Session.query.filter_by(user_id=current_user.id).all()
+    revoked_count = 0
+
+    for session in sessions:
+        # Don't revoke current session
+        if current_token_hash and session.token_hash == current_token_hash:
+            continue
+        session.revoke()
+        revoked_count += 1
+
+    log_event(
+        level='INFO',
+        category='auth',
+        message=f'{revoked_count} Sessions widerrufen',
+        source='manual'
+    )
+
+    flash(f'{revoked_count} Sitzung(en) wurden beendet.', 'success')
+    return redirect(url_for('settings.sessions_view'))
+
+
+@settings_bp.route('/sessions/api')
+@login_required
+def sessions_api():
+    """API: Aktive Sessions als JSON"""
+    from flask_login import current_user
+    from ..views.auth import SESSION_COOKIE_NAME
+    import hashlib
+
+    current_token = request.cookies.get(SESSION_COOKIE_NAME)
+    current_token_hash = None
+    if current_token:
+        current_token_hash = hashlib.sha256(current_token.encode()).hexdigest()
+
+    sessions = Session.query.filter_by(user_id=current_user.id)\
+        .order_by(Session.last_used.desc()).all()
+
+    result = []
+    for session in sessions:
+        data = session.to_dict()
+        data['is_current'] = (session.token_hash == current_token_hash)
+        result.append(data)
+
+    return jsonify({'sessions': result})

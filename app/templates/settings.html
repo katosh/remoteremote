@@ -144,7 +144,7 @@
 
     <!-- Logs Link -->
     <div class="bg-tv-dark rounded-xl p-6">
-        <a href="{{ url_for('settings.logs_view') }}"
+        <a href="{{ url_for('settings.logs') }}"
            class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
             <span>Aktivitätsprotokoll</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,9 +155,25 @@
 
     <!-- Scenarios Link -->
     <div class="bg-tv-dark rounded-xl p-6">
-        <a href="{{ url_for('settings.scenarios_view') }}"
+        <a href="{{ url_for('settings.scenarios') }}"
            class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
             <span>Szenarien verwalten</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- Sessions Link -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <a href="{{ url_for('settings.sessions_view') }}"
+           class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
+            <div class="flex items-center gap-3">
+                <span>Aktive Sitzungen</span>
+                {% if session_count %}
+                <span class="text-xs bg-gray-700 px-2 py-0.5 rounded-full">{{ session_count }}</span>
+                {% endif %}
+            </div>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
