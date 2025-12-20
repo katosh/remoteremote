@@ -301,21 +301,20 @@
 
         {% if schedule %}
         <!-- Enabled Toggle (only when editing) -->
-        <div class="bg-tv-dark rounded-xl p-6">
-            <label class="flex items-center justify-between cursor-pointer" x-data="{ enabled: {{ 'true' if schedule.enabled else 'false' }} }">
+        <div class="bg-tv-dark rounded-xl p-6" x-data="{ enabled: {{ 'true' if schedule.enabled else 'false' }} }">
+            <div class="flex items-center justify-between">
                 <span class="text-lg">Aktiviert</span>
-                <div class="relative" @click="enabled = !enabled">
-                    <input type="checkbox"
-                           name="enabled"
-                           x-bind:checked="enabled"
-                           :value="enabled ? 'on' : ''"
-                           class="sr-only peer">
-                    <div class="w-12 h-7 rounded-full shadow-inner transition-colors"
-                         :class="enabled ? 'bg-tv-accent' : 'bg-gray-700'"></div>
-                    <div class="absolute w-5 h-5 bg-white rounded-full shadow top-1 transition-transform"
-                         :class="enabled ? 'left-6' : 'left-1'"></div>
-                </div>
-            </label>
+                <button type="button"
+                        @click="enabled = !enabled"
+                        class="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-tv-accent"
+                        :class="enabled ? 'bg-tv-accent' : 'bg-gray-700'"
+                        role="switch"
+                        :aria-checked="enabled.toString()">
+                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                          :class="enabled ? 'translate-x-5' : 'translate-x-0'"></span>
+                </button>
+                <input type="hidden" name="enabled" :value="enabled ? 'on' : ''">
+            </div>
         </div>
         {% endif %}
 

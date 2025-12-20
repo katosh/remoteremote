@@ -42,9 +42,26 @@
 
         <div class="flex items-center gap-1 ml-2">
             <!-- Run Now Button -->
-            <button hx-post="{{ url_for('schedule.run_now', schedule_id=schedule.id) }}"
-                    hx-swap="none"
-                    class="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-green-400"
+            <button x-data="{ state: 'idle' }"
+                    @click="
+                        if (state !== 'idle') return;
+                        state = 'running';
+                        fetch('{{ url_for('schedule.run_now', schedule_id=schedule.id) }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content }
+                        })
+                        .then(r => r.json())
+                        .then(d => { state = d.success ? 'success' : 'error'; setTimeout(() => state = 'idle', 2000); })
+                        .catch(() => { state = 'error'; setTimeout(() => state = 'idle', 2000); });
+                    "
+                    class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+                    :class="{
+                        'text-gray-400': state === 'idle',
+                        'text-yellow-400 animate-pulse': state === 'running',
+                        'text-green-400': state === 'success',
+                        'text-red-400': state === 'error'
+                    }"
+                    :disabled="state === 'running'"
                     title="Jetzt ausführen">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>

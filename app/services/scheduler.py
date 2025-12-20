@@ -234,13 +234,22 @@ def _execute_power_action(action_data: dict):
     action = action_data.get('action', 'on')
     tv = get_tv_service()
 
+    print(f"[Power Action] Executing power action: {action}", flush=True)
+
     if action == 'on':
         # Wake-on-LAN - funktioniert ohne Token
         tv.power_on()
         set_cached_power_state('on')
+        print(f"[Power Action] Power ON sent via Wake-on-LAN", flush=True)
     elif action == 'off':
+        # Power off requires WebSocket connection
+        if not tv.is_paired:
+            print(f"[Power Action] WARNING: No token - power off may fail", flush=True)
         tv.power_off()
         set_cached_power_state('standby')
+        print(f"[Power Action] Power OFF sent", flush=True)
+    else:
+        print(f"[Power Action] Unknown action: {action}", flush=True)
 
 
 def _execute_startup_action(action_data: dict):
