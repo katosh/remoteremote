@@ -122,26 +122,6 @@
         </form>
     </div>
 
-    <!-- Backup -->
-    <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">Backup</h2>
-
-        <div class="space-y-3">
-            <button hx-post="{{ url_for('settings.backup') }}"
-                    hx-target="#backup-result"
-                    class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
-                Backup erstellen
-            </button>
-
-            <a href="#" onclick="alert('Backup-Download noch nicht implementiert')"
-               class="block w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-center transition-colors">
-                Letztes Backup herunterladen
-            </a>
-        </div>
-
-        <div id="backup-result" class="mt-4"></div>
-    </div>
-
     <!-- Logs Link -->
     <div class="bg-tv-dark rounded-xl p-6">
         <a href="{{ url_for('settings.logs') }}"
