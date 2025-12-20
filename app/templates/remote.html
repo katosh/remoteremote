@@ -177,32 +177,6 @@
             </button>
         </div>
 
-        <!-- Streaming Apps -->
-        <div class="grid grid-cols-4 gap-3">
-            <button hx-post="{{ url_for('remote.app_control') }}"
-                    hx-vals='{"action": "run", "app_id": "Netflix"}'
-                    hx-swap="none"
-                    class="btn-remote btn-action bg-red-800 hover:bg-red-700">
-                Netflix
-            </button>
-            <button hx-post="{{ url_for('remote.app_control') }}"
-                    hx-vals='{"action": "run", "app_id": "Amazon Prime Video"}'
-                    hx-swap="none"
-                    class="btn-remote btn-action bg-blue-800 hover:bg-blue-700">
-                Prime
-            </button>
-            <button hx-post="{{ url_for('remote.app_control') }}"
-                    hx-vals='{"action": "run", "app_id": "YouTube"}'
-                    hx-swap="none"
-                    class="btn-remote btn-action">
-                YouTube
-            </button>
-            <button hx-post="{{ url_for('remote.send_key', key='KEY_GUIDE') }}"
-                    hx-swap="none"
-                    class="btn-remote btn-action">
-                Guide
-            </button>
-        </div>
     </div>
 
     <!-- Expert Mode Controls -->
@@ -293,29 +267,6 @@
                               focus:outline-none focus:ring-2 focus:ring-tv-accent">
                 <button type="submit" class="btn-remote px-6">Senden</button>
             </form>
-        </div>
-
-        <!-- App Launcher -->
-        <div class="bg-gray-800 rounded-xl p-4">
-            <label class="block text-sm text-gray-400 mb-2">App starten:</label>
-            <div class="grid grid-cols-4 gap-2">
-                <button hx-post="{{ url_for('remote.app_control') }}"
-                        hx-vals='{"action": "run", "app_id": "Netflix"}'
-                        hx-swap="none"
-                        class="btn-remote py-3 text-xs bg-red-800 hover:bg-red-700">Netflix</button>
-                <button hx-post="{{ url_for('remote.app_control') }}"
-                        hx-vals='{"action": "run", "app_id": "YouTube"}'
-                        hx-swap="none"
-                        class="btn-remote py-3 text-xs">YouTube</button>
-                <button hx-post="{{ url_for('remote.app_control') }}"
-                        hx-vals='{"action": "run", "app_id": "Amazon Prime Video"}'
-                        hx-swap="none"
-                        class="btn-remote py-3 text-xs bg-blue-800 hover:bg-blue-700">Prime</button>
-                <button hx-post="{{ url_for('remote.app_control') }}"
-                        hx-vals='{"action": "run", "app_id": "Disney+"}'
-                        hx-swap="none"
-                        class="btn-remote py-3 text-xs bg-blue-900 hover:bg-blue-800">Disney+</button>
-            </div>
         </div>
 
         <!-- Color Buttons -->
