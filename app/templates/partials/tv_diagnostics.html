@@ -1,0 +1,108 @@
+<!-- TV Diagnostics Result Partial -->
+<div class="space-y-4 text-sm">
+    <!-- Status Summary -->
+    <div class="flex items-center gap-3 p-3 rounded-lg {{ 'bg-green-900/30' if data.success else 'bg-red-900/30' }}">
+        <div class="w-3 h-3 rounded-full {{ 'bg-green-500' if data.success else 'bg-red-500' }}"></div>
+        <span class="{{ 'text-green-400' if data.success else 'text-red-400' }}">
+            {{ 'TV erreichbar und antwortet' if data.success else (data.error or 'TV nicht erreichbar') }}
+        </span>
+    </div>
+
+    <!-- Connection Info -->
+    <div class="bg-gray-800 rounded-lg p-4">
+        <h3 class="font-medium mb-3 text-gray-300">Verbindung</h3>
+        <dl class="grid grid-cols-2 gap-2">
+            <dt class="text-gray-500">Ping</dt>
+            <dd>{{ 'OK' if data.ping.reachable else 'Fehlgeschlagen' }}</dd>
+            <dt class="text-gray-500">Token</dt>
+            <dd>{{ 'Vorhanden' if data.paired else 'Nicht vorhanden' }}</dd>
+            <dt class="text-gray-500">IP</dt>
+            <dd class="font-mono">{{ data.config.ip or '-' }}</dd>
+            <dt class="text-gray-500">MAC</dt>
+            <dd class="font-mono">{{ data.config.mac or '-' }}</dd>
+        </dl>
+    </div>
+
+    {% if data.parsed_info %}
+    <!-- Parsed TV Info -->
+    <div class="bg-gray-800 rounded-lg p-4">
+        <h3 class="font-medium mb-3 text-gray-300">TV-Informationen</h3>
+        <dl class="grid grid-cols-2 gap-2">
+            <dt class="text-gray-500">Name</dt>
+            <dd>{{ data.parsed_info.name }}</dd>
+            <dt class="text-gray-500">Modell</dt>
+            <dd>{{ data.parsed_info.model_name }}</dd>
+            <dt class="text-gray-500">Modell-ID</dt>
+            <dd class="font-mono text-xs">{{ data.parsed_info.model }}</dd>
+            <dt class="text-gray-500">Firmware</dt>
+            <dd>{{ data.parsed_info.firmware }}</dd>
+            <dt class="text-gray-500">Betriebssystem</dt>
+            <dd>{{ data.parsed_info.os }}</dd>
+            <dt class="text-gray-500">Auflösung</dt>
+            <dd>{{ data.parsed_info.resolution }}</dd>
+            <dt class="text-gray-500">Power-Status</dt>
+            <dd>
+                <span class="px-2 py-0.5 rounded text-xs {{ 'bg-green-600' if data.parsed_info.power_state == 'on' else 'bg-gray-600' }}">
+                    {{ data.parsed_info.power_state }}
+                </span>
+            </dd>
+            <dt class="text-gray-500">UUID</dt>
+            <dd class="font-mono text-xs break-all">{{ data.parsed_info.uuid }}</dd>
+        </dl>
+    </div>
+    {% endif %}
+
+    {% if data.upnp %}
+    <!-- UPnP Status -->
+    <div class="bg-gray-800 rounded-lg p-4">
+        <h3 class="font-medium mb-3 text-gray-300">UPnP (Lautstarke-Steuerung)</h3>
+        <dl class="grid grid-cols-2 gap-2">
+            <dt class="text-gray-500">Verfügbar</dt>
+            <dd>{{ 'Ja' if data.upnp.available else 'Nein' }}</dd>
+            {% if data.upnp.available %}
+            <dt class="text-gray-500">Lautstärke</dt>
+            <dd>{{ data.upnp.volume }}%</dd>
+            <dt class="text-gray-500">Stumm</dt>
+            <dd>{{ 'Ja' if data.upnp.muted else 'Nein' }}</dd>
+            {% endif %}
+            {% if data.upnp.error %}
+            <dt class="text-gray-500">Fehler</dt>
+            <dd class="text-red-400">{{ data.upnp.error }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    {% endif %}
+
+    {% if data.api_response %}
+    <!-- Raw API Response -->
+    <div class="bg-gray-800 rounded-lg p-4">
+        <h3 class="font-medium mb-3 text-gray-300 flex items-center justify-between">
+            <span>Rohe API-Antwort</span>
+            <button onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')"
+                    class="text-xs text-gray-500 hover:text-gray-300">
+                Ein-/Ausblenden
+            </button>
+        </h3>
+        <pre class="hidden bg-gray-900 p-3 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto">{{ data.api_response | tojson(indent=2) }}</pre>
+    </div>
+    {% endif %}
+
+    {% if data.apps %}
+    <!-- Installed Apps -->
+    <div class="bg-gray-800 rounded-lg p-4">
+        <h3 class="font-medium mb-3 text-gray-300 flex items-center justify-between">
+            <span>Installierte Apps</span>
+            <button onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')"
+                    class="text-xs text-gray-500 hover:text-gray-300">
+                Ein-/Ausblenden
+            </button>
+        </h3>
+        <pre class="hidden bg-gray-900 p-3 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto">{{ data.apps | tojson(indent=2) }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- Timestamp -->
+    <p class="text-xs text-gray-600 text-right">
+        Abgerufen: {{ now.strftime('%d.%m.%Y %H:%M:%S') }}
+    </p>
+</div>

@@ -345,6 +345,100 @@ def revoke_all_sessions():
     return redirect(url_for('settings.sessions_view'))
 
 
+@settings_bp.route('/tv/diagnostics')
+@login_required
+def tv_diagnostics():
+    """Fetch all available TV information for diagnostics"""
+    from datetime import datetime
+
+    tv = get_tv_service()
+    result = {
+        'success': False,
+        'reachable': False,
+        'paired': tv.is_paired,
+        'config': {
+            'ip': Config.get('tv_ip', current_app.config.get('TV_IP', '')),
+            'mac': Config.get('tv_mac', current_app.config.get('TV_MAC', '')),
+            'token_file': current_app.config.get('TV_TOKEN_FILE', ''),
+            'has_token': tv.is_paired
+        },
+        'ping': {},
+        'api_response': None,
+        'parsed_info': None,
+        'upnp': {},
+        'apps': None,
+        'error': None
+    }
+
+    # Test ping
+    try:
+        ping_result = tv.ping(timeout=2.0)
+        result['ping'] = {'reachable': ping_result, 'timeout': 2.0}
+        result['reachable'] = ping_result
+    except Exception as e:
+        result['ping'] = {'reachable': False, 'error': str(e)}
+
+    if result['reachable']:
+        # Get raw API response
+        try:
+            # Access the internal _rest_request method to get raw data
+            raw_data = tv._rest_request("", port=8001)
+            if raw_data is None:
+                raw_data = tv._rest_request("", port=tv.port)
+
+            if raw_data:
+                result['success'] = True
+                result['api_response'] = raw_data
+
+                # Also get parsed info
+                info = tv.get_info()
+                if info:
+                    result['parsed_info'] = {
+                        'name': info.name,
+                        'model': info.model,
+                        'model_name': info.model_name,
+                        'ip': info.ip,
+                        'mac': info.mac,
+                        'power_state': info.power_state,
+                        'firmware': info.firmware,
+                        'os': info.os,
+                        'resolution': info.resolution,
+                        'uuid': info.uuid
+                    }
+            else:
+                result['error'] = 'API-Anfrage fehlgeschlagen'
+        except Exception as e:
+            result['error'] = f'API-Fehler: {str(e)}'
+
+        # Try to get UPnP volume info
+        try:
+            volume = tv.get_volume()
+            muted = tv.get_mute_status()
+            result['upnp'] = {
+                'available': volume is not None,
+                'volume': volume,
+                'muted': muted
+            }
+        except Exception as e:
+            result['upnp'] = {'available': False, 'error': str(e)}
+
+        # Try to get installed apps list
+        try:
+            apps_data = tv._rest_request("applications", port=8001)
+            if apps_data:
+                result['apps'] = apps_data
+        except Exception:
+            pass
+    else:
+        result['error'] = 'TV nicht erreichbar (Ping fehlgeschlagen)'
+
+    # Return HTML for HTMX, JSON otherwise
+    if request.headers.get('HX-Request'):
+        return render_template('partials/tv_diagnostics.html', data=result, now=datetime.now())
+
+    return jsonify(result)
+
+
 @settings_bp.route('/sessions/api')
 @login_required
 def sessions_api():
