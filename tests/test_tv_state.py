@@ -172,7 +172,7 @@ class TestPowerActions:
             assert status['transition_type'] == 'turning_on'
 
     def test_power_off_sets_transition(self, auth_client, app):
-        """Test power off sets transition state (or completes immediately if TV not responding)"""
+        """Test power off sets transition state"""
         from app.services.tv_service import get_cached_status
 
         with app.app_context():
@@ -181,8 +181,8 @@ class TestPowerActions:
             assert response.status_code == 200
 
             status = get_cached_status()
-            # With mock TV (not connected), transition completes immediately
-            # since get_info() returns None which is detected as "TV is now off"
-            # This is correct behavior - we detect the target state was reached
-            assert status['power_state'] == 'off'
-            assert status['in_transition'] is False
+            # During MIN_TRANSITION_SECONDS (3s), we show transition state without
+            # checking the API to prevent flickering on slow connections.
+            # So immediately after power off, we should be in turning_off transition.
+            assert status['in_transition'] is True
+            assert status['transition_type'] == 'turning_off'
