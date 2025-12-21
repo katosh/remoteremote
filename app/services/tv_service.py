@@ -26,7 +26,8 @@ _status_cache: dict = {
     'transition_type': None,  # 'turning_on' or 'turning_off'
     'target_state': None,  # Expected state after transition ('on' or 'off')
     'just_confirmed': False,  # True when transition just completed
-    'confirmed_at': 0  # Timestamp when state was confirmed
+    'confirmed_at': 0,  # Timestamp when state was confirmed
+    'unreachable_since': 0  # Timestamp when TV first became unreachable during shutdown
 }
 CACHE_TTL_SECONDS = 10  # Cache TV status for 10 seconds (shorter for responsiveness)
 
@@ -36,6 +37,10 @@ MAX_TRANSITION_SECONDS = 60  # Give up after 60 seconds if API never confirms
 # Minimum time to show transition state before checking API
 # Keep this short to not miss standby phase, but long enough to avoid immediate flicker
 MIN_TRANSITION_SECONDS = 0.5
+
+# Minimum time unreachable during shutdown before marking as fully off
+# Wait a bit to ensure TV is truly off, not just temporarily unreachable
+MIN_SHUTTING_DOWN_SECONDS = 3
 
 
 class MockSamsungTV:
@@ -278,28 +283,54 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                 if not tv.ping(timeout=1.0):
                     # TV not reachable - determine outcome based on target_state
                     if target_state == 'off' or transition_type in ('turning_off', 'shutting_down'):
-                        # Target was off and TV is unreachable - success, it's off
-                        if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
-                            print(f"[TV Service] TV is now OFF (ping failed) - fully powered down", flush=True)
-                        _status_cache['transition_until'] = 0
-                        _status_cache['transition_type'] = None
-                        _status_cache['target_state'] = None
-                        _status_cache['connected'] = False
-                        _status_cache['power_state'] = 'off'
-                        _status_cache['info'] = None
-                        _status_cache['last_check'] = now
-                        _status_cache['just_confirmed'] = True
-                        _status_cache['confirmed_at'] = now
-                        return {
-                            'connected': False,
-                            'power_state': 'off',
-                            'info': None,
-                            'cached': False,
-                            'cache_age': 0,
-                            'in_transition': False,
-                            'transition_type': None,
-                            'just_confirmed': True
-                        }
+                        # Target was off and TV is unreachable
+                        # Track how long it's been unreachable before declaring it off
+                        unreachable_since = _status_cache.get('unreachable_since', 0)
+                        if unreachable_since == 0:
+                            # First time we noticed it's unreachable - start tracking
+                            print(f"[TV Service] TV became unreachable during shutdown - waiting {MIN_SHUTTING_DOWN_SECONDS}s before marking off", flush=True)
+                            _status_cache['unreachable_since'] = now
+                            unreachable_since = now
+
+                        unreachable_duration = now - unreachable_since
+
+                        if unreachable_duration >= MIN_SHUTTING_DOWN_SECONDS:
+                            # Been unreachable long enough - now it's truly off
+                            if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
+                                print(f"[TV Service] TV is now OFF (unreachable for {unreachable_duration:.1f}s) - fully powered down", flush=True)
+                            _status_cache['transition_until'] = 0
+                            _status_cache['transition_type'] = None
+                            _status_cache['target_state'] = None
+                            _status_cache['connected'] = False
+                            _status_cache['power_state'] = 'off'
+                            _status_cache['info'] = None
+                            _status_cache['last_check'] = now
+                            _status_cache['just_confirmed'] = True
+                            _status_cache['confirmed_at'] = now
+                            _status_cache['unreachable_since'] = 0  # Reset tracker
+                            return {
+                                'connected': False,
+                                'power_state': 'off',
+                                'info': None,
+                                'cached': False,
+                                'cache_age': 0,
+                                'in_transition': False,
+                                'transition_type': None,
+                                'just_confirmed': True
+                            }
+                        else:
+                            # Still in the waiting period - show standby
+                            remaining_wait = MIN_SHUTTING_DOWN_SECONDS - unreachable_duration
+                            return {
+                                'connected': False,
+                                'power_state': 'standby',
+                                'info': None,
+                                'cached': False,
+                                'cache_age': 0,
+                                'in_transition': True,
+                                'transition_type': 'shutting_down',
+                                'transition_remaining': int(remaining_wait)
+                            }
                     elif target_state == 'on' or transition_type == 'turning_on':
                         # Target was on but TV not reachable - still booting
                         return {
@@ -326,7 +357,13 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                             'transition_type': None
                         }
 
-                # Ping succeeded - now safe to call get_info() (TV is responsive)
+                # Ping succeeded - TV is reachable again
+                # Reset unreachable tracker since TV is responding
+                if _status_cache.get('unreachable_since', 0) > 0:
+                    print(f"[TV Service] TV is reachable again - clearing unreachable tracker", flush=True)
+                    _status_cache['unreachable_since'] = 0
+
+                # Now safe to call get_info() (TV is responsive)
                 info = tv.get_info()
                 if transition_type == 'turning_on' and info and info.power_state == 'on':
                     # TV is now on - clear transition and mark as just confirmed
@@ -621,17 +658,53 @@ def get_cached_status(force_refresh: bool = False) -> dict:
     info = None
 
     try:
-        info = tv.get_info()
-        if info:
-            connected = True
-            # Map TV's power_state to our simplified model
-            if info.power_state == 'on':
-                power_state = 'on'
-            else:
-                # 'standby' or any other state = off for our purposes
-                power_state = 'off'
+        # Quick ping check first to avoid long blocking timeouts
+        if not tv.ping(timeout=1.0):
+            # TV not responding to ping
+            # If we recently confirmed TV was on, trust that state longer
+            confirmed_age = now - _status_cache.get('confirmed_at', 0)
+            last_power_state = _status_cache.get('power_state')
+            if last_power_state == 'on' and confirmed_age < 30:
+                # Recently confirmed on - likely just a slow network, keep showing on
+                return {
+                    'connected': False,
+                    'power_state': 'on',
+                    'info': _status_cache.get('info'),
+                    'cached': True,
+                    'cache_age': cache_age,
+                    'in_transition': False,
+                    'transition_type': None,
+                    'just_confirmed': just_confirmed
+                }
+            # Otherwise assume off
+            power_state = 'off'
+        else:
+            # Ping succeeded - try to get full info
+            info = tv.get_info()
+            if info:
+                connected = True
+                # Map TV's power_state to our simplified model
+                if info.power_state == 'on':
+                    power_state = 'on'
+                else:
+                    # 'standby' or any other state = off for our purposes
+                    power_state = 'off'
     except Exception:
-        # TV not responding = off
+        # TV not responding - check if we recently confirmed it was on
+        confirmed_age = now - _status_cache.get('confirmed_at', 0)
+        last_power_state = _status_cache.get('power_state')
+        if last_power_state == 'on' and confirmed_age < 30:
+            # Recently confirmed on - likely just a temporary network issue
+            return {
+                'connected': False,
+                'power_state': 'on',
+                'info': _status_cache.get('info'),
+                'cached': True,
+                'cache_age': cache_age,
+                'in_transition': False,
+                'transition_type': None,
+                'just_confirmed': just_confirmed
+            }
         power_state = 'off'
 
     # Update memory cache
