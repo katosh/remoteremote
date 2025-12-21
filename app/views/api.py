@@ -14,6 +14,7 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 @login_required
 def tv_status():
     """Aktueller TV-Status (für HTMX Polling)"""
+    from flask import make_response
     from ..services.tv_service import get_cached_status
 
     mini = request.args.get('mini') == '1'
@@ -23,25 +24,57 @@ def tv_status():
     cached = get_cached_status()
     power_state = cached['power_state']
     reachable = cached['connected']
+    in_transition = cached.get('in_transition', False)
+    transition_type = cached.get('transition_type')
+    just_confirmed = cached.get('just_confirmed', False)
 
     # HTMX erwartet HTML, normale Requests bekommen JSON
     if request.headers.get('HX-Request'):
         if mini:
             # Mini status for remote view
-            return f'''<div class="flex items-center gap-3">
-                <div class="w-3 h-3 rounded-full { 'bg-green-500' if reachable else 'bg-red-500' }"></div>
-                <span class="text-sm">{ 'Verbunden' if reachable else 'Nicht verbunden' }</span>
-            </div>'''
+            checkmark = '<svg class="w-3 h-3 inline ml-1 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' if just_confirmed else ''
+            if in_transition:
+                if transition_type == 'turning_on':
+                    return '''<div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                        <span class="text-sm text-yellow-400">Wird gestartet...</span>
+                    </div>'''
+                elif transition_type == 'shutting_down':
+                    return '''<div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-orange-400"></div>
+                        <span class="text-sm text-orange-400">Standby</span>
+                    </div>'''
+                else:
+                    return '''<div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                        <span class="text-sm text-yellow-400">Wird beendet...</span>
+                    </div>'''
+            elif power_state == 'on':
+                return f'''<div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span class="text-sm">Eingeschaltet{checkmark}</span>
+                </div>'''
+            else:
+                return f'''<div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-gray-500"></div>
+                    <span class="text-sm text-gray-400">Ausgeschaltet{checkmark}</span>
+                </div>'''
         return render_template(
             'partials/tv_status.html',
             power_state=power_state,
             reachable=reachable,
-            tv_state=tv_state
+            in_transition=in_transition,
+            transition_type=transition_type,
+            just_confirmed=just_confirmed,
+            tv_state=tv_state,
+            tv_info=cached.get('info')
         )
 
     return jsonify({
         'power_state': power_state,
         'reachable': reachable,
+        'in_transition': in_transition,
+        'transition_type': transition_type,
         'estimated_volume': tv_state.estimated_volume,
         'estimated_channel': tv_state.estimated_channel,
         'estimated_muted': tv_state.estimated_muted

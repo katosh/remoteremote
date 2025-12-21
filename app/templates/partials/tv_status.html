@@ -1,56 +1,122 @@
 <!-- TV Status Partial - wird via HTMX aktualisiert -->
+<!-- Poll faster during transition, slower when stable -->
+<div hx-get="{{ url_for('api.tv_status') }}"
+     hx-trigger="every {{ '2s' if in_transition else '10s' }}"
+     hx-swap="outerHTML">
 <div class="flex items-center justify-between">
     <div class="flex items-center gap-4">
-        <!-- Connection Status -->
-        <div class="w-16 h-16 rounded-2xl {{ 'bg-green-500/20' if reachable else 'bg-red-500/20' }} flex items-center justify-center">
-            {% if reachable %}
+        <!-- Connection Status Icon -->
+        {% if in_transition and transition_type == 'shutting_down' %}
+        <!-- Standby state - orange, screen off but hardware running -->
+        <div class="w-16 h-16 rounded-2xl bg-orange-500/20 flex items-center justify-center">
+            <svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        {% elif in_transition %}
+        <!-- Transition state - yellow pulsing -->
+        <div class="w-16 h-16 rounded-2xl bg-yellow-500/20 flex items-center justify-center">
+            <svg class="w-8 h-8 text-yellow-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+            </svg>
+        </div>
+        {% elif power_state == 'on' %}
+        <!-- TV is on - green -->
+        <div class="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center">
             <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
-            {% else %}
-            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
-            </svg>
-            {% endif %}
         </div>
+        {% else %}
+        <!-- TV is off - gray -->
+        <div class="w-16 h-16 rounded-2xl bg-gray-600/20 flex items-center justify-center">
+            <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        {% endif %}
 
         <div>
             <h2 class="text-xl font-semibold">{{ tv_info.name if tv_info else 'Samsung TV' }}</h2>
-            <p class="text-gray-400">
-                {% if reachable %}
-                    {% if power_state == 'on' %}
-                        Eingeschaltet
-                    {% elif power_state == 'standby' %}
-                        Standby
+            <p class="{% if in_transition and transition_type == 'shutting_down' %}text-orange-400{% elif in_transition %}text-yellow-400{% elif power_state == 'on' %}text-gray-400{% else %}text-gray-500{% endif %}">
+                {% if in_transition %}
+                    {% if transition_type == 'turning_on' %}
+                        Wird gestartet...
+                    {% elif transition_type == 'shutting_down' %}
+                        Standby <span class="text-sm opacity-75">- Hardware fährt herunter</span>
                     {% else %}
-                        Verbunden
+                        Wird beendet...
+                    {% endif %}
+                {% elif power_state == 'on' %}
+                    Eingeschaltet
+                    {% if just_confirmed %}
+                    <svg class="w-4 h-4 inline ml-1 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
                     {% endif %}
                 {% else %}
-                    Nicht erreichbar
+                    Ausgeschaltet
+                    {% if just_confirmed %}
+                    <svg class="w-4 h-4 inline ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {% endif %}
                 {% endif %}
             </p>
         </div>
     </div>
 
-    <!-- Wake TV Button when not connected -->
-    {% if not reachable %}
-    <button hx-post="{{ url_for('remote.power') }}"
-            hx-vals='{"action": "on"}'
-            hx-swap="none"
-            class="btn-remote bg-tv-accent hover:bg-indigo-600 px-4 py-2 rounded-lg flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-        </svg>
-        <span>TV aufwecken</span>
-    </button>
-    {% endif %}
+    <!-- Power Controls - always show both buttons -->
+    <div class="flex gap-2">
+        {% if in_transition %}
+        <!-- During transition, show disabled button with spinner -->
+        <div class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Bitte warten...</span>
+        </div>
+        {% elif power_state == 'on' %}
+        <!-- TV is on - show power off button -->
+        <button hx-post="{{ url_for('remote.power') }}"
+                hx-vals='{"action": "off"}'
+                hx-target="#tv-status-card"
+                hx-swap="innerHTML"
+                hx-disabled-elt="this"
+                class="btn-remote bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+            </svg>
+            <span>Ausschalten</span>
+        </button>
+        {% else %}
+        <!-- TV is off - show power on button -->
+        <button hx-post="{{ url_for('remote.power') }}"
+                hx-vals='{"action": "on"}'
+                hx-target="#tv-status-card"
+                hx-swap="innerHTML"
+                hx-disabled-elt="this"
+                class="btn-remote bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+            </svg>
+            <span>Einschalten</span>
+        </button>
+        {% endif %}
+    </div>
+</div>
 
-    <!-- Quick Stats -->
-    {% if reachable and tv_state %}
-    <div class="hidden sm:flex gap-6 text-center">
+<!-- Quick Stats - only show when TV is on AND we have estimated values -->
+{% if power_state == 'on' and tv_state and (tv_state.estimated_volume is not none or tv_state.estimated_channel) %}
+<div class="mt-4 pt-4 border-t border-gray-700">
+    <div class="flex gap-6 text-center">
         {% if tv_state.estimated_volume is not none %}
         <div>
             <div class="text-2xl font-bold">{{ tv_state.estimated_volume }}%</div>
@@ -64,9 +130,7 @@
         </div>
         {% endif %}
     </div>
-    {% endif %}
+    <p class="text-xs text-gray-600 mt-2">* Geschätzte Werte basierend auf gesendeten Befehlen</p>
 </div>
-
-{% if tv_state and (tv_state.estimated_volume is not none or tv_state.estimated_channel) %}
-<p class="text-xs text-gray-600 mt-4">* Geschätzte Werte basierend auf gesendeten Befehlen</p>
 {% endif %}
+</div>

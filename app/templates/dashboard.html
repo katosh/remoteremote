@@ -5,7 +5,7 @@
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
     <!-- TV Status Card -->
-    <div class="bg-tv-dark rounded-2xl p-6"
+    <div id="tv-status-card" class="bg-tv-dark rounded-2xl p-6"
          hx-get="{{ url_for('api.tv_status') }}"
          hx-trigger="every 10s"
          hx-swap="innerHTML">

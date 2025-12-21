@@ -5,8 +5,8 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required
 
-from ..models import User, Schedule, Log, TVState, db
-from ..services.tv_service import get_cached_status
+from ..models import User, Schedule, Log, TVState, Config, db
+from ..services.tv_service import get_cached_status, get_tv_service
 
 main_bp = Blueprint('main', __name__)
 
@@ -38,6 +38,16 @@ def dashboard():
     # Determine if TV is reachable and power state
     reachable = status['connected']
     power_state = status['power_state']
+    in_transition = status.get('in_transition', False)
+    transition_type = status.get('transition_type')
+    just_confirmed = status.get('just_confirmed', False)
+
+    # Check if TV has a token
+    tv = get_tv_service()
+    tv_has_token = tv.is_paired
+
+    # Favorite channels (not yet implemented as model, use empty list)
+    favorites = []
 
     # Nächste geplante Aktionen
     upcoming_schedules = Schedule.query.filter(
@@ -56,6 +66,11 @@ def dashboard():
         tv_state=tv_state,
         reachable=reachable,
         power_state=power_state,
-        upcoming_schedules=upcoming_schedules,
-        recent_logs=recent_logs
+        in_transition=in_transition,
+        transition_type=transition_type,
+        just_confirmed=just_confirmed,
+        tv_has_token=tv_has_token,
+        favorites=favorites,
+        schedules=upcoming_schedules,
+        logs=recent_logs
     )

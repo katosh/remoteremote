@@ -54,12 +54,21 @@ def index():
     status = get_cached_status()
     reachable = status['connected']
     power_state = status['power_state']
+    in_transition = status.get('in_transition', False)
+    transition_type = status.get('transition_type')
+
+    # Check if TV has a token (needed to know which controls are available)
+    tv = get_tv_service()
+    tv_has_token = tv.is_paired
 
     return render_template(
         'remote.html',
         expert_mode=expert_mode,
         reachable=reachable,
-        power_state=power_state
+        power_state=power_state,
+        in_transition=in_transition,
+        transition_type=transition_type,
+        tv_has_token=tv_has_token
     )
 
 
@@ -105,35 +114,49 @@ def send_key(key=None):
         return jsonify({'success': True, 'key': key, 'async': True})
 
 
+def _power_action_async(action: str):
+    """Execute power action in background thread."""
+    def _execute():
+        tv = get_tv_service()
+        if action == 'on':
+            tv.power_on()
+        else:
+            tv.power_off()
+    _run_async(_execute)
+
+
 @remote_bp.route('/power', methods=['POST'])
 @login_required
 def power():
     """TV ein-/ausschalten"""
+    from flask import render_template
+    from ..models import TVState
+
     action = request.form.get('action', 'toggle')
-    tv = get_tv_service()
 
     try:
         if action == 'on':
-            tv.power_on()
-            message = 'TV eingeschaltet (Wake-on-LAN)'
-            # Set cache to expected state - TV will be starting up
+            # Set cache immediately, send command async
             set_cached_power_state('on')
+            _power_action_async('on')
+            message = 'TV eingeschaltet (Wake-on-LAN)'
         elif action == 'off':
-            tv.power_off()
-            message = 'TV ausgeschaltet'
-            # Set cache to expected state - TV is now off/standby
+            # Set cache immediately, send command async
             set_cached_power_state('standby')
+            _power_action_async('off')
+            message = 'TV ausgeschaltet'
         else:
-            # Toggle basierend auf aktuellem Status
-            info = tv.get_info()
-            if info and info.power_state == 'on':
-                tv.power_off()
-                message = 'TV ausgeschaltet'
+            # Toggle based on current cached status (avoid blocking API call)
+            tv = get_tv_service()
+            status = get_cached_status()
+            if status['power_state'] == 'on':
                 set_cached_power_state('standby')
+                _power_action_async('off')
+                message = 'TV ausgeschaltet'
             else:
-                tv.power_on()
-                message = 'TV eingeschaltet (Wake-on-LAN)'
                 set_cached_power_state('on')
+                _power_action_async('on')
+                message = 'TV eingeschaltet (Wake-on-LAN)'
 
         log_event(
             level='INFO',
@@ -142,6 +165,36 @@ def power():
             details={'action': action},
             source='manual'
         )
+
+        # If HTMX request, return transition state HTML immediately
+        # Don't call get_cached_status() here - it would check API and might
+        # clear the transition before the UI even sees it. Let polling handle confirmation.
+        if request.headers.get('HX-Request'):
+            tv_state = TVState.get_instance()
+            # Return the transition state we just set up
+            if action == 'on' or (action == 'toggle' and message.startswith('TV eingeschaltet')):
+                return render_template(
+                    'partials/tv_status.html',
+                    power_state='turning_on',
+                    reachable=False,
+                    in_transition=True,
+                    transition_type='turning_on',
+                    just_confirmed=False,
+                    tv_state=tv_state,
+                    tv_info=None
+                )
+            else:
+                return render_template(
+                    'partials/tv_status.html',
+                    power_state='turning_off',
+                    reachable=False,
+                    in_transition=True,
+                    transition_type='turning_off',
+                    just_confirmed=False,
+                    tv_state=tv_state,
+                    tv_info=None
+                )
+
         return jsonify({'success': True, 'message': message})
     except Exception as e:
         log_event(
