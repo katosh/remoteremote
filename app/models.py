@@ -11,6 +11,20 @@ import hashlib
 db = SQLAlchemy()
 
 
+def safe_commit():
+    """Safely commit database changes with rollback on error.
+
+    Returns True if commit succeeded, False otherwise.
+    """
+    try:
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"[DB] Commit failed, rolled back: {e}", flush=True)
+        return False
+
+
 class Config(db.Model):
     """Konfigurationseinstellungen als Key-Value-Paare"""
     __tablename__ = 'config'

@@ -38,6 +38,14 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         f"sqlite:///{os.path.join(instance_dir, 'tvremote.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # SQLite engine options for better concurrency
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'connect_args': {
+            'timeout': 30,  # Wait up to 30 seconds for locks
+            'check_same_thread': False  # Allow multi-threaded access
+        },
+        'pool_pre_ping': True  # Verify connections before use
+    }
 
     # Session
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)

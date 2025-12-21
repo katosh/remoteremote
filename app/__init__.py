@@ -7,7 +7,8 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, PendingRollbackError
+from sqlalchemy import event
 
 from .models import db, User, init_db, ensure_tables_exist
 from .config import config
@@ -58,14 +59,24 @@ def create_app(config_name: str = None) -> Flask:
             try:
                 # Quick health check
                 db.session.execute(db.text("SELECT 1"))
-            except OperationalError:
-                # Database issue - try to recreate tables
+            except (OperationalError, PendingRollbackError):
+                # Database issue - rollback and try to recover
                 app.logger.warning("Database error detected, attempting recovery...")
                 try:
                     db.session.rollback()
                     ensure_tables_exist()
                 except Exception as e:
                     app.logger.error(f"Database recovery failed: {e}")
+
+    # Teardown handler to clean up failed transactions
+    @app.teardown_request
+    def cleanup_db_session(exception=None):
+        """Rollback any failed transactions to prevent PendingRollbackError"""
+        if exception is not None:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 
     # Blueprints registrieren
     from .views import main_bp, auth_bp, remote_bp, schedule_bp, settings_bp, api_bp
