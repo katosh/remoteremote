@@ -22,6 +22,7 @@ _status_cache: dict = {
     'info': None,
     'last_check': 0,
     'transition_until': 0,  # Timestamp when transition state ends
+    'transition_started': 0,  # Timestamp when transition began
     'transition_type': None,  # 'turning_on' or 'turning_off'
     'target_state': None,  # Expected state after transition ('on' or 'off')
     'just_confirmed': False,  # True when transition just completed
@@ -31,6 +32,10 @@ CACHE_TTL_SECONDS = 10  # Cache TV status for 10 seconds (shorter for responsive
 
 # Maximum transition duration (safety timeout if API never confirms)
 MAX_TRANSITION_SECONDS = 60  # Give up after 60 seconds if API never confirms
+
+# Minimum time to show transition state before checking API
+# This prevents flickering on slow connections where the command hasn't taken effect yet
+MIN_TRANSITION_SECONDS = 3
 
 
 class MockSamsungTV:
@@ -183,6 +188,7 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
         _status_cache['target_state'] = 'on'  # Remember expected end state
         if is_transition:
             _status_cache['transition_until'] = now + MAX_TRANSITION_SECONDS
+            _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_on'
     elif power_state in ('off', 'standby', 'turning_off'):
         # TV is turning off - set transition state
@@ -192,6 +198,7 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
         _status_cache['target_state'] = 'off'  # Remember expected end state
         if is_transition:
             _status_cache['transition_until'] = now + MAX_TRANSITION_SECONDS
+            _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_off'
 
     _status_cache['last_check'] = now
@@ -235,6 +242,23 @@ def get_cached_status(force_refresh: bool = False) -> dict:
 
     # During transition, actively check if TV has reached target state
     if in_transition:
+        transition_started = _status_cache.get('transition_started', 0)
+        transition_age = now - transition_started
+
+        # During the first few seconds, don't check API - just show transition state
+        # This prevents flickering on slow connections where command hasn't taken effect
+        if transition_age < MIN_TRANSITION_SECONDS:
+            return {
+                'connected': False,
+                'power_state': transition_type,
+                'info': None,
+                'cached': True,
+                'cache_age': 0,
+                'in_transition': True,
+                'transition_type': transition_type,
+                'transition_remaining': int(_status_cache['transition_until'] - now)
+            }
+
         tv = get_tv_service()
         try:
             # Quick ping first to avoid long blocking timeouts during shutdown
@@ -300,6 +324,45 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     'in_transition': False,
                     'transition_type': None,
                     'just_confirmed': _status_cache.get('just_confirmed', False)
+                }
+            elif transition_type == 'turning_on' and info and info.power_state != 'on':
+                # TV is responding but not fully on yet (still booting)
+                # Keep showing transition state
+                return {
+                    'connected': True,
+                    'power_state': 'turning_on',
+                    'info': info,
+                    'cached': False,
+                    'cache_age': 0,
+                    'in_transition': True,
+                    'transition_type': 'turning_on',
+                    'transition_remaining': int(_status_cache['transition_until'] - now)
+                }
+            elif transition_type == 'turning_on' and info is None:
+                # TV not responding yet during turn-on - still booting
+                # Keep showing transition state
+                return {
+                    'connected': False,
+                    'power_state': 'turning_on',
+                    'info': None,
+                    'cached': False,
+                    'cache_age': 0,
+                    'in_transition': True,
+                    'transition_type': 'turning_on',
+                    'transition_remaining': int(_status_cache['transition_until'] - now)
+                }
+            elif transition_type == 'turning_off' and info and info.power_state == 'on':
+                # TV still reports as on - power-off command hasn't taken effect yet
+                # Keep showing transition state to prevent flickering
+                return {
+                    'connected': True,
+                    'power_state': 'turning_off',
+                    'info': info,
+                    'cached': False,
+                    'cache_age': 0,
+                    'in_transition': True,
+                    'transition_type': 'turning_off',
+                    'transition_remaining': int(_status_cache['transition_until'] - now)
                 }
             elif transition_type == 'turning_off' and info and info.power_state != 'on':
                 # TV is in standby - screen off but hardware still running
