@@ -239,65 +239,92 @@ def get_cached_status(force_refresh: bool = False) -> dict:
     # Check if we're in a transition state (power button was just pressed)
     in_transition = now < _status_cache.get('transition_until', 0)
     transition_type = _status_cache.get('transition_type') if in_transition else None
+    target_state = _status_cache.get('target_state')  # 'on' or 'off' - the ultimate goal
 
     # During transition, actively check if TV has reached target state
     if in_transition:
         transition_started = _status_cache.get('transition_started', 0)
         transition_age = now - transition_started
 
-        # During the first few seconds, don't check API - just show transition state
-        # This prevents flickering on slow connections where command hasn't taken effect
-        if transition_age < MIN_TRANSITION_SECONDS:
-            return {
-                'connected': False,
-                'power_state': transition_type,
-                'info': None,
-                'cached': True,
-                'cache_age': 0,
-                'in_transition': True,
-                'transition_type': transition_type,
-                'transition_remaining': int(_status_cache['transition_until'] - now)
-            }
+        # Safety check: if transition_type is None but we're still in transition,
+        # derive it from target_state to prevent showing wrong state
+        if transition_type is None and target_state:
+            transition_type = 'turning_on' if target_state == 'on' else 'turning_off'
 
-        tv = get_tv_service()
-        try:
-            # Quick ping first to avoid long blocking timeouts during shutdown
-            # ping() uses 1-second timeout vs get_info()'s 5-10 seconds
-            if not tv.ping(timeout=1.0):
-                # TV not reachable - if turning off/shutting down, it's now fully off
-                if transition_type in ('turning_off', 'shutting_down'):
-                    if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
-                        print(f"[TV Service] TV is now OFF (ping failed) - fully powered down", flush=True)
-                    _status_cache['transition_until'] = 0
-                    _status_cache['transition_type'] = None
-                    _status_cache['target_state'] = None
-                    _status_cache['connected'] = False
-                    _status_cache['power_state'] = 'off'
-                    _status_cache['info'] = None
-                    _status_cache['last_check'] = now
-                    _status_cache['just_confirmed'] = True
-                    _status_cache['confirmed_at'] = now
-                    return {
-                        'connected': False,
-                        'power_state': 'off',
-                        'info': None,
-                        'cached': False,
-                        'cache_age': 0,
-                        'in_transition': False,
-                        'transition_type': None,
-                        'just_confirmed': True
-                    }
-                # If turning on and ping fails, TV is still starting up - return transition state
+        # If we still don't know the transition type, clear transition and return cached state
+        if transition_type is None:
+            _status_cache['transition_until'] = 0
+            # Fall through to normal cache logic below
+
+        else:
+            # During the first few seconds, don't check API - just show transition state
+            # This prevents flickering on slow connections where command hasn't taken effect
+            if transition_age < MIN_TRANSITION_SECONDS:
                 return {
                     'connected': False,
-                    'power_state': 'turning_on',
+                    'power_state': transition_type,
                     'info': None,
                     'cached': True,
-                    'cache_age': cache_age,
+                    'cache_age': 0,
                     'in_transition': True,
-                    'transition_type': 'turning_on',
+                    'transition_type': transition_type,
                     'transition_remaining': int(_status_cache['transition_until'] - now)
                 }
+
+            tv = get_tv_service()
+            try:
+                # Quick ping first to avoid long blocking timeouts during shutdown
+                # ping() uses 1-second timeout vs get_info()'s 5-10 seconds
+                if not tv.ping(timeout=1.0):
+                    # TV not reachable - determine outcome based on target_state
+                    if target_state == 'off' or transition_type in ('turning_off', 'shutting_down'):
+                        # Target was off and TV is unreachable - success, it's off
+                        if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
+                            print(f"[TV Service] TV is now OFF (ping failed) - fully powered down", flush=True)
+                        _status_cache['transition_until'] = 0
+                        _status_cache['transition_type'] = None
+                        _status_cache['target_state'] = None
+                        _status_cache['connected'] = False
+                        _status_cache['power_state'] = 'off'
+                        _status_cache['info'] = None
+                        _status_cache['last_check'] = now
+                        _status_cache['just_confirmed'] = True
+                        _status_cache['confirmed_at'] = now
+                        return {
+                            'connected': False,
+                            'power_state': 'off',
+                            'info': None,
+                            'cached': False,
+                            'cache_age': 0,
+                            'in_transition': False,
+                            'transition_type': None,
+                            'just_confirmed': True
+                        }
+                    elif target_state == 'on' or transition_type == 'turning_on':
+                        # Target was on but TV not reachable - still booting
+                        return {
+                            'connected': False,
+                            'power_state': 'turning_on',
+                            'info': None,
+                            'cached': True,
+                            'cache_age': cache_age,
+                            'in_transition': True,
+                            'transition_type': 'turning_on',
+                            'transition_remaining': int(_status_cache['transition_until'] - now)
+                        }
+                    else:
+                        # Unknown state - shouldn't happen, but default to off for safety
+                        _status_cache['transition_until'] = 0
+                        _status_cache['transition_type'] = None
+                        return {
+                            'connected': False,
+                            'power_state': 'off',
+                            'info': None,
+                            'cached': True,
+                            'cache_age': 0,
+                            'in_transition': False,
+                            'transition_type': None
+                        }
 
             # Ping succeeded - now safe to call get_info() (TV is responsive)
             info = tv.get_info()
@@ -421,8 +448,8 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     'transition_type': 'shutting_down',
                     'transition_remaining': int(_status_cache['transition_until'] - now)
                 }
-            elif transition_type in ('turning_off', 'shutting_down') and info is None:
-                # TV is now fully off (unreachable)
+            elif info is None and (target_state == 'off' or transition_type in ('turning_off', 'shutting_down')):
+                # TV is now fully off (unreachable) and we were turning off
                 if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
                     print(f"[TV Service] TV is now OFF (unreachable) - fully powered down", flush=True)
                 _status_cache['transition_until'] = 0
@@ -444,9 +471,22 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     'transition_type': None,
                     'just_confirmed': True
                 }
+            elif info is None and (target_state == 'on' or transition_type == 'turning_on'):
+                # TV not responding during turn-on - still booting
+                return {
+                    'connected': False,
+                    'power_state': 'turning_on',
+                    'info': None,
+                    'cached': False,
+                    'cache_age': 0,
+                    'in_transition': True,
+                    'transition_type': 'turning_on',
+                    'transition_remaining': int(_status_cache['transition_until'] - now)
+                }
         except Exception as e:
-            # API call failed - if turning off/shutting down, this means TV is now fully off
-            if transition_type in ('turning_off', 'shutting_down'):
+            # API call failed - determine outcome based on target_state
+            if target_state == 'off' or transition_type in ('turning_off', 'shutting_down'):
+                # Target was off and API failed - TV is fully off
                 if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
                     print(f"[TV Service] TV unreachable - fully powered down", flush=True)
                 _status_cache['transition_until'] = 0
@@ -468,6 +508,8 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     'transition_type': None,
                     'just_confirmed': True
                 }
+            # Target was on but API failed - still booting, keep transition
+            # (fall through to transition state below)
 
         # Still in transition - but check if another request already detected completion
         if _status_cache.get('power_state') == 'off' and _status_cache.get('transition_type') is None:
@@ -493,11 +535,14 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                 'just_confirmed': _status_cache.get('just_confirmed', False)
             }
 
-        # Still in transition - return transition state
+        # Still in transition - return transition state based on target_state for safety
         current_transition = _status_cache.get('transition_type') or transition_type
+        if current_transition is None:
+            # Derive from target_state if we still don't know
+            current_transition = 'turning_on' if target_state == 'on' else 'turning_off' if target_state == 'off' else 'turning_off'
         return {
             'connected': False,
-            'power_state': current_transition,  # 'turning_on', 'turning_off', or 'shutting_down'
+            'power_state': current_transition,
             'info': None,
             'cached': True,
             'cache_age': cache_age,
