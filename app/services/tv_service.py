@@ -34,8 +34,8 @@ CACHE_TTL_SECONDS = 10  # Cache TV status for 10 seconds (shorter for responsive
 MAX_TRANSITION_SECONDS = 60  # Give up after 60 seconds if API never confirms
 
 # Minimum time to show transition state before checking API
-# This prevents flickering on slow connections where the command hasn't taken effect yet
-MIN_TRANSITION_SECONDS = 3
+# Keep this short to not miss standby phase, but long enough to avoid immediate flicker
+MIN_TRANSITION_SECONDS = 0.5
 
 
 class MockSamsungTV:

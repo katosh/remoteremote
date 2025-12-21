@@ -118,10 +118,17 @@ def _power_action_async(action: str):
     """Execute power action in background thread."""
     def _execute():
         tv = get_tv_service()
-        if action == 'on':
-            tv.power_on()
-        else:
-            tv.power_off()
+        print(f"[Power] Executing power action: {action}", flush=True)
+        try:
+            if action == 'on':
+                result = tv.power_on()
+                print(f"[Power] power_on() returned: {result}", flush=True)
+            else:
+                result = tv.power_off()
+                print(f"[Power] power_off() returned: {result}", flush=True)
+        except Exception as e:
+            print(f"[Power] Error executing power action: {e}", flush=True)
+            raise
     _run_async(_execute)
 
 
