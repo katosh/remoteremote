@@ -1,26 +1,49 @@
 """
-Zeitplanungs-Views
+Schedule Views
 """
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required
+from flask_babel import gettext as _
+import pytz
 
-from ..models import db, Schedule
+from ..models import db, Schedule, Config
 from ..services.logger import log_event
 from ..services.scheduler import calculate_next_run, add_schedule, update_schedule, remove_schedule
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
 
+def get_tv_timezone_info():
+    """Get current timezone and time for display."""
+    tz_name = Config.get('timezone') or 'Europe/Berlin'
+    try:
+        tz = pytz.timezone(tz_name)
+        current_time = datetime.now(tz)
+        return {
+            'name': tz_name,
+            'current_time': current_time.strftime('%H:%M'),
+            'current_date': current_time.strftime('%d.%m.%Y')
+        }
+    except Exception:
+        return {
+            'name': tz_name,
+            'current_time': datetime.now().strftime('%H:%M'),
+            'current_date': datetime.now().strftime('%d.%m.%Y')
+        }
+
+
 @schedule_bp.route('/')
 @login_required
 def index():
-    """Zeitplan-Übersicht"""
+    """Schedule overview"""
     schedules = Schedule.query.order_by(Schedule.next_run).all()
+    tz_info = get_tv_timezone_info()
 
     return render_template(
         'schedule.html',
-        schedules=schedules
+        schedules=schedules,
+        timezone_info=tz_info
     )
 
 

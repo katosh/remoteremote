@@ -349,10 +349,10 @@ class PhilipsTVService(BaseTVService):
                 status['channel_name'] = channel
             else:
                 status['activity'] = 'on'
-                status['activity_name'] = 'Eingeschaltet'
+                status['activity_name'] = 'On'
         except Exception:
             status['activity'] = 'on'
-            status['activity_name'] = 'Eingeschaltet'
+            status['activity_name'] = 'On'
 
         # Get volume
         try:

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Bearbeiten' if schedule else 'Neuer' }} Zeitplan - TV Fernbedienung{% endblock %}
+{% block title %}{{ _('Edit') if schedule else _('New') }} {{ _('Schedule') }} - {{ _('TV Remote Control') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-6" x-data="{
@@ -15,7 +15,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
-        <h1 class="text-2xl font-bold">{{ 'Zeitplan bearbeiten' if schedule else 'Neuer Zeitplan' }}</h1>
+        <h1 class="text-2xl font-bold">{{ _('Edit Schedule') if schedule else _('New Schedule') }}</h1>
     </div>
 
     <!-- Form -->
@@ -24,7 +24,7 @@
 
         <!-- Name -->
         <div class="bg-tv-dark rounded-xl p-6">
-            <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Name</label>
+            <label for="name" class="block text-sm font-medium text-gray-300 mb-2">{{ _('Name') }}</label>
             <input type="text"
                    name="name"
                    id="name"
@@ -33,9 +33,9 @@
                    class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl
                           text-white placeholder-gray-500
                           focus:outline-none focus:ring-2 focus:ring-tv-accent focus:border-transparent"
-                   placeholder="z.B. Morgens einschalten">
+                   placeholder="{{ _('e.g. Morning turn on') }}">
 
-            <label for="description" class="block text-sm font-medium text-gray-300 mb-2 mt-4">Beschreibung (optional)</label>
+            <label for="description" class="block text-sm font-medium text-gray-300 mb-2 mt-4">{{ _('Description (optional)') }}</label>
             <input type="text"
                    name="description"
                    id="description"
@@ -43,12 +43,12 @@
                    class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl
                           text-white placeholder-gray-500
                           focus:outline-none focus:ring-2 focus:ring-tv-accent focus:border-transparent"
-                   placeholder="Kurze Beschreibung">
+                   placeholder="{{ _('Short description') }}">
         </div>
 
         <!-- Schedule Time -->
         <div class="bg-tv-dark rounded-xl p-6">
-            <h2 class="text-lg font-semibold mb-4">Zeitplanung</h2>
+            <h2 class="text-lg font-semibold mb-4">{{ _('Scheduling') }}</h2>
 
             <!-- Mode Toggle -->
             <div class="flex gap-2 mb-4">
@@ -56,13 +56,13 @@
                         @click="cronMode = 'simple'"
                         :class="cronMode === 'simple' ? 'bg-tv-accent' : 'bg-gray-700'"
                         class="px-4 py-2 rounded-lg transition-colors">
-                    Einfach
+                    {{ _('Simple') }}
                 </button>
                 <button type="button"
                         @click="cronMode = 'custom'"
                         :class="cronMode === 'custom' ? 'bg-tv-accent' : 'bg-gray-700'"
                         class="px-4 py-2 rounded-lg transition-colors">
-                    Cron
+                    {{ _('Cron') }}
                 </button>
             </div>
 
@@ -70,7 +70,7 @@
             <div x-show="cronMode === 'simple'" class="space-y-4" x-data="{ repeat: 'daily' }">
                 <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">Stunde</label>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Hour') }}</label>
                         <select name="hour"
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                        focus:outline-none focus:ring-2 focus:ring-tv-accent">
@@ -80,7 +80,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">Minute</label>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Minute') }}</label>
                         <select name="minute"
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                        focus:outline-none focus:ring-2 focus:ring-tv-accent">
@@ -90,23 +90,23 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">Wiederholung</label>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Repeat') }}</label>
                         <select name="repeat" x-model="repeat"
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                        focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                            <option value="once">Einmalig</option>
-                            <option value="daily" selected>Täglich</option>
-                            <option value="weekdays">Mo-Fr</option>
-                            <option value="weekends">Sa-So</option>
-                            <option value="weekly">Wöchentlich</option>
+                            <option value="once">{{ _('Once') }}</option>
+                            <option value="daily" selected>{{ _('Daily') }}</option>
+                            <option value="weekdays">{{ _('Mon-Fri') }}</option>
+                            <option value="weekends">{{ _('Sat-Sun') }}</option>
+                            <option value="weekly">{{ _('Weekly') }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div x-show="repeat === 'weekly'" x-cloak>
-                    <label class="block text-sm text-gray-400 mb-2">Wochentage</label>
+                    <label class="block text-sm text-gray-400 mb-2">{{ _('Weekdays') }}</label>
                     <div class="flex gap-2">
-                        {% for day, name in [('1', 'Mo'), ('2', 'Di'), ('3', 'Mi'), ('4', 'Do'), ('5', 'Fr'), ('6', 'Sa'), ('0', 'So')] %}
+                        {% for day, name in [('1', _('Mon')), ('2', _('Tue')), ('3', _('Wed')), ('4', _('Thu')), ('5', _('Fri')), ('6', _('Sat')), ('0', _('Sun'))] %}
                         <label class="flex-1">
                             <input type="checkbox" name="weekdays" value="{{ day }}" class="sr-only peer">
                             <span class="block text-center py-2 rounded-lg bg-gray-700 peer-checked:bg-tv-accent transition-colors cursor-pointer">
@@ -120,45 +120,45 @@
 
             <!-- Cron Mode -->
             <div x-show="cronMode === 'custom'" x-cloak>
-                <label class="block text-sm text-gray-400 mb-2">Cron-Ausdruck</label>
+                <label class="block text-sm text-gray-400 mb-2">{{ _('Cron Expression') }}</label>
                 <input type="text"
                        name="cron_expression"
                        value="{{ schedule.cron_expression if schedule else '0 7 * * *' }}"
                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white font-mono
                               focus:outline-none focus:ring-2 focus:ring-tv-accent"
                        placeholder="0 7 * * *">
-                <p class="text-xs text-gray-500 mt-2">Format: Minute Stunde Tag Monat Wochentag</p>
+                <p class="text-xs text-gray-500 mt-2">{{ _('Format: Minute Hour Day Month Weekday') }}</p>
             </div>
         </div>
 
         <!-- Action Type -->
         <div class="bg-tv-dark rounded-xl p-6">
-            <h2 class="text-lg font-semibold mb-4">Aktion</h2>
+            <h2 class="text-lg font-semibold mb-4">{{ _('Action') }}</h2>
 
             <div class="flex flex-wrap gap-2 mb-4">
                 <button type="button"
                         @click="actionType = 'startup'"
                         :class="actionType === 'startup' ? 'bg-tv-accent' : 'bg-gray-700'"
                         class="px-4 py-2 rounded-lg transition-colors">
-                    Startup
+                    {{ _('Startup') }}
                 </button>
                 <button type="button"
                         @click="actionType = 'power'"
                         :class="actionType === 'power' ? 'bg-tv-accent' : 'bg-gray-700'"
                         class="px-4 py-2 rounded-lg transition-colors">
-                    Power
+                    {{ _('Power') }}
                 </button>
                 <button type="button"
                         @click="actionType = 'key'"
                         :class="actionType === 'key' ? 'bg-tv-accent' : 'bg-gray-700'"
                         class="px-4 py-2 rounded-lg transition-colors">
-                    Einzeltaste
+                    {{ _('Single Key') }}
                 </button>
                 <button type="button"
                         @click="actionType = 'sequence'"
                         :class="actionType === 'sequence' ? 'bg-tv-accent' : 'bg-gray-700'"
                         class="px-4 py-2 rounded-lg transition-colors">
-                    Sequenz
+                    {{ _('Sequence') }}
                 </button>
             </div>
 
@@ -166,27 +166,27 @@
 
             <!-- Startup (Power on + Channel + Volume) -->
             <div x-show="actionType === 'startup'" x-cloak class="space-y-4">
-                <p class="text-sm text-gray-400">TV einschalten und optional Kanal und Lautstärke setzen.</p>
+                <p class="text-sm text-gray-400">{{ _('Turn on TV and optionally set channel and volume.') }}</p>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">Kanal (optional)</label>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Channel (optional)') }}</label>
                         <input type="number"
                                name="startup_channel"
                                min="1"
                                max="9999"
-                               placeholder="z.B. 1"
+                               placeholder="{{ _('e.g. 1') }}"
                                value="{{ schedule.get_action_data().get('channel', '') if schedule and schedule.action_type == 'startup' else '' }}"
                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                       placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tv-accent">
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">Lautstärke (optional)</label>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Volume (optional)') }}</label>
                         <input type="number"
                                name="startup_volume"
                                min="0"
                                max="100"
-                               placeholder="z.B. 20"
+                               placeholder="{{ _('e.g. 20') }}"
                                value="{{ schedule.get_action_data().get('volume', '') if schedule and schedule.action_type == 'startup' else '' }}"
                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                       placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tv-accent">
@@ -194,7 +194,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">Wartezeit nach Einschalten (Sekunden)</label>
+                    <label class="block text-sm text-gray-400 mb-2">{{ _('Wait time after turn on (seconds)') }}</label>
                     <input type="number"
                            name="startup_wait"
                            min="5"
@@ -202,13 +202,13 @@
                            value="{{ schedule.get_action_data().get('wait', 15) if schedule and schedule.action_type == 'startup' else 15 }}"
                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                   focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                    <p class="text-xs text-gray-500 mt-1">Zeit bis TV bereit ist (Standard: 15s)</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ _('Time until TV is ready (default: 15s)') }}</p>
                 </div>
             </div>
 
             <!-- Power Selection -->
             <div x-show="actionType === 'power'" x-cloak>
-                <label class="block text-sm text-gray-400 mb-2">Power-Aktion</label>
+                <label class="block text-sm text-gray-400 mb-2">{{ _('Power Action') }}</label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="relative">
                         <input type="radio" name="power_action" value="on" {{ 'checked' if not schedule or schedule.action_type != 'power' or schedule.get_action_data().get('action', 'on') == 'on' else '' }} class="sr-only peer">
@@ -218,7 +218,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                             </svg>
-                            <span class="font-medium">Einschalten</span>
+                            <span class="font-medium">{{ _('Turn On') }}</span>
                             <p class="text-xs text-gray-400 mt-1">Wake-on-LAN</p>
                         </div>
                     </label>
@@ -230,7 +230,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                             </svg>
-                            <span class="font-medium">Ausschalten</span>
+                            <span class="font-medium">{{ _('Turn Off') }}</span>
                             <p class="text-xs text-gray-400 mt-1">Power off</p>
                         </div>
                     </label>
@@ -239,35 +239,35 @@
 
             <!-- Key Selection -->
             <div x-show="actionType === 'key'" x-cloak>
-                <label class="block text-sm text-gray-400 mb-2">Taste</label>
+                <label class="block text-sm text-gray-400 mb-2">{{ _('Key') }}</label>
                 <select name="key"
                         class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
                                focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                    <optgroup label="Power">
-                        <option value="KEY_POWER">Power Ein/Aus</option>
-                        <option value="KEY_POWEROFF">Ausschalten</option>
+                    <optgroup label="{{ _('Power') }}">
+                        <option value="KEY_POWER">{{ _('Power On/Off') }}</option>
+                        <option value="KEY_POWEROFF">{{ _('Turn Off') }}</option>
                     </optgroup>
-                    <optgroup label="Navigation">
-                        <option value="KEY_UP">Hoch</option>
-                        <option value="KEY_DOWN">Runter</option>
-                        <option value="KEY_LEFT">Links</option>
-                        <option value="KEY_RIGHT">Rechts</option>
-                        <option value="KEY_ENTER">OK/Enter</option>
-                        <option value="KEY_RETURN">Zurück</option>
-                        <option value="KEY_EXIT">Exit</option>
+                    <optgroup label="{{ _('Navigation') }}">
+                        <option value="KEY_UP">{{ _('Up') }}</option>
+                        <option value="KEY_DOWN">{{ _('Down') }}</option>
+                        <option value="KEY_LEFT">{{ _('Left') }}</option>
+                        <option value="KEY_RIGHT">{{ _('Right') }}</option>
+                        <option value="KEY_ENTER">{{ _('OK/Enter') }}</option>
+                        <option value="KEY_RETURN">{{ _('Back') }}</option>
+                        <option value="KEY_EXIT">{{ _('Exit') }}</option>
                     </optgroup>
-                    <optgroup label="Lautstärke">
-                        <option value="KEY_VOLUP">Lauter</option>
-                        <option value="KEY_VOLDOWN">Leiser</option>
-                        <option value="KEY_MUTE">Stumm</option>
+                    <optgroup label="{{ _('Volume') }}">
+                        <option value="KEY_VOLUP">{{ _('Volume Up') }}</option>
+                        <option value="KEY_VOLDOWN">{{ _('Volume Down') }}</option>
+                        <option value="KEY_MUTE">{{ _('Mute') }}</option>
                     </optgroup>
-                    <optgroup label="Kanäle">
-                        <option value="KEY_CHUP">Kanal +</option>
-                        <option value="KEY_CHDOWN">Kanal -</option>
-                        <option value="KEY_GUIDE">TV Guide</option>
+                    <optgroup label="{{ _('Channels') }}">
+                        <option value="KEY_CHUP">{{ _('Channel +') }}</option>
+                        <option value="KEY_CHDOWN">{{ _('Channel -') }}</option>
+                        <option value="KEY_GUIDE">{{ _('TV Guide') }}</option>
                     </optgroup>
-                    <optgroup label="Apps">
-                        <option value="KEY_HOME">Home</option>
+                    <optgroup label="{{ _('Apps') }}">
+                        <option value="KEY_HOME">{{ _('Home') }}</option>
                         <option value="KEY_NETFLIX">Netflix</option>
                         <option value="KEY_AMAZON">Prime Video</option>
                         <option value="KEY_YOUTUBE">YouTube</option>
@@ -278,7 +278,7 @@
             <!-- Sequence Input -->
             <div x-show="actionType === 'sequence'" x-cloak class="space-y-4">
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">Tasten (kommagetrennt)</label>
+                    <label class="block text-sm text-gray-400 mb-2">{{ _('Keys (comma-separated)') }}</label>
                     <input type="text"
                            name="sequence_keys"
                            value=""
@@ -287,7 +287,7 @@
                            placeholder="KEY_1, KEY_2, KEY_3">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">Verzögerung zwischen Tasten (ms)</label>
+                    <label class="block text-sm text-gray-400 mb-2">{{ _('Delay between keys (ms)') }}</label>
                     <input type="number"
                            name="sequence_delay"
                            value="300"
@@ -303,7 +303,7 @@
         <!-- Enabled Toggle (only when editing) -->
         <div class="bg-tv-dark rounded-xl p-6" x-data="{ enabled: {{ 'true' if schedule.enabled else 'false' }} }">
             <div class="flex items-center justify-between">
-                <span class="text-lg">Aktiviert</span>
+                <span class="text-lg">{{ _('Enabled') }}</span>
                 <button type="button"
                         @click="enabled = !enabled"
                         class="relative inline-flex h-6 w-11 items-center flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-tv-accent"
@@ -322,14 +322,14 @@
         <div class="flex gap-4">
             <button type="submit"
                     class="flex-1 py-4 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
-                {{ 'Speichern' if schedule else 'Erstellen' }}
+                {{ _('Save') if schedule else _('Create') }}
             </button>
             {% if schedule %}
             <button type="button"
                     hx-post="{{ url_for('schedule.delete', schedule_id=schedule.id) }}"
-                    hx-confirm="Zeitplan wirklich löschen?"
+                    hx-confirm="{{ _('Really delete schedule?') }}"
                     class="px-6 py-4 bg-red-600 hover:bg-red-500 rounded-xl font-medium transition-colors">
-                Löschen
+                {{ _('Delete') }}
             </button>
             {% endif %}
         </div>

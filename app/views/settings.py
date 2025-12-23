@@ -3,6 +3,7 @@ Settings Views
 """
 import os
 import time
+import pytz
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required
 from flask_babel import gettext as _
@@ -14,6 +15,51 @@ from ..services.logger import log_event
 from ..services.discovery import discover_samsung_tvs, discover_all_tvs
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
+
+# Common timezones for the selector (grouped by region)
+COMMON_TIMEZONES = [
+    # Europe
+    'Europe/Berlin',
+    'Europe/London',
+    'Europe/Paris',
+    'Europe/Rome',
+    'Europe/Madrid',
+    'Europe/Amsterdam',
+    'Europe/Brussels',
+    'Europe/Vienna',
+    'Europe/Zurich',
+    'Europe/Stockholm',
+    'Europe/Oslo',
+    'Europe/Copenhagen',
+    'Europe/Helsinki',
+    'Europe/Warsaw',
+    'Europe/Prague',
+    'Europe/Athens',
+    'Europe/Moscow',
+    # Americas
+    'America/New_York',
+    'America/Chicago',
+    'America/Denver',
+    'America/Los_Angeles',
+    'America/Toronto',
+    'America/Vancouver',
+    'America/Sao_Paulo',
+    'America/Mexico_City',
+    # Asia
+    'Asia/Tokyo',
+    'Asia/Shanghai',
+    'Asia/Hong_Kong',
+    'Asia/Singapore',
+    'Asia/Seoul',
+    'Asia/Dubai',
+    'Asia/Kolkata',
+    # Pacific
+    'Australia/Sydney',
+    'Australia/Melbourne',
+    'Pacific/Auckland',
+    # UTC
+    'UTC',
+]
 
 
 @settings_bp.route('/')
@@ -31,6 +77,9 @@ def settings_view():
     # Count active sessions
     session_count = Session.query.filter_by(user_id=current_user.id).count()
 
+    # Get timezone from database, fallback to config
+    current_timezone = Config.get('timezone', current_app.config.get('TIMEZONE', 'Europe/Berlin'))
+
     return render_template(
         'settings.html',
         config={
@@ -40,7 +89,10 @@ def settings_view():
         },
         tv_info=tv_info,
         has_token=has_token,
-        session_count=session_count
+        session_count=session_count,
+        log_retention_days=current_app.config.get('LOG_RETENTION_DAYS', 365),
+        timezone=current_timezone,
+        timezones=COMMON_TIMEZONES
     )
 
 
@@ -67,6 +119,31 @@ def change_language():
     )
 
     flash(_('Language changed successfully.'), 'success')
+    return redirect(url_for('settings.settings_view'))
+
+
+@settings_bp.route('/timezone', methods=['POST'])
+@login_required
+def change_timezone():
+    """Change application timezone"""
+    timezone = request.form.get('timezone')
+
+    # Validate timezone
+    if timezone not in COMMON_TIMEZONES:
+        flash(_('Invalid timezone selected.'), 'error')
+        return redirect(url_for('settings.settings_view'))
+
+    Config.set('timezone', timezone)
+
+    log_event(
+        level='INFO',
+        category='config',
+        message=_('Timezone changed'),
+        details={'timezone': timezone},
+        source='manual'
+    )
+
+    flash(_('Timezone changed successfully.'), 'success')
     return redirect(url_for('settings.settings_view'))
 
 

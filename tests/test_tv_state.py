@@ -132,7 +132,7 @@ class TestTVStateDisplay:
             assert response.status_code == 200
             html = response.data.decode('utf-8')
             # Should show transition text
-            assert 'Wird gestartet' in html or 'animate-pulse' in html
+            assert 'Starting...' in html or 'animate-pulse' in html
 
     def test_api_mini_status_when_off(self, auth_client, app):
         """Test mini status shows off state"""
@@ -151,7 +151,7 @@ class TestTVStateDisplay:
                                        headers={'HX-Request': 'true'})
             assert response.status_code == 200
             html = response.data.decode('utf-8')
-            assert 'Ausgeschaltet' in html
+            assert 'Powered Off' in html
 
 
 class TestPowerActions:

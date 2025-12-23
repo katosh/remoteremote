@@ -2,6 +2,7 @@
 API-Endpoints für HTMX und JSON-Responses
 """
 from flask import Blueprint, jsonify, render_template, request
+from flask_babel import gettext as _
 from flask_login import login_required
 
 from ..models import TVState, Schedule, Log, db
@@ -35,29 +36,29 @@ def tv_status():
             checkmark = '<svg class="w-3 h-3 inline ml-1 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' if just_confirmed else ''
             if in_transition:
                 if transition_type == 'turning_on':
-                    return '''<div class="flex items-center gap-3">
+                    return f'''<div class="flex items-center gap-3">
                         <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
-                        <span class="text-sm text-yellow-400">Wird gestartet...</span>
+                        <span class="text-sm text-yellow-400">{_('Starting...')}</span>
                     </div>'''
                 elif transition_type == 'shutting_down':
-                    return '''<div class="flex items-center gap-3">
+                    return f'''<div class="flex items-center gap-3">
                         <div class="w-3 h-3 rounded-full bg-orange-400"></div>
-                        <span class="text-sm text-orange-400">Standby</span>
+                        <span class="text-sm text-orange-400">{_('Standby')}</span>
                     </div>'''
                 else:
-                    return '''<div class="flex items-center gap-3">
+                    return f'''<div class="flex items-center gap-3">
                         <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
-                        <span class="text-sm text-yellow-400">Wird beendet...</span>
+                        <span class="text-sm text-yellow-400">{_('Shutting down...')}</span>
                     </div>'''
             elif power_state == 'on':
                 return f'''<div class="flex items-center gap-3">
                     <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span class="text-sm">Eingeschaltet{checkmark}</span>
+                    <span class="text-sm">{_('Powered On')}{checkmark}</span>
                 </div>'''
             else:
                 return f'''<div class="flex items-center gap-3">
                     <div class="w-3 h-3 rounded-full bg-gray-500"></div>
-                    <span class="text-sm text-gray-400">Ausgeschaltet{checkmark}</span>
+                    <span class="text-sm text-gray-400">{_('Powered Off')}{checkmark}</span>
                 </div>'''
         return render_template(
             'partials/tv_status.html',

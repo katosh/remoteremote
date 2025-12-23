@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Fernbedienung - TV Fernbedienung{% endblock %}
+{% block title %}{{ _('Remote') }} - {{ _('TV Remote Control') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto px-4 py-6" x-data="{ expertMode: false }">
     <!-- Mode Toggle -->
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-xl font-bold">Fernbedienung</h1>
+        <h1 class="text-xl font-bold">{{ _('Remote') }}</h1>
         <label class="flex items-center cursor-pointer">
-            <span class="text-sm text-gray-400 mr-2">Experten</span>
+            <span class="text-sm text-gray-400 mr-2">{{ _('Expert') }}</span>
             <div class="relative">
                 <input type="checkbox" x-model="expertMode" class="sr-only">
                 <div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner"
@@ -27,7 +27,7 @@
              hx-swap="innerHTML">
             <div class="flex items-center gap-3">
                 <div class="w-3 h-3 rounded-full {{ 'bg-green-500' if reachable else 'bg-red-500' }}"></div>
-                <span class="text-sm">{{ 'Verbunden' if reachable else 'Nicht verbunden' }}</span>
+                <span class="text-sm">{{ _('Connected') if reachable else _('Not connected') }}</span>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                 </svg>
-                <span class="text-xs mt-1">Ein</span>
+                <span class="text-xs mt-1">{{ _('On') }}</span>
             </button>
 
             <!-- Power off (requires token) -->
@@ -62,7 +62,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                 </svg>
-                <span class="text-xs mt-1">Aus</span>
+                <span class="text-xs mt-1">{{ _('Off') }}</span>
             </button>
         </div>
 
@@ -168,25 +168,25 @@
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Zurück
+                {{ _('Back') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_HOME') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Home
+                {{ _('Home') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Stumm
+                {{ _('Mute') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_SOURCE') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Quelle
+                {{ _('Source') }}
             </button>
         </div>
 
@@ -208,7 +208,7 @@
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-nav text-sm">
-                Vorher
+                {{ _('Previous') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_0') }}"
                     hx-swap="none"
@@ -220,13 +220,13 @@
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-nav text-sm">
-                Liste
+                {{ _('List') }}
             </button>
         </div>
 
         <!-- Direct Channel Input -->
         <div class="bg-gray-800 rounded-xl p-4">
-            <label class="block text-sm text-gray-400 mb-2">Direkt zu Kanal:</label>
+            <label class="block text-sm text-gray-400 mb-2">{{ _('Go to channel:') }}</label>
             <form class="flex gap-2" hx-post="{{ url_for('remote.channel') }}" hx-swap="none"
                   @submit.prevent="$el.requestSubmit()">
                 <input type="hidden" name="action" value="set">
@@ -234,7 +234,7 @@
                        name="channel"
                        min="1"
                        max="9999"
-                       placeholder="Kanalnummer"
+                       placeholder="{{ _('Channel number') }}"
                        required
                        class="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-500
                               focus:outline-none focus:ring-2 focus:ring-tv-accent">
@@ -245,7 +245,7 @@
         <!-- Direct Volume Control (UPnP) -->
         <div class="bg-gray-800 rounded-xl p-4" x-data="volumeControl()">
             <div class="flex items-center justify-between mb-3">
-                <label class="text-sm text-gray-400">Lautstärke (UPnP)</label>
+                <label class="text-sm text-gray-400">{{ _('Volume (UPnP)') }}</label>
                 <div class="flex items-center gap-2">
                     <span class="text-lg font-bold" x-text="volume + '%'">--</span>
                     <button @click="refreshVolume()" class="text-gray-400 hover:text-white p-1">
@@ -273,16 +273,16 @@
 
         <!-- Text Input -->
         <div class="bg-gray-800 rounded-xl p-4">
-            <label class="block text-sm text-gray-400 mb-2">Text eingeben (für Suchfelder):</label>
+            <label class="block text-sm text-gray-400 mb-2">{{ _('Enter text (for search fields):') }}</label>
             <form class="flex gap-2" hx-post="{{ url_for('remote.send_text') }}" hx-swap="none"
                   @submit.prevent="$el.requestSubmit(); $el.reset();">
                 <input type="text"
                        name="text"
-                       placeholder="Text eingeben..."
+                       placeholder="{{ _('Enter text...') }}"
                        required
                        class="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-500
                               focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                <button type="submit" class="btn-remote px-6">Senden</button>
+                <button type="submit" class="btn-remote px-6">{{ _('Send') }}</button>
             </form>
         </div>
 
@@ -360,37 +360,37 @@
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Info
+                {{ _('Info') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MENU') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Menü
+                {{ _('Menu') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_TOOLS') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Tools
+                {{ _('Tools') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_EXIT') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Exit
+                {{ _('Exit') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_CAPTION') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Untertitel
+                {{ _('Subtitles') }}
             </button>
             <button hx-post="{{ url_for('remote.send_key', key='KEY_AD') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
                     class="btn-remote btn-action">
-                Audio
+                {{ _('Audio') }}
             </button>
         </div>
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-23 17:48+0100\n"
+"POT-Creation-Date: 2025-12-23 18:37+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,17 +17,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: app/__init__.py:79
-msgid "Please log in to access this page."
-msgstr ""
-
 #: app/templates/base.html:14
 msgid "Samsung TV Remote Control"
 msgstr ""
 
 #: app/templates/base.html:22 app/templates/dashboard.html:3
 #: app/templates/login.html:3 app/templates/login.html:16
-#: app/templates/settings.html:3
+#: app/templates/remote.html:3 app/templates/schedule.html:3
+#: app/templates/schedule_form.html:3 app/templates/settings.html:3
 msgid "TV Remote Control"
 msgstr ""
 
@@ -38,10 +35,13 @@ msgstr ""
 
 #: app/templates/base.html:196 app/templates/base.html:232
 #: app/templates/base.html:318 app/templates/dashboard.html:76
+#: app/templates/remote.html:3 app/templates/remote.html:9
+#: app/templates/remote_philips.html:3 app/templates/remote_philips.html:10
 msgid "Remote"
 msgstr ""
 
 #: app/templates/base.html:200 app/templates/base.html:236
+#: app/templates/schedule.html:3 app/templates/schedule.html:10
 msgid "Schedules"
 msgstr ""
 
@@ -52,7 +52,7 @@ msgid "Settings"
 msgstr ""
 
 #: app/templates/base.html:207 app/templates/base.html:243
-#: app/templates/settings.html:518
+#: app/templates/settings.html:540
 msgid "Logout"
 msgstr ""
 
@@ -68,11 +68,13 @@ msgstr ""
 msgid "Pair now"
 msgstr ""
 
-#: app/templates/base.html:310
+#: app/templates/base.html:310 app/templates/remote.html:177
+#: app/templates/remote_philips.html:42 app/templates/remote_philips.html:215
+#: app/templates/schedule_form.html:270
 msgid "Home"
 msgstr ""
 
-#: app/templates/base.html:326
+#: app/templates/base.html:326 app/templates/schedule_form.html:3
 msgid "Schedule"
 msgstr ""
 
@@ -93,14 +95,18 @@ msgid "first."
 msgstr ""
 
 #: app/templates/dashboard.html:38 app/templates/partials/tv_status.html:110
+#: app/templates/schedule_form.html:221
 msgid "Turn On"
 msgstr ""
 
 #: app/templates/dashboard.html:53 app/templates/partials/tv_status.html:96
+#: app/templates/schedule_form.html:233 app/templates/schedule_form.html:248
 msgid "Turn Off"
 msgstr ""
 
-#: app/templates/dashboard.html:67
+#: app/templates/dashboard.html:67 app/templates/remote.html:183
+#: app/templates/remote_philips.html:308 app/templates/remote_philips.html:309
+#: app/templates/schedule_form.html:262
 msgid "Mute"
 msgstr ""
 
@@ -144,6 +150,432 @@ msgstr ""
 msgid "Secure connection via HTTPS"
 msgstr ""
 
+#: app/templates/remote.html:11 app/templates/remote_philips.html:14
+msgid "Expert"
+msgstr ""
+
+#: app/templates/remote.html:30 app/templates/remote_philips.html:33
+msgid "Connected"
+msgstr ""
+
+#: app/templates/remote.html:30 app/templates/remote_philips.html:33
+msgid "Not connected"
+msgstr ""
+
+#: app/templates/partials/tv_diagnostics.html:92 app/templates/remote.html:50
+#: app/templates/remote_philips.html:45 app/templates/remote_philips.html:89
+#: app/templates/remote_philips.html:434
+msgid "On"
+msgstr ""
+
+#: app/templates/partials/tv_diagnostics.html:92 app/templates/remote.html:65
+#: app/templates/remote_philips.html:103 app/templates/remote_philips.html:444
+msgid "Off"
+msgstr ""
+
+#: app/templates/remote.html:171 app/templates/remote_philips.html:209
+#: app/templates/schedule_form.html:256
+msgid "Back"
+msgstr ""
+
+#: app/templates/remote.html:189 app/templates/remote_philips.html:44
+#: app/templates/remote_philips.html:227
+msgid "Source"
+msgstr ""
+
+#: app/templates/remote.html:211 app/templates/remote_philips.html:268
+msgid "Previous"
+msgstr ""
+
+#: app/templates/remote.html:223
+msgid "List"
+msgstr ""
+
+#: app/templates/remote.html:229
+msgid "Go to channel:"
+msgstr ""
+
+#: app/templates/remote.html:237
+msgid "Channel number"
+msgstr ""
+
+#: app/templates/remote.html:248
+msgid "Volume (UPnP)"
+msgstr ""
+
+#: app/templates/remote.html:276
+msgid "Enter text (for search fields):"
+msgstr ""
+
+#: app/templates/remote.html:281
+msgid "Enter text..."
+msgstr ""
+
+#: app/templates/remote.html:285
+msgid "Send"
+msgstr ""
+
+#: app/templates/remote.html:363 app/templates/remote_philips.html:388
+msgid "Info"
+msgstr ""
+
+#: app/templates/remote.html:369 app/templates/remote_philips.html:450
+msgid "Menu"
+msgstr ""
+
+#: app/templates/remote.html:375
+msgid "Tools"
+msgstr ""
+
+#: app/templates/remote.html:381 app/templates/schedule_form.html:257
+msgid "Exit"
+msgstr ""
+
+#: app/templates/remote.html:387 app/templates/remote_philips.html:406
+msgid "Subtitles"
+msgstr ""
+
+#: app/templates/remote.html:393
+msgid "Audio"
+msgstr ""
+
+#: app/templates/partials/tv_status.html:50
+#: app/templates/remote_philips.html:38
+msgid "Standby"
+msgstr ""
+
+#: app/templates/remote_philips.html:39
+msgid "Offline"
+msgstr ""
+
+#: app/templates/remote_philips.html:40
+msgid "Loading..."
+msgstr ""
+
+#: app/templates/remote_philips.html:41
+msgid "Live TV"
+msgstr ""
+
+#: app/templates/remote_philips.html:43
+msgid "App"
+msgstr ""
+
+#: app/templates/remote_philips.html:46
+msgid "TV is in standby"
+msgstr ""
+
+#: app/templates/remote_philips.html:47
+msgid "Not reachable"
+msgstr ""
+
+#: app/templates/remote_philips.html:247 app/templates/remote_philips.html:394
+msgid "Options"
+msgstr ""
+
+#: app/templates/remote_philips.html:280
+msgid "Search"
+msgstr ""
+
+#: app/templates/partials/tv_diagnostics.html:65
+#: app/templates/partials/tv_diagnostics.html:70
+#: app/templates/partials/tv_status.html:123
+#: app/templates/remote_philips.html:287 app/templates/schedule_form.html:259
+msgid "Volume"
+msgstr ""
+
+#: app/templates/remote_philips.html:308
+msgid "Unmute"
+msgstr ""
+
+#: app/templates/remote_philips.html:400
+msgid "Adjust"
+msgstr ""
+
+#: app/templates/remote_philips.html:412
+msgid "Teletext"
+msgstr ""
+
+#: app/templates/remote_philips.html:418
+msgid "Record"
+msgstr ""
+
+#: app/templates/partials/tv_diagnostics.html:89
+#: app/templates/remote_philips.html:424
+msgid "Ambilight"
+msgstr ""
+
+#: app/templates/schedule.html:16
+msgid "TV Time"
+msgstr ""
+
+#: app/templates/schedule.html:25 app/templates/schedule_form.html:3
+msgid "New"
+msgstr ""
+
+#: app/templates/schedule.html:41
+msgid "Loading schedules..."
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:76
+#: app/templates/schedule_form.html:3
+msgid "Edit"
+msgstr ""
+
+#: app/templates/schedule_form.html:18
+msgid "Edit Schedule"
+msgstr ""
+
+#: app/templates/schedule_form.html:18
+msgid "New Schedule"
+msgstr ""
+
+#: app/templates/partials/tv_diagnostics.html:38
+#: app/templates/schedule_form.html:27
+msgid "Name"
+msgstr ""
+
+#: app/templates/schedule_form.html:36
+msgid "e.g. Morning turn on"
+msgstr ""
+
+#: app/templates/schedule_form.html:38
+msgid "Description (optional)"
+msgstr ""
+
+#: app/templates/schedule_form.html:46
+msgid "Short description"
+msgstr ""
+
+#: app/templates/schedule_form.html:51
+msgid "Scheduling"
+msgstr ""
+
+#: app/templates/schedule_form.html:59
+msgid "Simple"
+msgstr ""
+
+#: app/templates/schedule_form.html:65
+msgid "Cron"
+msgstr ""
+
+#: app/templates/schedule_form.html:73
+msgid "Hour"
+msgstr ""
+
+#: app/templates/schedule_form.html:83
+msgid "Minute"
+msgstr ""
+
+#: app/templates/schedule_form.html:93
+msgid "Repeat"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:36
+#: app/templates/schedule_form.html:97
+msgid "Once"
+msgstr ""
+
+#: app/templates/schedule_form.html:98
+msgid "Daily"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:31
+#: app/templates/schedule_form.html:99
+msgid "Mon-Fri"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:31
+#: app/templates/schedule_form.html:100
+msgid "Sat-Sun"
+msgstr ""
+
+#: app/templates/schedule_form.html:101
+msgid "Weekly"
+msgstr ""
+
+#: app/templates/schedule_form.html:107
+msgid "Weekdays"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Mon"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Tue"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Wed"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Thu"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Fri"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Sat"
+msgstr ""
+
+#: app/templates/schedule_form.html:109
+msgid "Sun"
+msgstr ""
+
+#: app/templates/schedule_form.html:123
+msgid "Cron Expression"
+msgstr ""
+
+#: app/templates/schedule_form.html:130
+msgid "Format: Minute Hour Day Month Weekday"
+msgstr ""
+
+#: app/templates/schedule_form.html:136
+msgid "Action"
+msgstr ""
+
+#: app/templates/schedule_form.html:143
+msgid "Startup"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:39
+#: app/templates/schedule_form.html:149 app/templates/schedule_form.html:246
+msgid "Power"
+msgstr ""
+
+#: app/templates/schedule_form.html:155
+msgid "Single Key"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:39
+#: app/templates/schedule_form.html:161
+msgid "Sequence"
+msgstr ""
+
+#: app/templates/schedule_form.html:169
+msgid "Turn on TV and optionally set channel and volume."
+msgstr ""
+
+#: app/templates/schedule_form.html:173
+msgid "Channel (optional)"
+msgstr ""
+
+#: app/templates/schedule_form.html:178
+msgid "e.g. 1"
+msgstr ""
+
+#: app/templates/schedule_form.html:184
+msgid "Volume (optional)"
+msgstr ""
+
+#: app/templates/schedule_form.html:189
+msgid "e.g. 20"
+msgstr ""
+
+#: app/templates/schedule_form.html:197
+msgid "Wait time after turn on (seconds)"
+msgstr ""
+
+#: app/templates/schedule_form.html:205
+msgid "Time until TV is ready (default: 15s)"
+msgstr ""
+
+#: app/templates/schedule_form.html:211
+msgid "Power Action"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:39
+#: app/templates/schedule_form.html:242
+msgid "Key"
+msgstr ""
+
+#: app/templates/schedule_form.html:247
+msgid "Power On/Off"
+msgstr ""
+
+#: app/templates/schedule_form.html:250
+msgid "Navigation"
+msgstr ""
+
+#: app/templates/schedule_form.html:251
+msgid "Up"
+msgstr ""
+
+#: app/templates/schedule_form.html:252
+msgid "Down"
+msgstr ""
+
+#: app/templates/schedule_form.html:253
+msgid "Left"
+msgstr ""
+
+#: app/templates/schedule_form.html:254
+msgid "Right"
+msgstr ""
+
+#: app/templates/schedule_form.html:255
+msgid "OK/Enter"
+msgstr ""
+
+#: app/templates/schedule_form.html:260
+msgid "Volume Up"
+msgstr ""
+
+#: app/templates/schedule_form.html:261
+msgid "Volume Down"
+msgstr ""
+
+#: app/templates/schedule_form.html:264
+msgid "Channels"
+msgstr ""
+
+#: app/templates/schedule_form.html:265
+msgid "Channel +"
+msgstr ""
+
+#: app/templates/schedule_form.html:266
+msgid "Channel -"
+msgstr ""
+
+#: app/templates/schedule_form.html:267
+msgid "TV Guide"
+msgstr ""
+
+#: app/templates/schedule_form.html:269
+msgid "Apps"
+msgstr ""
+
+#: app/templates/schedule_form.html:281
+msgid "Keys (comma-separated)"
+msgstr ""
+
+#: app/templates/schedule_form.html:290
+msgid "Delay between keys (ms)"
+msgstr ""
+
+#: app/templates/schedule_form.html:306
+msgid "Enabled"
+msgstr ""
+
+#: app/templates/schedule_form.html:325 app/templates/settings.html:83
+msgid "Save"
+msgstr ""
+
+#: app/templates/schedule_form.html:325
+msgid "Create"
+msgstr ""
+
+#: app/templates/schedule_form.html:330
+msgid "Really delete schedule?"
+msgstr ""
+
+#: app/templates/schedule_form.html:332
+msgid "Delete"
+msgstr ""
+
 #: app/templates/settings.html:11
 msgid "Language"
 msgstr ""
@@ -166,10 +598,6 @@ msgstr ""
 
 #: app/templates/settings.html:69
 msgid "TV MAC Address (for Wake-on-LAN)"
-msgstr ""
-
-#: app/templates/settings.html:83
-msgid "Save"
 msgstr ""
 
 #: app/templates/settings.html:91
@@ -262,23 +690,72 @@ msgid "Active Sessions"
 msgstr ""
 
 #: app/templates/settings.html:497
+msgid "TV Timezone"
+msgstr ""
+
+#: app/templates/settings.html:498
+msgid ""
+"Timezone used for scheduled actions (e.g., turning the TV on/off at "
+"specific times)."
+msgstr ""
+
+#: app/templates/settings.html:516
+msgid "Save Timezone"
+msgstr ""
+
+#: app/templates/settings.html:523
 msgid "System"
 msgstr ""
 
-#: app/templates/settings.html:501
+#: app/templates/settings.html:527
 msgid "Version"
 msgstr ""
 
-#: app/templates/settings.html:505
-msgid "Timezone"
-msgstr ""
-
-#: app/templates/settings.html:509
+#: app/templates/settings.html:531
 msgid "Log Retention"
 msgstr ""
 
-#: app/templates/settings.html:510
-msgid "365 days"
+#: app/templates/settings.html:532
+#, python-format
+msgid "%(num)d day"
+msgid_plural "%(num)d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/partials/schedule_list.html:15
+msgid "Disable"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:15
+msgid "Enable"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:23
+msgid "Disabled"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:26
+msgid "Next:"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:31
+msgid "daily"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:39
+msgid "TV Turn On"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:66
+msgid "Run now"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:92
+msgid "No schedules"
+msgstr ""
+
+#: app/templates/partials/schedule_list.html:94
+msgid "Create first schedule"
 msgstr ""
 
 #: app/templates/partials/tv_diagnostics.html:7
@@ -329,10 +806,6 @@ msgstr ""
 msgid "TV Information"
 msgstr ""
 
-#: app/templates/partials/tv_diagnostics.html:38
-msgid "Name"
-msgstr ""
-
 #: app/templates/partials/tv_diagnostics.html:40
 msgid "Model"
 msgstr ""
@@ -361,12 +834,6 @@ msgstr ""
 msgid "UUID"
 msgstr ""
 
-#: app/templates/partials/tv_diagnostics.html:65
-#: app/templates/partials/tv_diagnostics.html:70
-#: app/templates/partials/tv_status.html:123
-msgid "Volume"
-msgstr ""
-
 #: app/templates/partials/tv_diagnostics.html:67
 msgid "Available"
 msgstr ""
@@ -381,18 +848,6 @@ msgstr ""
 
 #: app/templates/partials/tv_diagnostics.html:86
 msgid "Philips Features"
-msgstr ""
-
-#: app/templates/partials/tv_diagnostics.html:89
-msgid "Ambilight"
-msgstr ""
-
-#: app/templates/partials/tv_diagnostics.html:92
-msgid "On"
-msgstr ""
-
-#: app/templates/partials/tv_diagnostics.html:92
-msgid "Off"
 msgstr ""
 
 #: app/templates/partials/tv_diagnostics.html:104
@@ -414,10 +869,6 @@ msgstr ""
 
 #: app/templates/partials/tv_status.html:48
 msgid "Starting..."
-msgstr ""
-
-#: app/templates/partials/tv_status.html:50
-msgid "Standby"
 msgstr ""
 
 #: app/templates/partials/tv_status.html:50
@@ -448,15 +899,27 @@ msgstr ""
 msgid "Estimated values based on sent commands"
 msgstr ""
 
-#: app/views/settings.py:56
+#: app/views/settings.py:108
 msgid "Invalid language selected."
 msgstr ""
 
-#: app/views/settings.py:64
+#: app/views/settings.py:116
 msgid "Language changed"
 msgstr ""
 
-#: app/views/settings.py:69
+#: app/views/settings.py:121
 msgid "Language changed successfully."
+msgstr ""
+
+#: app/views/settings.py:133
+msgid "Invalid timezone selected."
+msgstr ""
+
+#: app/views/settings.py:141
+msgid "Timezone changed"
+msgstr ""
+
+#: app/views/settings.py:146
+msgid "Timezone changed successfully."
 msgstr ""
 
