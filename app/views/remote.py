@@ -505,7 +505,11 @@ def philips_tv_mode():
 @remote_bp.route('/philips/ambilight', methods=['POST'])
 @login_required
 def philips_ambilight():
-    """Philips Ambilight control"""
+    """
+    Philips Ambilight control - direct on/off without opening menu.
+
+    Uses Philips API /6/ambilight/power endpoint for direct control.
+    """
     from ..services.tv_service import get_current_tv_type
 
     if get_current_tv_type() != 'philips':
@@ -515,29 +519,57 @@ def philips_ambilight():
     tv = get_tv_service()
 
     try:
-        if hasattr(tv, 'get_ambilight_power') and hasattr(tv, 'set_ambilight_power'):
-            if action == 'toggle':
-                current = tv.get_ambilight_power()
-                tv.set_ambilight_power(not current)
-                message = 'Ambilight ' + ('aus' if current else 'an')
-            elif action == 'on':
-                tv.set_ambilight_power(True)
-                message = 'Ambilight an'
-            elif action == 'off':
-                tv.set_ambilight_power(False)
-                message = 'Ambilight aus'
+        if action == 'toggle':
+            if hasattr(tv, 'toggle_ambilight'):
+                new_state = tv.toggle_ambilight()
+                if new_state is not None:
+                    message = 'Ambilight ' + ('an' if new_state else 'aus')
+                    state = 'on' if new_state else 'off'
+                else:
+                    return jsonify({'success': False, 'error': 'Ambilight konnte nicht umgeschaltet werden'}), 500
             else:
-                return jsonify({'success': False, 'error': 'Ungültige Aktion'}), 400
+                # Fallback to old method
+                current = tv.get_ambilight_power()
+                new_state = not current if current is not None else True
+                tv.set_ambilight_power(new_state)
+                message = 'Ambilight ' + ('an' if new_state else 'aus')
+                state = 'on' if new_state else 'off'
 
-            log_event(
-                level='INFO',
-                category='action',
-                message=message,
-                details={'action': action},
-                source='manual'
-            )
-            return jsonify({'success': True, 'message': message})
+        elif action == 'on':
+            if tv.set_ambilight_power(True):
+                message = 'Ambilight an'
+                state = 'on'
+            else:
+                return jsonify({'success': False, 'error': 'Ambilight konnte nicht eingeschaltet werden'}), 500
+
+        elif action == 'off':
+            if tv.set_ambilight_power(False):
+                message = 'Ambilight aus'
+                state = 'off'
+            else:
+                return jsonify({'success': False, 'error': 'Ambilight konnte nicht ausgeschaltet werden'}), 500
+
+        elif action == 'status':
+            # Return current state without changing it
+            current = tv.get_ambilight_power()
+            return jsonify({
+                'success': True,
+                'state': 'on' if current else 'off' if current is not None else 'unknown',
+                'power': current
+            })
+
         else:
-            return jsonify({'success': False, 'error': 'Ambilight nicht verfügbar'}), 503
+            return jsonify({'success': False, 'error': 'Ungültige Aktion'}), 400
+
+        log_event(
+            level='INFO',
+            category='action',
+            message=message,
+            details={'action': action, 'new_state': state},
+            source='manual'
+        )
+        return jsonify({'success': True, 'message': message, 'state': state})
+
     except Exception as e:
+        print(f"[Ambilight] Error: {e}", flush=True)
         return jsonify({'success': False, 'error': str(e)}), 500

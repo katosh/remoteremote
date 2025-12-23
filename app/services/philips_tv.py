@@ -417,26 +417,70 @@ class PhilipsTVService(BaseTVService):
             return False
 
     def get_ambilight_power(self) -> Optional[bool]:
-        """Get Ambilight power state"""
+        """
+        Get Ambilight power state.
+
+        Returns:
+            True if Ambilight is on, False if off, None on error
+
+        Note: Uses Philips API endpoint /6/ambilight/power
+        Expected response: {"power": "On"} or {"power": "Off"}
+        """
         if not self._remote or not self.is_paired:
             return None
 
         try:
-            return self._remote.get_ambilight_power()
-        except Exception:
+            result = self._remote.get_ambilight_power()
+            print(f"[Philips TV] Ambilight power state: {result}", flush=True)
+            return result
+        except Exception as e:
+            print(f"[Philips TV] Error getting ambilight state: {e}", flush=True)
             return None
 
     def set_ambilight_power(self, on: bool) -> bool:
-        """Set Ambilight power state"""
+        """
+        Set Ambilight power state directly (without opening menu).
+
+        Args:
+            on: True to turn on, False to turn off
+
+        Returns:
+            True if successful, False on error
+
+        Note: Uses Philips API endpoint POST /6/ambilight/power
+        with body {"power": "On"} or {"power": "Off"}
+        """
         if not self._remote or not self.is_paired:
             return False
 
         try:
+            print(f"[Philips TV] Setting ambilight power to: {on}", flush=True)
             self._remote.set_ambilight_power(on)
             return True
         except Exception as e:
             print(f"[Philips TV] Error setting ambilight: {e}", flush=True)
             return False
+
+    def toggle_ambilight(self) -> Optional[bool]:
+        """
+        Toggle Ambilight on/off and return new state.
+
+        Returns:
+            New state (True=on, False=off) or None on error
+        """
+        current = self.get_ambilight_power()
+        if current is None:
+            # Can't get current state, try to turn on
+            print(f"[Philips TV] Can't get ambilight state, trying to turn on", flush=True)
+            if self.set_ambilight_power(True):
+                return True
+            return None
+
+        new_state = not current
+        if self.set_ambilight_power(new_state):
+            print(f"[Philips TV] Ambilight toggled to: {new_state}", flush=True)
+            return new_state
+        return None
 
 
 def discover_philips_tvs(timeout: int = 5) -> List[dict]:
