@@ -18,6 +18,9 @@ python-dotenv>=1.0.0
 # HTTP client (for TV API)
 requests>=2.31.0
 
+# Philips TV support
+philipstv>=2.1.0
+
 # Timezone support
 pytz>=2024.1
 

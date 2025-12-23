@@ -1,6 +1,7 @@
 """
 Einstellungs-Views
 """
+import time
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,7 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ..models import db, Config, User, Log, Session
 from ..services.tv_service import get_tv_service, reinit_tv_service
 from ..services.logger import log_event
-from ..services.discovery import discover_samsung_tvs
+from ..services.discovery import discover_samsung_tvs, discover_all_tvs
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
@@ -18,6 +19,7 @@ settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 def settings_view():
     """Einstellungen-Übersicht"""
     from flask_login import current_user
+    from ..services.tv_service import get_current_tv_type
 
     tv = get_tv_service()
     tv_info = None
@@ -34,6 +36,7 @@ def settings_view():
     return render_template(
         'settings.html',
         config={
+            'tv_type': Config.get('tv_type', 'samsung'),
             'tv_ip': Config.get('tv_ip', current_app.config.get('TV_IP', '')),
             'tv_mac': Config.get('tv_mac', current_app.config.get('TV_MAC', ''))
         },
@@ -47,9 +50,15 @@ def settings_view():
 @login_required
 def update_tv():
     """TV-Einstellungen aktualisieren"""
+    tv_type = request.form.get('tv_type', 'samsung')
     tv_ip = request.form.get('tv_ip')
     tv_mac = request.form.get('tv_mac')
 
+    # Validate TV type
+    if tv_type not in ('samsung', 'philips'):
+        tv_type = 'samsung'
+
+    Config.set('tv_type', tv_type)
     if tv_ip:
         Config.set('tv_ip', tv_ip)
     if tv_mac:
@@ -61,7 +70,7 @@ def update_tv():
         level='INFO',
         category='config',
         message='TV-Einstellungen aktualisiert',
-        details={'tv_ip': tv_ip, 'tv_mac': tv_mac},
+        details={'tv_type': tv_type, 'tv_ip': tv_ip, 'tv_mac': tv_mac},
         source='manual'
     )
 
@@ -108,11 +117,16 @@ def change_password():
 @settings_bp.route('/discover', methods=['POST'])
 @login_required
 def discover():
-    """Samsung TVs im Netzwerk suchen"""
+    """TVs im Netzwerk suchen (Samsung und Philips)"""
     try:
-        tvs = discover_samsung_tvs()
+        tvs = discover_all_tvs()
+        # Return HTML for HTMX, JSON otherwise
+        if request.headers.get('HX-Request'):
+            return render_template('partials/discovery_result.html', tvs=tvs, error=None)
         return jsonify({'success': True, 'tvs': tvs})
     except Exception as e:
+        if request.headers.get('HX-Request'):
+            return render_template('partials/discovery_result.html', tvs=None, error=str(e))
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -162,6 +176,192 @@ def pair():
             source='manual'
         )
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Store pending Philips pairing sessions with threading support
+import threading
+_philips_pairing_sessions = {}
+_philips_pairing_lock = threading.Lock()
+
+
+@settings_bp.route('/pair/philips/start', methods=['POST'])
+@login_required
+def pair_philips_start():
+    """Start Philips TV pairing - initiates connection and shows PIN on TV"""
+    import secrets
+    from ..services.tv_service import PHILIPS_AVAILABLE
+
+    if not PHILIPS_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Philips TV support not available. Install: pip install philipstv'}), 400
+
+    tv_ip = Config.get('tv_ip', current_app.config.get('TV_IP', ''))
+    if not tv_ip:
+        return jsonify({'success': False, 'error': 'TV IP-Adresse nicht konfiguriert. Bitte zuerst IP eingeben und speichern.'}), 400
+
+    # Generate a unique request ID
+    request_id = secrets.token_urlsafe(16)
+
+    # Clean up old sessions (older than 5 minutes)
+    current_time = time.time()
+    with _philips_pairing_lock:
+        for rid in list(_philips_pairing_sessions.keys()):
+            if current_time - _philips_pairing_sessions[rid].get('created', 0) > 300:
+                del _philips_pairing_sessions[rid]
+
+        # Create session with threading primitives
+        _philips_pairing_sessions[request_id] = {
+            'ip': tv_ip,
+            'created': time.time(),
+            'pin_event': threading.Event(),
+            'pin_value': None,
+            'result': None,
+            'error': None,
+            'started': False
+        }
+
+    def run_pairing():
+        """Background thread to run pairing"""
+        try:
+            from philipstv import PhilipsTVRemote
+
+            session = _philips_pairing_sessions.get(request_id)
+            if not session:
+                return
+
+            session['started'] = True
+
+            # Create remote and start pairing
+            remote = PhilipsTVRemote.new(tv_ip)
+
+            def pin_callback():
+                """Called by philipstv when PIN is shown on TV"""
+                session = _philips_pairing_sessions.get(request_id)
+                if not session:
+                    raise Exception("Session expired")
+
+                # Wait for PIN to be submitted (max 120 seconds)
+                if session['pin_event'].wait(timeout=120):
+                    return session['pin_value']
+                else:
+                    raise Exception("PIN timeout")
+
+            # This call shows the PIN on TV and blocks until pin_callback returns
+            credentials = remote.pair(pin_callback)
+
+            if credentials and len(credentials) == 2:
+                session['result'] = credentials
+            else:
+                session['error'] = 'Ungültige Antwort vom TV'
+
+        except Exception as e:
+            session = _philips_pairing_sessions.get(request_id)
+            if session:
+                session['error'] = str(e)
+
+    # Start pairing in background thread
+    pairing_thread = threading.Thread(target=run_pairing, daemon=True)
+    pairing_thread.start()
+
+    # Wait briefly for the pairing to start and PIN to appear on TV
+    time.sleep(1.5)
+
+    session = _philips_pairing_sessions.get(request_id)
+    if session and session.get('error'):
+        error = session['error']
+        with _philips_pairing_lock:
+            del _philips_pairing_sessions[request_id]
+        return jsonify({'success': False, 'error': f'Pairing fehlgeschlagen: {error}'}), 500
+
+    log_event(
+        level='INFO',
+        category='config',
+        message='Philips TV pairing gestartet',
+        details={'ip': tv_ip},
+        source='manual'
+    )
+
+    return jsonify({
+        'success': True,
+        'request_id': request_id,
+        'message': 'PIN wird auf dem TV angezeigt'
+    })
+
+
+@settings_bp.route('/pair/philips/complete', methods=['POST'])
+@login_required
+def pair_philips_complete():
+    """Complete Philips TV pairing with PIN"""
+    data = request.get_json()
+    pin = data.get('pin')
+    request_id = data.get('request_id')
+
+    if not pin or not request_id:
+        return jsonify({'success': False, 'error': 'PIN und Request-ID erforderlich'}), 400
+
+    with _philips_pairing_lock:
+        if request_id not in _philips_pairing_sessions:
+            return jsonify({'success': False, 'error': 'Pairing-Sitzung abgelaufen. Bitte erneut starten.'}), 400
+
+        session = _philips_pairing_sessions[request_id]
+        tv_ip = session['ip']
+
+        # Send PIN to the waiting background thread
+        session['pin_value'] = pin
+        session['pin_event'].set()
+
+    # Wait for pairing to complete (max 10 seconds)
+    for _ in range(20):
+        time.sleep(0.5)
+        session = _philips_pairing_sessions.get(request_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session abgelaufen'}), 400
+
+        if session.get('result'):
+            philips_id, philips_key = session['result']
+
+            # Store credentials in database
+            Config.set('philips_id', philips_id)
+            Config.set('philips_key', philips_key)
+
+            # Reinitialize TV service with new credentials
+            reinit_tv_service()
+
+            # Clean up
+            with _philips_pairing_lock:
+                if request_id in _philips_pairing_sessions:
+                    del _philips_pairing_sessions[request_id]
+
+            log_event(
+                level='INFO',
+                category='config',
+                message='Philips TV pairing erfolgreich',
+                details={'ip': tv_ip},
+                source='manual'
+            )
+
+            return jsonify({'success': True, 'message': 'Pairing erfolgreich!'})
+
+        if session.get('error'):
+            error = session['error']
+            with _philips_pairing_lock:
+                if request_id in _philips_pairing_sessions:
+                    del _philips_pairing_sessions[request_id]
+
+            log_event(
+                level='ERROR',
+                category='config',
+                message='Philips TV pairing fehlgeschlagen',
+                details={'error': error},
+                source='manual'
+            )
+            return jsonify({'success': False, 'error': f'Pairing fehlgeschlagen: {error}'}), 500
+
+    # Timeout
+    with _philips_pairing_lock:
+        if request_id in _philips_pairing_sessions:
+            del _philips_pairing_sessions[request_id]
+
+    return jsonify({'success': False, 'error': 'Pairing timeout - bitte erneut versuchen'}), 500
 
 
 @settings_bp.route('/logs')

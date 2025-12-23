@@ -1,10 +1,10 @@
 """
-TV-Service - Wrapper um samsung_tv.py mit Konfigurationsverwaltung
+TV-Service - Unified wrapper for Samsung and Philips TVs
 """
 import os
 import sys
 import time
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from flask import current_app
 
 # Pfad zum samsung_tv.py Modul hinzufügen
@@ -12,8 +12,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from samsung_tv import SamsungTV, Key, TVInfo
 
+# Import Philips TV support
+try:
+    from .philips_tv import PhilipsTVService, PHILIPS_AVAILABLE
+except ImportError:
+    PHILIPS_AVAILABLE = False
+    PhilipsTVService = None
+
+# Type alias for TV instance
+TVInstance = Union[SamsungTV, 'PhilipsTVService']
+
 # Globale TV-Instanz
-_tv_instance: Optional[SamsungTV] = None
+_tv_instance: Optional[TVInstance] = None
+_tv_type: str = 'samsung'  # 'samsung' or 'philips'
 
 # Cache for TV status to avoid repeated checks
 _status_cache: dict = {
@@ -728,22 +739,38 @@ def get_cached_status(force_refresh: bool = False) -> dict:
     }
 
 
-def _create_tv_instance() -> SamsungTV:
-    """Neue TV-Instanz erstellen mit Konfiguration aus DB oder Config"""
+def _create_tv_instance() -> TVInstance:
+    """Create TV instance based on configured TV type"""
+    global _tv_type
     from ..models import Config as ConfigModel
 
-    # Werte aus Datenbank oder Fallback auf App-Config
+    # Get TV type from config (default: samsung for backward compatibility)
     try:
+        _tv_type = ConfigModel.get('tv_type') or 'samsung'
         tv_ip = ConfigModel.get('tv_ip') or current_app.config['TV_IP']
         tv_mac = ConfigModel.get('tv_mac') or current_app.config['TV_MAC']
-        tv_token_file = current_app.config['TV_TOKEN_FILE']
     except RuntimeError:
-        # Außerhalb des App-Kontexts (z.B. bei CLI-Nutzung)
+        # Outside app context
+        _tv_type = os.environ.get('TV_TYPE', 'samsung')
         tv_ip = os.environ.get('TV_IP', '192.168.178.103')
         tv_mac = os.environ.get('TV_MAC', '80:47:86:E9:B2:17')
-        tv_token_file = os.path.expanduser('~/.tv_token')
 
-    print(f"[TV Service] Creating TV instance: ip={tv_ip}, token_file={tv_token_file}", flush=True)
+    print(f"[TV Service] Creating {_tv_type.upper()} TV instance: ip={tv_ip}", flush=True)
+
+    if _tv_type == 'philips':
+        return _create_philips_instance(tv_ip, tv_mac)
+    else:
+        return _create_samsung_instance(tv_ip, tv_mac)
+
+
+def _create_samsung_instance(tv_ip: str, tv_mac: str) -> SamsungTV:
+    """Create Samsung TV instance"""
+    from ..models import Config as ConfigModel
+
+    try:
+        tv_token_file = current_app.config['TV_TOKEN_FILE']
+    except RuntimeError:
+        tv_token_file = os.path.expanduser('~/.tv_token')
 
     tv = SamsungTV(
         ip=tv_ip,
@@ -757,28 +784,63 @@ def _create_tv_instance() -> SamsungTV:
         try:
             db_token = ConfigModel.get('tv_token')
             if db_token:
-                print(f"[TV Service] Restoring token from database to file", flush=True)
-                # Write token to file for future use
+                print(f"[TV Service] Restoring Samsung token from database", flush=True)
                 try:
                     token_dir = os.path.dirname(tv_token_file)
                     if token_dir and not os.path.exists(token_dir):
                         os.makedirs(token_dir, exist_ok=True)
                     with open(tv_token_file, 'w') as f:
                         f.write(db_token)
-                    # Reload token into TV instance
                     tv._token = db_token
-                    print(f"[TV Service] Token restored from database successfully", flush=True)
+                    print(f"[TV Service] Samsung token restored successfully", flush=True)
                 except PermissionError as e:
-                    print(f"[TV Service] Cannot write token file (permission denied): {e}", flush=True)
-                    # Still use the token in memory even if we can't write file
+                    print(f"[TV Service] Cannot write token file: {e}", flush=True)
                     tv._token = db_token
                 except Exception as e:
                     print(f"[TV Service] Error writing token file: {e}", flush=True)
                     tv._token = db_token
         except Exception as e:
-            print(f"[TV Service] Could not restore token from database: {e}", flush=True)
+            print(f"[TV Service] Could not restore Samsung token: {e}", flush=True)
 
     return tv
+
+
+def _create_philips_instance(tv_ip: str, tv_mac: str) -> 'PhilipsTVService':
+    """Create Philips TV instance"""
+    if not PHILIPS_AVAILABLE or PhilipsTVService is None:
+        raise ImportError("Philips TV support not available (philipstv package not installed)")
+
+    from ..models import Config as ConfigModel
+
+    # Get Philips credentials from database
+    credentials = None
+    try:
+        philips_id = ConfigModel.get('philips_id')
+        philips_key = ConfigModel.get('philips_key')
+        if philips_id and philips_key:
+            credentials = (philips_id, philips_key)
+            print(f"[TV Service] Philips credentials loaded from database", flush=True)
+    except Exception as e:
+        print(f"[TV Service] Could not load Philips credentials: {e}", flush=True)
+
+    return PhilipsTVService(ip=tv_ip, mac=tv_mac, credentials=credentials)
+
+
+def get_current_tv_type() -> str:
+    """Get the currently configured TV type"""
+    global _tv_type
+    return _tv_type
+
+
+def set_tv_type(tv_type: str) -> None:
+    """Set TV type and reinitialize"""
+    from ..models import Config as ConfigModel
+
+    if tv_type not in ('samsung', 'philips'):
+        raise ValueError(f"Invalid TV type: {tv_type}")
+
+    ConfigModel.set('tv_type', tv_type)
+    reinit_tv_service()
 
 
 class TVServiceWrapper:
@@ -855,5 +917,11 @@ class TVServiceWrapper:
         db.session.commit()
 
 
-# Export der Key-Enum für einfachen Import
-__all__ = ['get_tv_service', 'reinit_tv_service', 'get_cached_status', 'invalidate_status_cache', 'set_cached_power_state', 'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper']
+# Export for easy imports
+__all__ = [
+    'get_tv_service', 'reinit_tv_service', 'get_cached_status',
+    'invalidate_status_cache', 'set_cached_power_state',
+    'get_current_tv_type', 'set_tv_type',
+    'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper',
+    'PHILIPS_AVAILABLE'
+]
