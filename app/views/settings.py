@@ -1,6 +1,7 @@
 """
 Einstellungs-Views
 """
+import os
 import time
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required
@@ -114,8 +115,25 @@ def change_password():
 @login_required
 def discover():
     """TVs im Netzwerk suchen (Samsung und Philips)"""
+    from ..services.discovery import get_tv_details
+
     try:
         tvs = discover_all_tvs()
+
+        # Get detailed info (including MAC) for Samsung TVs
+        for tv in tvs:
+            if tv.get('type') == 'samsung' and not tv.get('mac'):
+                try:
+                    details = get_tv_details(tv['ip'])
+                    if details.get('mac') and details['mac'] != 'Unknown':
+                        tv['mac'] = details['mac']
+                    if details.get('name') and details['name'] != 'Unknown':
+                        tv['name'] = details['name']
+                    if details.get('model') and details['model'] != 'Unknown':
+                        tv['model'] = details['model']
+                except Exception:
+                    pass
+
         # Return HTML for HTMX, JSON otherwise
         if request.headers.get('HX-Request'):
             return render_template('partials/discovery_result.html', tvs=tvs, error=None)
@@ -129,13 +147,36 @@ def discover():
 @settings_bp.route('/pair', methods=['POST'])
 @login_required
 def pair():
-    """TV-Pairing starten"""
+    """TV-Pairing starten (Samsung)"""
     tv = get_tv_service()
 
     try:
-        # Log token file location for debugging
-        token_file = current_app.config.get('TV_TOKEN_FILE', 'unknown')
-        print(f"[Pairing] Token file location: {token_file}", flush=True)
+        # Clear existing token to force new pairing request
+        token_file = current_app.config.get('TV_TOKEN_FILE', '~/.tv_token')
+        token_file = os.path.expanduser(token_file)
+        print(f"[Pairing] Clearing old token from: {token_file}", flush=True)
+
+        # Clear token from file
+        try:
+            if os.path.exists(token_file):
+                os.remove(token_file)
+                print(f"[Pairing] Old token file removed", flush=True)
+        except Exception as e:
+            print(f"[Pairing] Could not remove token file: {e}", flush=True)
+
+        # Clear token from database
+        try:
+            config = Config.query.get('tv_token')
+            if config:
+                db.session.delete(config)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # Clear token from TV instance and reinitialize
+        tv._token = None
+        reinit_tv_service()
+        tv = get_tv_service()
 
         # Pairing im Hintergrund starten
         success = tv.pair(timeout=60)
@@ -154,7 +195,22 @@ def pair():
                 details={'token_file': token_file},
                 source='manual'
             )
-            return jsonify({'success': True, 'message': 'Pairing erfolgreich!'})
+
+            # Return HTML for HTMX with auto-reload
+            return '''
+            <div class="p-4 bg-green-900/30 border border-green-700 rounded-xl text-green-400">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="font-medium">Kopplung erfolgreich!</p>
+                        <p class="text-sm opacity-80">Die Seite wird neu geladen...</p>
+                    </div>
+                </div>
+            </div>
+            <script>setTimeout(function() { location.reload(); }, 1500);</script>
+            '''
         else:
             log_event(
                 level='WARNING',
@@ -162,7 +218,20 @@ def pair():
                 message='TV-Pairing fehlgeschlagen - Timeout oder abgelehnt',
                 source='manual'
             )
-            return jsonify({'success': False, 'error': 'Pairing fehlgeschlagen oder Timeout'})
+
+            return '''
+            <div class="p-4 bg-yellow-900/30 border border-yellow-700 rounded-xl text-yellow-400">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div>
+                        <p class="font-medium">Kopplung fehlgeschlagen</p>
+                        <p class="text-sm mt-1 opacity-80">Zeitüberschreitung oder Anfrage wurde auf dem TV abgelehnt. Bitte erneut versuchen.</p>
+                    </div>
+                </div>
+            </div>
+            '''
     except Exception as e:
         log_event(
             level='ERROR',
@@ -171,7 +240,21 @@ def pair():
             details={'error': str(e)},
             source='manual'
         )
-        return jsonify({'success': False, 'error': str(e)}), 500
+
+        error_msg = str(e).replace('<', '&lt;').replace('>', '&gt;')
+        return f'''
+        <div class="p-4 bg-red-900/30 border border-red-700 rounded-xl text-red-400">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="font-medium">Fehler bei der Kopplung</p>
+                    <p class="text-sm mt-1 opacity-80">{error_msg}</p>
+                </div>
+            </div>
+        </div>
+        '''
 
 
 # Store pending Philips pairing sessions with threading support
