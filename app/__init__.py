@@ -81,7 +81,7 @@ def create_app(config_name: str = None) -> Flask:
     @login_manager.user_loader
     def load_user(user_id):
         try:
-            return User.query.get(int(user_id))
+            return db.session.get(User, int(user_id))
         except OperationalError:
             # Database tables missing - try to recreate
             ensure_tables_exist()

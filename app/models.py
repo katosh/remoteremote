@@ -36,13 +36,13 @@ class Config(db.Model):
     @classmethod
     def get(cls, key: str, default=None):
         """Konfigurationswert abrufen"""
-        config = cls.query.get(key)
+        config = db.session.get(cls, key)
         return config.value if config else default
 
     @classmethod
     def set(cls, key: str, value: str):
         """Konfigurationswert setzen"""
-        config = cls.query.get(key)
+        config = db.session.get(cls, key)
         if config:
             config.value = value
         else:
@@ -286,7 +286,7 @@ class TVState(db.Model):
     @classmethod
     def get_instance(cls):
         """Singleton-Instanz abrufen oder erstellen"""
-        state = cls.query.get(1)
+        state = db.session.get(cls, 1)
         if not state:
             state = cls(id=1)
             db.session.add(state)

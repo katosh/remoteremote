@@ -1,6 +1,6 @@
-# TV Remote Control
+# remoteremote
 
-A web-based remote control application for Samsung and Philips Smart TVs. Control your TV from any device on your local network through a responsive web interface.
+A web-based remote control for Samsung and Philips Smart TVs. Control your TV from any device on your local network through a responsive web interface.
 
 ## Features
 
@@ -56,8 +56,8 @@ A web-based remote control application for Samsung and Philips Smart TVs. Contro
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/tvremote.git
-cd tvremote
+git clone https://github.com/yourusername/remoteremote.git
+cd remoteremote
 
 # Create virtual environment
 python -m venv venv

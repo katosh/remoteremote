@@ -270,7 +270,7 @@ def pair():
 
         # Clear token from database
         try:
-            config = Config.query.get('tv_token')
+            config = db.session.get(Config, 'tv_token')
             if config:
                 db.session.delete(config)
                 db.session.commit()

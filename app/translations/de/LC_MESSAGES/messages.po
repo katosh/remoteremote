@@ -931,3 +931,35 @@ msgstr "Zeitzone geändert"
 msgid "Timezone changed successfully."
 msgstr "Zeitzone wurde erfolgreich geändert."
 
+#: app/templates/errors/404.html:3
+msgid "Not Found"
+msgstr "Nicht gefunden"
+
+#: app/templates/errors/500.html:3
+msgid "Error"
+msgstr "Fehler"
+
+#: app/templates/errors/429.html:3
+msgid "Too Many Requests"
+msgstr "Zu viele Anfragen"
+
+#: app/templates/errors/429.html:8
+msgid "Please wait a moment before trying again."
+msgstr "Bitte warten Sie einen Moment, bevor Sie es erneut versuchen."
+
+#: app/templates/errors/429.html:10
+msgid "Back to Home"
+msgstr "Zur Startseite"
+
+#: app/templates/setup.html:3
+msgid "Setup"
+msgstr "Ersteinrichtung"
+
+#: app/templates/setup.html:28
+msgid "This is the initial setup for remoteremote."
+msgstr "Dies ist die Ersteinrichtung für remoteremote."
+
+#: app/templates/base.html:14
+msgid "Smart TV Remote Control"
+msgstr "Smart TV Fernbedienung"
+

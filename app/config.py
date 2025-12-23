@@ -85,8 +85,8 @@ class Config:
     BACKUP_SSH_USER = os.environ.get('BACKUP_SSH_USER', '')
     BACKUP_SSH_PATH = os.environ.get('BACKUP_SSH_PATH', '')
 
-    # Anwendung
-    APP_NAME = 'TV Fernbedienung'
+    # Application
+    APP_NAME = 'remoteremote'
 
 
 class DevelopmentConfig(Config):

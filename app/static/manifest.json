@@ -1,7 +1,7 @@
 {
-  "name": "TV Fernbedienung",
-  "short_name": "TV Remote",
-  "description": "Samsung Smart TV Fernbedienung",
+  "name": "remoteremote",
+  "short_name": "remoteremote",
+  "description": "Web-based remote control for Samsung and Philips Smart TVs",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f1a",

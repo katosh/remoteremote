@@ -47,7 +47,7 @@ def load_session_from_cookie():
         if token:
             session = Session.validate_token(token)
             if session:
-                user = User.query.get(session.user_id)
+                user = db.session.get(User, session.user_id)
                 if user:
                     login_user(user, remember=False)
                     session.is_current = True

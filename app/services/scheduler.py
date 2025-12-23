@@ -153,9 +153,9 @@ def _execute_schedule_job(schedule_id: int, app):
     """Job-Wrapper für Zeitplan-Ausführung"""
     print(f"[Scheduler] Führe Job 'schedule_{schedule_id}' aus...", flush=True)
     with app.app_context():
-        from ..models import Schedule
+        from ..models import Schedule, db
 
-        schedule = Schedule.query.get(schedule_id)
+        schedule = db.session.get(Schedule, schedule_id)
         if schedule and schedule.enabled:
             print(f"[Scheduler] Starte Zeitplan: {schedule.name}", flush=True)
             execute_schedule(schedule)
@@ -342,11 +342,11 @@ def _execute_sequence_action(action_data: dict):
 
 def _execute_scenario_action(action_data: dict):
     """Szenario ausführen"""
-    from ..models import Scenario
+    from ..models import Scenario, db
 
     scenario_id = action_data.get('scenario_id')
     if scenario_id:
-        scenario = Scenario.query.get(scenario_id)
+        scenario = db.session.get(Scenario, scenario_id)
         if scenario:
             execute_scenario(scenario)
 
