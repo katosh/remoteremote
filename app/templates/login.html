@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Anmelden - TV Fernbedienung{% endblock %}
+{% block title %}{{ _('Login') }} - {{ _('TV Remote Control') }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center px-4 py-12">
@@ -13,8 +13,8 @@
                           d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
             </div>
-            <h1 class="text-3xl font-bold">TV Fernbedienung</h1>
-            <p class="mt-2 text-gray-400">Bitte melden Sie sich an</p>
+            <h1 class="text-3xl font-bold">{{ _('TV Remote Control') }}</h1>
+            <p class="mt-2 text-gray-400">{{ _('Please log in') }}</p>
         </div>
 
         <!-- Login Form -->
@@ -24,7 +24,7 @@
             <div class="space-y-4">
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-                        Passwort
+                        {{ _('Password') }}
                     </label>
                     <input type="password"
                            name="password"
@@ -36,7 +36,7 @@
                                   text-white placeholder-gray-500
                                   focus:outline-none focus:ring-2 focus:ring-tv-accent focus:border-transparent
                                   transition-all duration-200"
-                           placeholder="Passwort eingeben">
+                           placeholder="{{ _('Enter password') }}">
                 </div>
 
                 <div class="flex items-center">
@@ -46,7 +46,7 @@
                            class="w-4 h-4 rounded bg-tv-dark border-gray-700 text-tv-accent
                                   focus:ring-tv-accent focus:ring-offset-0">
                     <label for="remember" class="ml-2 text-sm text-gray-400">
-                        Angemeldet bleiben
+                        {{ _('Remember me') }}
                     </label>
                 </div>
             </div>
@@ -69,13 +69,13 @@
                            text-white font-medium
                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tv-accent focus:ring-offset-tv-darker
                            transition-all duration-200">
-                Anmelden
+                {{ _('Login') }}
             </button>
         </form>
 
         <!-- Footer -->
         <p class="text-center text-sm text-gray-500">
-            Sichere Verbindung via HTTPS
+            {{ _('Secure connection via HTTPS') }}
         </p>
     </div>
 </div>

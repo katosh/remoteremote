@@ -1,0 +1,457 @@
+# German translations for TV Remote.
+# Copyright (C) 2025
+# This file is distributed under the same license as the TV Remote project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TV Remote 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-23 17:48+0100\n"
+"PO-Revision-Date: 2025-12-23 17:50+0100\n"
+"Last-Translator: \n"
+"Language: de\n"
+"Language-Team: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app/__init__.py:79
+msgid "Please log in to access this page."
+msgstr "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
+
+#: app/templates/base.html:14
+msgid "Samsung TV Remote Control"
+msgstr "Samsung TV Fernbedienung"
+
+#: app/templates/base.html:22 app/templates/dashboard.html:3
+#: app/templates/login.html:3 app/templates/login.html:16
+#: app/templates/settings.html:3
+msgid "TV Remote Control"
+msgstr "TV Fernbedienung"
+
+#: app/templates/base.html:192 app/templates/base.html:228
+#: app/templates/dashboard.html:3
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: app/templates/base.html:196 app/templates/base.html:232
+#: app/templates/base.html:318 app/templates/dashboard.html:76
+msgid "Remote"
+msgstr "Fernbedienung"
+
+#: app/templates/base.html:200 app/templates/base.html:236
+msgid "Schedules"
+msgstr "Zeitpläne"
+
+#: app/templates/base.html:204 app/templates/base.html:240
+#: app/templates/base.html:335 app/templates/settings.html:3
+#: app/templates/settings.html:7
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: app/templates/base.html:207 app/templates/base.html:243
+#: app/templates/settings.html:518
+msgid "Logout"
+msgstr "Abmelden"
+
+#: app/templates/base.html:283
+msgid "TV not paired"
+msgstr "TV nicht gekoppelt"
+
+#: app/templates/base.html:284
+msgid "Pair the remote with your TV to use all features."
+msgstr "Koppeln Sie die Fernbedienung mit Ihrem TV, um alle Funktionen zu nutzen."
+
+#: app/templates/base.html:289
+msgid "Pair now"
+msgstr "Jetzt koppeln"
+
+#: app/templates/base.html:310
+msgid "Home"
+msgstr "Start"
+
+#: app/templates/base.html:326
+msgid "Schedule"
+msgstr "Zeitplan"
+
+#: app/templates/dashboard.html:17
+msgid "Quick Actions"
+msgstr "Schnellaktionen"
+
+#: app/templates/dashboard.html:23
+msgid "TV control not available. Please"
+msgstr "TV-Steuerung nicht verfügbar. Bitte zuerst"
+
+#: app/templates/dashboard.html:23
+msgid "pair TV"
+msgstr "TV koppeln"
+
+#: app/templates/dashboard.html:23
+msgid "first."
+msgstr "."
+
+#: app/templates/dashboard.html:38 app/templates/partials/tv_status.html:110
+msgid "Turn On"
+msgstr "Einschalten"
+
+#: app/templates/dashboard.html:53 app/templates/partials/tv_status.html:96
+msgid "Turn Off"
+msgstr "Ausschalten"
+
+#: app/templates/dashboard.html:67
+msgid "Mute"
+msgstr "Stumm"
+
+#: app/templates/dashboard.html:84
+msgid "Favorites"
+msgstr "Favoriten"
+
+#: app/templates/dashboard.html:103
+msgid "Upcoming Schedules"
+msgstr "Nächste Zeitpläne"
+
+#: app/templates/dashboard.html:105 app/templates/dashboard.html:120
+msgid "Show all"
+msgstr "Alle anzeigen"
+
+#: app/templates/dashboard.html:118
+msgid "Recent Activity"
+msgstr "Letzte Aktivitäten"
+
+#: app/templates/login.html:3 app/templates/login.html:72
+msgid "Login"
+msgstr "Anmelden"
+
+#: app/templates/login.html:17
+msgid "Please log in"
+msgstr "Bitte melden Sie sich an"
+
+#: app/templates/login.html:27
+msgid "Password"
+msgstr "Passwort"
+
+#: app/templates/login.html:39
+msgid "Enter password"
+msgstr "Passwort eingeben"
+
+#: app/templates/login.html:49
+msgid "Remember me"
+msgstr "Angemeldet bleiben"
+
+#: app/templates/login.html:78
+msgid "Secure connection via HTTPS"
+msgstr "Sichere Verbindung via HTTPS"
+
+#: app/templates/settings.html:11
+msgid "Language"
+msgstr "Sprache"
+
+#: app/templates/settings.html:33
+msgid "Save Language"
+msgstr "Sprache speichern"
+
+#: app/templates/settings.html:40
+msgid "TV Configuration"
+msgstr "TV-Konfiguration"
+
+#: app/templates/partials/tv_diagnostics.html:20 app/templates/settings.html:46
+msgid "TV Type"
+msgstr "TV-Typ"
+
+#: app/templates/settings.html:57
+msgid "TV IP Address"
+msgstr "TV IP-Adresse"
+
+#: app/templates/settings.html:69
+msgid "TV MAC Address (for Wake-on-LAN)"
+msgstr "TV MAC-Adresse (für Wake-on-LAN)"
+
+#: app/templates/settings.html:83
+msgid "Save"
+msgstr "Speichern"
+
+#: app/templates/settings.html:91
+msgid "Find TV"
+msgstr "TV suchen"
+
+#: app/templates/settings.html:190
+msgid "TV Diagnostics"
+msgstr "TV-Diagnose"
+
+#: app/templates/settings.html:193
+msgid "Shows all available TV information (API data, UPnP status, apps)."
+msgstr "Zeigt alle verfügbaren Informationen vom TV an (API-Daten, UPnP-Status, Apps)."
+
+#: app/templates/settings.html:205
+msgid "Fetch TV Information"
+msgstr "TV-Informationen abrufen"
+
+#: app/templates/settings.html:213
+msgid "TV Pairing"
+msgstr "TV-Kopplung"
+
+#: app/templates/partials/tv_diagnostics.html:24
+#: app/templates/settings.html:217
+msgid "Paired"
+msgstr "Gekoppelt"
+
+#: app/templates/settings.html:217
+msgid "No token - pairing required"
+msgstr "Kein Token - Kopplung erforderlich"
+
+#: app/templates/settings.html:235 app/templates/settings.html:249
+msgid "Re-pair"
+msgstr "Neu koppeln"
+
+#: app/templates/settings.html:235 app/templates/settings.html:249
+msgid "Start pairing"
+msgstr "Kopplung starten"
+
+#: app/templates/settings.html:238
+msgid "During pairing, a connection to the TV is established. Confirm the request on the TV screen."
+msgstr "Bei der Kopplung wird eine Verbindung zum TV hergestellt. Bestätigen Sie die Anfrage auf dem TV-Bildschirm."
+
+#: app/templates/settings.html:253
+msgid "For Philips pairing, a PIN will be displayed on the TV screen. Enter this PIN here."
+msgstr "Bei der Philips-Kopplung wird ein PIN auf dem TV-Bildschirm angezeigt. Geben Sie diesen PIN hier ein."
+
+#: app/templates/settings.html:259
+msgid "Philips TV PIN"
+msgstr "Philips TV PIN"
+
+#: app/templates/settings.html:260
+msgid "Please enter the PIN displayed on your TV:"
+msgstr "Bitte geben Sie den PIN ein, der auf Ihrem TV angezeigt wird:"
+
+#: app/templates/settings.html:272
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: app/templates/settings.html:277
+msgid "Confirm"
+msgstr "Bestätigen"
+
+#: app/templates/settings.html:426 app/templates/settings.html:463
+msgid "Change Password"
+msgstr "Passwort ändern"
+
+#: app/templates/settings.html:430
+msgid "Current Password"
+msgstr "Aktuelles Passwort"
+
+#: app/templates/settings.html:440
+msgid "New Password"
+msgstr "Neues Passwort"
+
+#: app/templates/settings.html:451
+msgid "Confirm New Password"
+msgstr "Neues Passwort bestätigen"
+
+#: app/templates/settings.html:472
+msgid "Activity Log"
+msgstr "Aktivitätsprotokoll"
+
+#: app/templates/settings.html:484
+msgid "Active Sessions"
+msgstr "Aktive Sitzungen"
+
+#: app/templates/settings.html:497
+msgid "System"
+msgstr "System"
+
+#: app/templates/settings.html:501
+msgid "Version"
+msgstr "Version"
+
+#: app/templates/settings.html:505
+msgid "Timezone"
+msgstr "Zeitzone"
+
+#: app/templates/settings.html:509
+msgid "Log Retention"
+msgstr "Log-Aufbewahrung"
+
+#: app/templates/settings.html:510
+msgid "365 days"
+msgstr "365 Tage"
+
+#: app/templates/partials/tv_diagnostics.html:7
+msgid "TV reachable and responding"
+msgstr "TV erreichbar und antwortet"
+
+#: app/templates/partials/tv_diagnostics.html:7
+msgid "TV not reachable"
+msgstr "TV nicht erreichbar"
+
+#: app/templates/partials/tv_diagnostics.html:18
+msgid "Connection"
+msgstr "Verbindung"
+
+#: app/templates/partials/tv_diagnostics.html:22
+msgid "Ping"
+msgstr "Ping"
+
+#: app/templates/partials/tv_diagnostics.html:23
+msgid "OK"
+msgstr "OK"
+
+#: app/templates/partials/tv_diagnostics.html:23
+msgid "Failed"
+msgstr "Fehlgeschlagen"
+
+#: app/templates/partials/tv_diagnostics.html:25
+#: app/templates/partials/tv_diagnostics.html:68
+#: app/templates/partials/tv_diagnostics.html:73
+msgid "Yes"
+msgstr "Ja"
+
+#: app/templates/partials/tv_diagnostics.html:25
+#: app/templates/partials/tv_diagnostics.html:68
+#: app/templates/partials/tv_diagnostics.html:73
+msgid "No"
+msgstr "Nein"
+
+#: app/templates/partials/tv_diagnostics.html:26
+msgid "IP"
+msgstr "IP"
+
+#: app/templates/partials/tv_diagnostics.html:28
+msgid "MAC"
+msgstr "MAC"
+
+#: app/templates/partials/tv_diagnostics.html:36
+msgid "TV Information"
+msgstr "TV-Informationen"
+
+#: app/templates/partials/tv_diagnostics.html:38
+msgid "Name"
+msgstr "Name"
+
+#: app/templates/partials/tv_diagnostics.html:40
+msgid "Model"
+msgstr "Modell"
+
+#: app/templates/partials/tv_diagnostics.html:42
+msgid "Model ID"
+msgstr "Modell-ID"
+
+#: app/templates/partials/tv_diagnostics.html:44
+msgid "Firmware"
+msgstr "Firmware"
+
+#: app/templates/partials/tv_diagnostics.html:46
+msgid "Operating System"
+msgstr "Betriebssystem"
+
+#: app/templates/partials/tv_diagnostics.html:48
+msgid "Resolution"
+msgstr "Auflösung"
+
+#: app/templates/partials/tv_diagnostics.html:50
+msgid "Power Status"
+msgstr "Power-Status"
+
+#: app/templates/partials/tv_diagnostics.html:56
+msgid "UUID"
+msgstr "UUID"
+
+#: app/templates/partials/tv_diagnostics.html:65
+#: app/templates/partials/tv_diagnostics.html:70
+#: app/templates/partials/tv_status.html:123
+msgid "Volume"
+msgstr "Lautstärke"
+
+#: app/templates/partials/tv_diagnostics.html:67
+msgid "Available"
+msgstr "Verfügbar"
+
+#: app/templates/partials/tv_diagnostics.html:72
+msgid "Muted"
+msgstr "Stumm"
+
+#: app/templates/partials/tv_diagnostics.html:76
+msgid "Error"
+msgstr "Fehler"
+
+#: app/templates/partials/tv_diagnostics.html:86
+msgid "Philips Features"
+msgstr "Philips-Funktionen"
+
+#: app/templates/partials/tv_diagnostics.html:89
+msgid "Ambilight"
+msgstr "Ambilight"
+
+#: app/templates/partials/tv_diagnostics.html:92
+msgid "On"
+msgstr "An"
+
+#: app/templates/partials/tv_diagnostics.html:92
+msgid "Off"
+msgstr "Aus"
+
+#: app/templates/partials/tv_diagnostics.html:104
+msgid "Raw API Response"
+msgstr "Rohe API-Antwort"
+
+#: app/templates/partials/tv_diagnostics.html:107
+#: app/templates/partials/tv_diagnostics.html:121
+msgid "Show/Hide"
+msgstr "Ein-/Ausblenden"
+
+#: app/templates/partials/tv_diagnostics.html:118
+msgid "Installed Apps"
+msgstr "Installierte Apps"
+
+#: app/templates/partials/tv_diagnostics.html:130
+msgid "Retrieved:"
+msgstr "Abgerufen:"
+
+#: app/templates/partials/tv_status.html:48
+msgid "Starting..."
+msgstr "Wird gestartet..."
+
+#: app/templates/partials/tv_status.html:50
+msgid "Standby"
+msgstr "Standby"
+
+#: app/templates/partials/tv_status.html:50
+msgid "Hardware shutting down"
+msgstr "Hardware fährt herunter"
+
+#: app/templates/partials/tv_status.html:52
+msgid "Shutting down..."
+msgstr "Wird beendet..."
+
+#: app/templates/partials/tv_status.html:55
+msgid "Powered On"
+msgstr "Eingeschaltet"
+
+#: app/templates/partials/tv_status.html:62
+msgid "Powered Off"
+msgstr "Ausgeschaltet"
+
+#: app/templates/partials/tv_status.html:82
+msgid "Please wait..."
+msgstr "Bitte warten..."
+
+#: app/templates/partials/tv_status.html:129
+msgid "Channel"
+msgstr "Kanal"
+
+#: app/templates/partials/tv_status.html:133
+msgid "Estimated values based on sent commands"
+msgstr "Geschätzte Werte basierend auf gesendeten Befehlen"
+
+#: app/views/settings.py:56
+msgid "Invalid language selected."
+msgstr "Ungültige Sprache ausgewählt."
+
+#: app/views/settings.py:64
+msgid "Language changed"
+msgstr "Sprache geändert"
+
+#: app/views/settings.py:69
+msgid "Language changed successfully."
+msgstr "Sprache wurde erfolgreich geändert."

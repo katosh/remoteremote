@@ -34,6 +34,11 @@ class Config:
     # Flask
     SECRET_KEY = get_or_create_secret_key()
 
+    # Babel (i18n)
+    BABEL_DEFAULT_LOCALE = 'en'
+    BABEL_TRANSLATION_DIRECTORIES = 'translations'
+    LANGUAGES = ['en', 'de']
+
     # Datenbank
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         f"sqlite:///{os.path.join(instance_dir, 'tvremote.db')}"

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="h-full">
+<html lang="{{ current_language }}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f0f1a">
     <meta name="application-name" content="TV Remote">
-    <meta name="description" content="Samsung TV Fernbedienung">
+    <meta name="description" content="{{ _('Samsung TV Remote Control') }}">
 
     <!-- App Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
@@ -19,7 +19,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16x16.png') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
-    <title>{% block title %}TV Fernbedienung{% endblock %}</title>
+    <title>{% block title %}{{ _('TV Remote Control') }}{% endblock %}</title>
 
     <!-- TailwindCSS via CDN (in Produktion: lokal kompiliert) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -189,22 +189,22 @@
                 <div class="hidden md:flex items-center space-x-4">
                     <a href="{{ url_for('main.dashboard') }}"
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint == 'main.dashboard' else '' }}">
-                        Dashboard
+                        {{ _('Dashboard') }}
                     </a>
                     <a href="{{ url_for('remote.index') }}"
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'remote' in request.endpoint else '' }}">
-                        Fernbedienung
+                        {{ _('Remote') }}
                     </a>
                     <a href="{{ url_for('schedule.index') }}"
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'schedule' in request.endpoint else '' }}">
-                        Zeitpläne
+                        {{ _('Schedules') }}
                     </a>
                     <a href="{{ url_for('settings.settings_view') }}"
                        class="px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'settings' in request.endpoint else '' }}">
-                        Einstellungen
+                        {{ _('Settings') }}
                     </a>
                     <a href="{{ url_for('auth.logout') }}" class="px-3 py-2 text-gray-400 hover:text-white">
-                        Abmelden
+                        {{ _('Logout') }}
                     </a>
                 </div>
 
@@ -225,22 +225,22 @@
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <a href="{{ url_for('main.dashboard') }}"
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint == 'main.dashboard' else '' }}">
-                    Dashboard
+                    {{ _('Dashboard') }}
                 </a>
                 <a href="{{ url_for('remote.index') }}"
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'remote' in request.endpoint else '' }}">
-                    Fernbedienung
+                    {{ _('Remote') }}
                 </a>
                 <a href="{{ url_for('schedule.index') }}"
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'schedule' in request.endpoint else '' }}">
-                    Zeitpläne
+                    {{ _('Schedules') }}
                 </a>
                 <a href="{{ url_for('settings.settings_view') }}"
                    class="block px-3 py-2 rounded-lg hover:bg-gray-800 {{ 'bg-gray-800' if request.endpoint and 'settings' in request.endpoint else '' }}">
-                    Einstellungen
+                    {{ _('Settings') }}
                 </a>
                 <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 text-gray-400 hover:text-white">
-                    Abmelden
+                    {{ _('Logout') }}
                 </a>
             </div>
         </div>
@@ -280,13 +280,13 @@
                           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
                 <div>
-                    <p class="font-semibold">TV nicht gekoppelt</p>
-                    <p class="text-sm text-yellow-100">Koppeln Sie die Fernbedienung mit Ihrem TV, um alle Funktionen zu nutzen.</p>
+                    <p class="font-semibold">{{ _('TV not paired') }}</p>
+                    <p class="text-sm text-yellow-100">{{ _('Pair the remote with your TV to use all features.') }}</p>
                 </div>
             </div>
             <a href="{{ url_for('settings.settings_view') }}#tv-pairing"
                class="bg-yellow-700 hover:bg-yellow-800 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
-                Jetzt koppeln
+                {{ _('Pair now') }}
             </a>
         </div>
     </div>
@@ -307,7 +307,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
-                <span class="text-xs mt-1">Home</span>
+                <span class="text-xs mt-1">{{ _('Home') }}</span>
             </a>
             <a href="{{ url_for('remote.index') }}"
                class="flex flex-col items-center px-3 py-1 {{ 'text-tv-accent' if request.endpoint and 'remote' in request.endpoint else 'text-gray-400' }}">
@@ -315,7 +315,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                 </svg>
-                <span class="text-xs mt-1">Remote</span>
+                <span class="text-xs mt-1">{{ _('Remote') }}</span>
             </a>
             <a href="{{ url_for('schedule.index') }}"
                class="flex flex-col items-center px-3 py-1 {{ 'text-tv-accent' if request.endpoint and 'schedule' in request.endpoint else 'text-gray-400' }}">
@@ -323,7 +323,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-xs mt-1">Zeitplan</span>
+                <span class="text-xs mt-1">{{ _('Schedule') }}</span>
             </a>
             <a href="{{ url_for('settings.settings_view') }}"
                class="flex flex-col items-center px-3 py-1 {{ 'text-tv-accent' if request.endpoint and 'settings' in request.endpoint else 'text-gray-400' }}">
@@ -332,7 +332,7 @@
                           d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
-                <span class="text-xs mt-1">Einstellungen</span>
+                <span class="text-xs mt-1">{{ _('Settings') }}</span>
             </a>
         </div>
     </nav>

@@ -2,11 +2,12 @@
 TV Remote Web Application - Flask App Factory
 """
 import os
-from flask import Flask, g
+from flask import Flask, g, request
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_babel import Babel
 from sqlalchemy.exc import OperationalError, PendingRollbackError
 from sqlalchemy import event
 
@@ -16,6 +17,38 @@ from .config import config
 login_manager = LoginManager()
 csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address)
+babel = Babel()
+
+# Supported languages
+LANGUAGES = {
+    'en': 'English',
+    'de': 'Deutsch'
+}
+
+
+def get_locale():
+    """Select the best matching language for the user.
+
+    Priority:
+    1. User preference stored in database (persists across sessions)
+    2. Browser Accept-Language header
+    3. Default to English
+    """
+    from .models import Config
+    from flask import current_app
+
+    # Check user preference in database
+    try:
+        user_lang = Config.get('user_language')
+        if user_lang and user_lang in LANGUAGES:
+            return user_lang
+    except Exception as e:
+        # Log the error for debugging
+        if current_app:
+            current_app.logger.debug(f"Could not get user_language from database: {e}")
+
+    # Fall back to browser preference
+    return request.accept_languages.best_match(LANGUAGES.keys(), default='en')
 
 
 def create_app(config_name: str = None) -> Flask:
@@ -35,11 +68,15 @@ def create_app(config_name: str = None) -> Flask:
     login_manager.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    babel.init_app(app, locale_selector=get_locale)
 
     # Login Manager konfigurieren
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.'
     login_manager.login_message_category = 'warning'
+
+    # Set login message dynamically (uses lazy_gettext for deferred translation)
+    from flask_babel import lazy_gettext as _l
+    login_manager.login_message = _l('Please log in to access this page.')
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -103,12 +140,16 @@ def create_app(config_name: str = None) -> Flask:
     # Kontext-Prozessor für Templates
     @app.context_processor
     def inject_globals():
+        from flask_babel import get_locale
+
         # In test mode, don't try to connect to real TV
         if app.config.get('TESTING'):
             return {
                 'app_name': app.config['APP_NAME'],
                 'tv_connected': False,
-                'tv_has_token': False
+                'tv_has_token': False,
+                'languages': LANGUAGES,
+                'current_language': str(get_locale())
             }
 
         from .services.tv_service import get_tv_service, get_cached_status
@@ -119,13 +160,17 @@ def create_app(config_name: str = None) -> Flask:
             return {
                 'app_name': app.config['APP_NAME'],
                 'tv_connected': status['connected'],
-                'tv_has_token': tv.is_paired if tv else False
+                'tv_has_token': tv.is_paired if tv else False,
+                'languages': LANGUAGES,
+                'current_language': str(get_locale())
             }
         except Exception:
             return {
                 'app_name': app.config['APP_NAME'],
                 'tv_connected': False,
-                'tv_has_token': False
+                'tv_has_token': False,
+                'languages': LANGUAGES,
+                'current_language': str(get_locale())
             }
 
     # Error Handler

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - TV Fernbedienung{% endblock %}
+{% block title %}{{ _('Dashboard') }} - {{ _('TV Remote Control') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -14,13 +14,13 @@
 
     <!-- Quick Actions -->
     <div class="bg-tv-dark rounded-2xl p-6" id="quick-actions">
-        <h2 class="text-lg font-semibold mb-4">Schnellaktionen</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('Quick Actions') }}</h2>
         {% if not tv_has_token %}
         <p class="text-yellow-400 text-sm mb-4">
             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/>
             </svg>
-            TV-Steuerung nicht verfügbar. Bitte zuerst <a href="{{ url_for('settings.settings_view') }}" class="underline">TV koppeln</a>.
+            {{ _('TV control not available. Please') }} <a href="{{ url_for('settings.settings_view') }}" class="underline">{{ _('pair TV') }}</a> {{ _('first.') }}
         </p>
         {% endif %}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -35,7 +35,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                 </svg>
-                <span class="text-sm">Einschalten</span>
+                <span class="text-sm">{{ _('Turn On') }}</span>
             </button>
 
             <!-- Power off (requires token) -->
@@ -50,7 +50,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
                 </svg>
-                <span class="text-sm">Ausschalten</span>
+                <span class="text-sm">{{ _('Turn Off') }}</span>
             </button>
 
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
@@ -64,7 +64,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
                 </svg>
-                <span class="text-sm">Stumm</span>
+                <span class="text-sm">{{ _('Mute') }}</span>
             </button>
 
             <a href="{{ url_for('remote.index') }}"
@@ -73,7 +73,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                 </svg>
-                <span class="text-sm">Fernbedienung</span>
+                <span class="text-sm">{{ _('Remote') }}</span>
             </a>
         </div>
     </div>
@@ -81,7 +81,7 @@
     <!-- Favorite Channels -->
     {% if favorites %}
     <div class="bg-tv-dark rounded-2xl p-6">
-        <h2 class="text-lg font-semibold mb-4">Favoriten</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('Favorites') }}</h2>
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {% for channel in favorites %}
             <button hx-post="{{ url_for('remote.channel') }}"
@@ -100,9 +100,9 @@
     <!-- Upcoming Schedules -->
     <div class="bg-tv-dark rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold">Nächste Zeitpläne</h2>
+            <h2 class="text-lg font-semibold">{{ _('Upcoming Schedules') }}</h2>
             <a href="{{ url_for('schedule.index') }}" class="text-tv-accent text-sm hover:underline">
-                Alle anzeigen
+                {{ _('Show all') }}
             </a>
         </div>
         <div hx-get="{{ url_for('api.upcoming_schedules') }}"
@@ -115,9 +115,9 @@
     <!-- Recent Activity -->
     <div class="bg-tv-dark rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold">Letzte Aktivitäten</h2>
+            <h2 class="text-lg font-semibold">{{ _('Recent Activity') }}</h2>
             <a href="{{ url_for('settings.logs') }}" class="text-tv-accent text-sm hover:underline">
-                Alle anzeigen
+                {{ _('Show all') }}
             </a>
         </div>
         <div hx-get="{{ url_for('api.recent_logs') }}"

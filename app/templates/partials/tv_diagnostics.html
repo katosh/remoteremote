@@ -4,7 +4,7 @@
     <div class="flex items-center gap-3 p-3 rounded-lg {{ 'bg-green-900/30' if data.success else 'bg-red-900/30' }}">
         <div class="w-3 h-3 rounded-full {{ 'bg-green-500' if data.success else 'bg-red-500' }}"></div>
         <span class="{{ 'text-green-400' if data.success else 'text-red-400' }}">
-            {{ 'TV erreichbar und antwortet' if data.success else (data.error or 'TV nicht erreichbar') }}
+            {{ _('TV reachable and responding') if data.success else (data.error or _('TV not reachable')) }}
         </span>
         {% if data.tv_type %}
         <span class="ml-auto text-xs px-2 py-0.5 rounded {{ 'bg-blue-900 text-blue-300' if data.tv_type == 'philips' else 'bg-gray-700 text-gray-300' }}">
@@ -15,17 +15,17 @@
 
     <!-- Connection Info -->
     <div class="bg-gray-800 rounded-lg p-4">
-        <h3 class="font-medium mb-3 text-gray-300">Verbindung</h3>
+        <h3 class="font-medium mb-3 text-gray-300">{{ _('Connection') }}</h3>
         <dl class="grid grid-cols-2 gap-2">
-            <dt class="text-gray-500">TV-Typ</dt>
+            <dt class="text-gray-500">{{ _('TV Type') }}</dt>
             <dd>{{ 'Philips Android TV' if data.tv_type == 'philips' else 'Samsung Smart TV' }}</dd>
-            <dt class="text-gray-500">Ping</dt>
-            <dd>{{ 'OK' if data.ping.reachable else 'Fehlgeschlagen' }}</dd>
-            <dt class="text-gray-500">Gekoppelt</dt>
-            <dd>{{ 'Ja' if data.paired else 'Nein' }}</dd>
-            <dt class="text-gray-500">IP</dt>
+            <dt class="text-gray-500">{{ _('Ping') }}</dt>
+            <dd>{{ _('OK') if data.ping.reachable else _('Failed') }}</dd>
+            <dt class="text-gray-500">{{ _('Paired') }}</dt>
+            <dd>{{ _('Yes') if data.paired else _('No') }}</dd>
+            <dt class="text-gray-500">{{ _('IP') }}</dt>
             <dd class="font-mono">{{ data.config.ip or '-' }}</dd>
-            <dt class="text-gray-500">MAC</dt>
+            <dt class="text-gray-500">{{ _('MAC') }}</dt>
             <dd class="font-mono">{{ data.config.mac or '-' }}</dd>
         </dl>
     </div>
@@ -33,27 +33,27 @@
     {% if data.parsed_info %}
     <!-- Parsed TV Info -->
     <div class="bg-gray-800 rounded-lg p-4">
-        <h3 class="font-medium mb-3 text-gray-300">TV-Informationen</h3>
+        <h3 class="font-medium mb-3 text-gray-300">{{ _('TV Information') }}</h3>
         <dl class="grid grid-cols-2 gap-2">
-            <dt class="text-gray-500">Name</dt>
+            <dt class="text-gray-500">{{ _('Name') }}</dt>
             <dd>{{ data.parsed_info.name }}</dd>
-            <dt class="text-gray-500">Modell</dt>
+            <dt class="text-gray-500">{{ _('Model') }}</dt>
             <dd>{{ data.parsed_info.model_name }}</dd>
-            <dt class="text-gray-500">Modell-ID</dt>
+            <dt class="text-gray-500">{{ _('Model ID') }}</dt>
             <dd class="font-mono text-xs">{{ data.parsed_info.model }}</dd>
-            <dt class="text-gray-500">Firmware</dt>
+            <dt class="text-gray-500">{{ _('Firmware') }}</dt>
             <dd>{{ data.parsed_info.firmware }}</dd>
-            <dt class="text-gray-500">Betriebssystem</dt>
+            <dt class="text-gray-500">{{ _('Operating System') }}</dt>
             <dd>{{ data.parsed_info.os }}</dd>
-            <dt class="text-gray-500">Auflösung</dt>
+            <dt class="text-gray-500">{{ _('Resolution') }}</dt>
             <dd>{{ data.parsed_info.resolution }}</dd>
-            <dt class="text-gray-500">Power-Status</dt>
+            <dt class="text-gray-500">{{ _('Power Status') }}</dt>
             <dd>
                 <span class="px-2 py-0.5 rounded text-xs {{ 'bg-green-600' if data.parsed_info.power_state == 'on' else 'bg-gray-600' }}">
                     {{ data.parsed_info.power_state }}
                 </span>
             </dd>
-            <dt class="text-gray-500">UUID</dt>
+            <dt class="text-gray-500">{{ _('UUID') }}</dt>
             <dd class="font-mono text-xs break-all">{{ data.parsed_info.uuid }}</dd>
         </dl>
     </div>
@@ -62,18 +62,18 @@
     {% if data.volume %}
     <!-- Volume Status -->
     <div class="bg-gray-800 rounded-lg p-4">
-        <h3 class="font-medium mb-3 text-gray-300">Lautstärke</h3>
+        <h3 class="font-medium mb-3 text-gray-300">{{ _('Volume') }}</h3>
         <dl class="grid grid-cols-2 gap-2">
-            <dt class="text-gray-500">Verfügbar</dt>
-            <dd>{{ 'Ja' if data.volume.available else 'Nein' }}</dd>
+            <dt class="text-gray-500">{{ _('Available') }}</dt>
+            <dd>{{ _('Yes') if data.volume.available else _('No') }}</dd>
             {% if data.volume.available %}
-            <dt class="text-gray-500">Lautstärke</dt>
+            <dt class="text-gray-500">{{ _('Volume') }}</dt>
             <dd>{{ data.volume.volume }}%</dd>
-            <dt class="text-gray-500">Stumm</dt>
-            <dd>{{ 'Ja' if data.volume.muted else 'Nein' }}</dd>
+            <dt class="text-gray-500">{{ _('Muted') }}</dt>
+            <dd>{{ _('Yes') if data.volume.muted else _('No') }}</dd>
             {% endif %}
             {% if data.volume.error %}
-            <dt class="text-gray-500">Fehler</dt>
+            <dt class="text-gray-500">{{ _('Error') }}</dt>
             <dd class="text-red-400">{{ data.volume.error }}</dd>
             {% endif %}
         </dl>
@@ -83,13 +83,13 @@
     {% if data.philips_features %}
     <!-- Philips-Specific Features -->
     <div class="bg-gray-800 rounded-lg p-4">
-        <h3 class="font-medium mb-3 text-gray-300">Philips-Funktionen</h3>
+        <h3 class="font-medium mb-3 text-gray-300">{{ _('Philips Features') }}</h3>
         <dl class="grid grid-cols-2 gap-2">
             {% if data.philips_features.ambilight is not none %}
-            <dt class="text-gray-500">Ambilight</dt>
+            <dt class="text-gray-500">{{ _('Ambilight') }}</dt>
             <dd>
                 <span class="px-2 py-0.5 rounded text-xs {{ 'bg-purple-600' if data.philips_features.ambilight else 'bg-gray-600' }}">
-                    {{ 'An' if data.philips_features.ambilight else 'Aus' }}
+                    {{ _('On') if data.philips_features.ambilight else _('Off') }}
                 </span>
             </dd>
             {% endif %}
@@ -101,10 +101,10 @@
     <!-- Raw API Response -->
     <div class="bg-gray-800 rounded-lg p-4">
         <h3 class="font-medium mb-3 text-gray-300 flex items-center justify-between">
-            <span>Rohe API-Antwort</span>
+            <span>{{ _('Raw API Response') }}</span>
             <button onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')"
                     class="text-xs text-gray-500 hover:text-gray-300">
-                Ein-/Ausblenden
+                {{ _('Show/Hide') }}
             </button>
         </h3>
         <pre class="hidden bg-gray-900 p-3 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto">{{ data.api_response | tojson(indent=2) }}</pre>
@@ -115,10 +115,10 @@
     <!-- Installed Apps -->
     <div class="bg-gray-800 rounded-lg p-4">
         <h3 class="font-medium mb-3 text-gray-300 flex items-center justify-between">
-            <span>Installierte Apps</span>
+            <span>{{ _('Installed Apps') }}</span>
             <button onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')"
                     class="text-xs text-gray-500 hover:text-gray-300">
-                Ein-/Ausblenden
+                {{ _('Show/Hide') }}
             </button>
         </h3>
         <pre class="hidden bg-gray-900 p-3 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto">{{ data.apps | tojson(indent=2) }}</pre>
@@ -127,6 +127,6 @@
 
     <!-- Timestamp -->
     <p class="text-xs text-gray-600 text-right">
-        Abgerufen: {{ now.strftime('%d.%m.%Y %H:%M:%S') }}
+        {{ _('Retrieved:') }} {{ now.strftime('%d.%m.%Y %H:%M:%S') }}
     </p>
 </div>

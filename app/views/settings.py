@@ -1,10 +1,11 @@
 """
-Einstellungs-Views
+Settings Views
 """
 import os
 import time
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required
+from flask_babel import gettext as _
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ..models import db, Config, User, Log, Session
@@ -41,6 +42,32 @@ def settings_view():
         has_token=has_token,
         session_count=session_count
     )
+
+
+@settings_bp.route('/language', methods=['POST'])
+@login_required
+def change_language():
+    """Change interface language"""
+    from .. import LANGUAGES
+
+    language = request.form.get('language')
+
+    if language not in LANGUAGES:
+        flash(_('Invalid language selected.'), 'error')
+        return redirect(url_for('settings.settings_view'))
+
+    Config.set('user_language', language)
+
+    log_event(
+        level='INFO',
+        category='config',
+        message=_('Language changed'),
+        details={'language': language, 'language_name': LANGUAGES[language]},
+        source='manual'
+    )
+
+    flash(_('Language changed successfully.'), 'success')
+    return redirect(url_for('settings.settings_view'))
 
 
 @settings_bp.route('/tv', methods=['POST'])

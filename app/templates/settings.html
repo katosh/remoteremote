@@ -1,20 +1,49 @@
 {% extends "base.html" %}
 
-{% block title %}Einstellungen - TV Fernbedienung{% endblock %}
+{% block title %}{{ _('Settings') }} - {{ _('TV Remote Control') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-6 space-y-6">
-    <h1 class="text-2xl font-bold mb-6">Einstellungen</h1>
+    <h1 class="text-2xl font-bold mb-6">{{ _('Settings') }}</h1>
+
+    <!-- Language Selection -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">{{ _('Language') }}</h2>
+
+        <form method="POST" action="{{ url_for('settings.change_language') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="flex gap-3">
+                {% for code, name in languages.items() %}
+                <label class="flex-1">
+                    <input type="radio" name="language" value="{{ code }}"
+                           {{ 'checked' if current_language == code else '' }}
+                           class="sr-only peer">
+                    <div class="py-3 px-4 bg-gray-800 border border-gray-700 rounded-xl text-center cursor-pointer
+                                peer-checked:border-tv-accent peer-checked:bg-tv-accent/20
+                                hover:bg-gray-700 transition-colors">
+                        {{ name }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit"
+                    class="w-full py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
+                {{ _('Save Language') }}
+            </button>
+        </form>
+    </div>
 
     <!-- TV Configuration -->
     <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">TV-Konfiguration</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('TV Configuration') }}</h2>
 
         <form method="POST" action="{{ url_for('settings.update_tv') }}" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
             <div>
-                <label for="tv_type" class="block text-sm text-gray-400 mb-2">TV-Typ</label>
+                <label for="tv_type" class="block text-sm text-gray-400 mb-2">{{ _('TV Type') }}</label>
                 <select name="tv_type"
                         id="tv_type"
                         class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
@@ -25,7 +54,7 @@
             </div>
 
             <div>
-                <label for="tv_ip" class="block text-sm text-gray-400 mb-2">TV IP-Adresse</label>
+                <label for="tv_ip" class="block text-sm text-gray-400 mb-2">{{ _('TV IP Address') }}</label>
                 <input type="text"
                        name="tv_ip"
                        id="tv_ip"
@@ -37,7 +66,7 @@
             </div>
 
             <div>
-                <label for="tv_mac" class="block text-sm text-gray-400 mb-2">TV MAC-Adresse (für Wake-on-LAN)</label>
+                <label for="tv_mac" class="block text-sm text-gray-400 mb-2">{{ _('TV MAC Address (for Wake-on-LAN)') }}</label>
                 <input type="text"
                        name="tv_mac"
                        id="tv_mac"
@@ -51,7 +80,7 @@
             <div class="flex gap-3">
                 <button type="submit"
                         class="flex-1 py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
-                    Speichern
+                    {{ _('Save') }}
                 </button>
                 <button type="button"
                         id="discover-btn"
@@ -59,7 +88,7 @@
                         hx-target="#discovery-result"
                         hx-swap="innerHTML"
                         class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors flex items-center gap-2">
-                    <span id="discover-text">TV suchen</span>
+                    <span id="discover-text">{{ _('Find TV') }}</span>
                 </button>
             </div>
 
@@ -158,10 +187,10 @@
 
     <!-- TV Diagnostics -->
     <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">TV-Diagnose</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('TV Diagnostics') }}</h2>
 
         <p class="text-sm text-gray-400 mb-4">
-            Zeigt alle verfügbaren Informationen vom TV an (API-Daten, UPnP-Status, Apps).
+            {{ _('Shows all available TV information (API data, UPnP status, apps).') }}
         </p>
 
         <button id="fetch-diagnostics"
@@ -173,7 +202,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>TV-Informationen abrufen</span>
+            <span>{{ _('Fetch TV Information') }}</span>
         </button>
 
         <div id="diagnostics-result" class="mt-4"></div>
@@ -181,11 +210,11 @@
 
     <!-- Token Management -->
     <div id="tv-pairing" class="bg-tv-dark rounded-xl p-6 scroll-mt-4">
-        <h2 class="text-lg font-semibold mb-4">TV-Kopplung</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('TV Pairing') }}</h2>
 
         <div class="flex items-center gap-4 mb-4">
             <div class="w-4 h-4 rounded-full {{ 'bg-green-500' if has_token else 'bg-yellow-500' }}"></div>
-            <span>{{ 'Gekoppelt' if has_token else 'Kein Token - Kopplung erforderlich' }}</span>
+            <span>{{ _('Paired') if has_token else _('No token - pairing required') }}</span>
             {% if config.tv_type == 'philips' %}
             <span class="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">Philips</span>
             {% else %}
@@ -203,10 +232,10 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span id="samsung-pair-text">{{ 'Neu koppeln' if has_token else 'Kopplung starten' }}</span>
+                <span id="samsung-pair-text">{{ _('Re-pair') if has_token else _('Start pairing') }}</span>
             </button>
             <p class="text-sm text-gray-500 mt-4">
-                Bei der Kopplung wird eine Verbindung zum TV hergestellt. Bestätigen Sie die Anfrage auf dem TV-Bildschirm.
+                {{ _('During pairing, a connection to the TV is established. Confirm the request on the TV screen.') }}
             </p>
         </div>
 
@@ -217,18 +246,18 @@
                         id="philips-pair-btn"
                         onclick="startPhilipsPairing()"
                         class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors flex items-center justify-center gap-2">
-                    <span id="philips-pair-text">{{ 'Neu koppeln' if has_token else 'Kopplung starten' }}</span>
+                    <span id="philips-pair-text">{{ _('Re-pair') if has_token else _('Start pairing') }}</span>
                 </button>
             </div>
             <p class="text-sm text-gray-500 mt-4">
-                Bei der Philips-Kopplung wird ein PIN auf dem TV-Bildschirm angezeigt. Geben Sie diesen PIN hier ein.
+                {{ _('For Philips pairing, a PIN will be displayed on the TV screen. Enter this PIN here.') }}
             </p>
 
             <!-- PIN Entry Modal -->
             <div id="philips-pin-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
                 <div class="bg-tv-dark rounded-xl p-6 max-w-sm mx-4">
-                    <h3 class="text-lg font-semibold mb-4">Philips TV PIN</h3>
-                    <p class="text-sm text-gray-400 mb-4">Bitte geben Sie den PIN ein, der auf Ihrem TV angezeigt wird:</p>
+                    <h3 class="text-lg font-semibold mb-4">{{ _('Philips TV PIN') }}</h3>
+                    <p class="text-sm text-gray-400 mb-4">{{ _('Please enter the PIN displayed on your TV:') }}</p>
                     <input type="text"
                            id="philips-pin"
                            maxlength="4"
@@ -240,12 +269,12 @@
                         <button type="button"
                                 onclick="cancelPhilipsPairing()"
                                 class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
-                            Abbrechen
+                            {{ _('Cancel') }}
                         </button>
                         <button type="button"
                                 onclick="submitPhilipsPin()"
                                 class="flex-1 py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
-                            Bestätigen
+                            {{ _('Confirm') }}
                         </button>
                     </div>
                     <div id="philips-pin-error" class="hidden mt-3 text-red-400 text-sm"></div>
@@ -394,11 +423,11 @@
 
     <!-- Password Change -->
     <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">Passwort ändern</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('Change Password') }}</h2>
 
         <form method="POST" action="{{ url_for('settings.change_password') }}" class="space-y-4">
             <div>
-                <label for="current_password" class="block text-sm text-gray-400 mb-2">Aktuelles Passwort</label>
+                <label for="current_password" class="block text-sm text-gray-400 mb-2">{{ _('Current Password') }}</label>
                 <input type="password"
                        name="current_password"
                        id="current_password"
@@ -408,7 +437,7 @@
             </div>
 
             <div>
-                <label for="new_password" class="block text-sm text-gray-400 mb-2">Neues Passwort</label>
+                <label for="new_password" class="block text-sm text-gray-400 mb-2">{{ _('New Password') }}</label>
                 <input type="password"
                        name="new_password"
                        id="new_password"
@@ -419,7 +448,7 @@
             </div>
 
             <div>
-                <label for="confirm_password" class="block text-sm text-gray-400 mb-2">Neues Passwort bestätigen</label>
+                <label for="confirm_password" class="block text-sm text-gray-400 mb-2">{{ _('Confirm New Password') }}</label>
                 <input type="password"
                        name="confirm_password"
                        id="confirm_password"
@@ -431,7 +460,7 @@
 
             <button type="submit"
                     class="w-full py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
-                Passwort ändern
+                {{ _('Change Password') }}
             </button>
         </form>
     </div>
@@ -440,7 +469,7 @@
     <div class="bg-tv-dark rounded-xl p-6">
         <a href="{{ url_for('settings.logs') }}"
            class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
-            <span>Aktivitätsprotokoll</span>
+            <span>{{ _('Activity Log') }}</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -452,7 +481,7 @@
         <a href="{{ url_for('settings.sessions_view') }}"
            class="flex items-center justify-between text-lg hover:text-tv-accent transition-colors">
             <div class="flex items-center gap-3">
-                <span>Aktive Sitzungen</span>
+                <span>{{ _('Active Sessions') }}</span>
                 {% if session_count %}
                 <span class="text-xs bg-gray-700 px-2 py-0.5 rounded-full">{{ session_count }}</span>
                 {% endif %}
@@ -465,20 +494,20 @@
 
     <!-- System Info -->
     <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">System</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ _('System') }}</h2>
 
         <dl class="space-y-2 text-sm">
             <div class="flex justify-between">
-                <dt class="text-gray-400">Version</dt>
+                <dt class="text-gray-400">{{ _('Version') }}</dt>
                 <dd>1.0.0</dd>
             </div>
             <div class="flex justify-between">
-                <dt class="text-gray-400">Zeitzone</dt>
+                <dt class="text-gray-400">{{ _('Timezone') }}</dt>
                 <dd>Europe/Berlin</dd>
             </div>
             <div class="flex justify-between">
-                <dt class="text-gray-400">Log-Aufbewahrung</dt>
-                <dd>365 Tage</dd>
+                <dt class="text-gray-400">{{ _('Log Retention') }}</dt>
+                <dd>{{ _('365 days') }}</dd>
             </div>
         </dl>
     </div>
@@ -486,7 +515,7 @@
     <!-- Logout -->
     <a href="{{ url_for('auth.logout') }}"
        class="block w-full py-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-center transition-colors">
-        Abmelden
+        {{ _('Logout') }}
     </a>
 </div>
 
