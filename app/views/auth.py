@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from .. import limiter
 from ..models import db, User, Session
 from ..services.logger import log_event
 
@@ -61,6 +62,8 @@ def load_session_from_cookie():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
+@limiter.limit("20 per minute", methods=["GET"])
 def login():
     """Anmeldeseite"""
     if current_user.is_authenticated:
@@ -188,6 +191,8 @@ def logout_all():
 
 
 @auth_bp.route('/setup', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
+@limiter.limit("10 per minute", methods=["GET"])
 def setup():
     """Ersteinrichtung - Passwort setzen wenn kein Benutzer existiert"""
     user = User.query.first()

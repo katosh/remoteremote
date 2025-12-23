@@ -5,10 +5,16 @@ import threading
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
+from .. import limiter
 from ..services.tv_service import get_tv_service, invalidate_status_cache, set_cached_power_state, get_cached_status
 from ..services.logger import log_event
 
 remote_bp = Blueprint('remote', __name__, url_prefix='/remote')
+
+# Rate limits for remote control endpoints
+# Allow rapid button presses but prevent abuse
+REMOTE_KEY_LIMIT = "120 per minute"  # 2 keys/second average
+REMOTE_ACTION_LIMIT = "60 per minute"  # Power, volume, channel actions
 
 
 def _run_async(func, *args, **kwargs):
@@ -81,6 +87,7 @@ def index():
 
 @remote_bp.route('/send-key', methods=['POST'])
 @remote_bp.route('/send-key/<key>', methods=['POST'])
+@limiter.limit(REMOTE_KEY_LIMIT)
 @login_required
 def send_key(key=None):
     """Taste an TV senden - async für schnelle UI-Reaktion"""
@@ -140,6 +147,7 @@ def _power_action_async(action: str):
 
 
 @remote_bp.route('/power', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def power():
     """TV ein-/ausschalten"""
@@ -249,6 +257,7 @@ def _volume_key_async(action: str, steps: int = 1):
 
 
 @remote_bp.route('/volume', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def volume():
     """Lautstärke ändern - UPnP für set/get (schnell), Keys async für up/down/mute"""
@@ -326,6 +335,7 @@ def _channel_async(action: str, channel_num: str = None):
 
 
 @remote_bp.route('/channel', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def channel():
     """Kanal wechseln - async für schnelle UI"""
@@ -362,6 +372,7 @@ def _send_text_async(text: str):
 
 
 @remote_bp.route('/text', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def send_text():
     """Text an TV senden - async für schnelle UI"""
@@ -374,6 +385,7 @@ def send_text():
 
 
 @remote_bp.route('/app', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def app_control():
     """App starten oder schließen"""
@@ -431,6 +443,7 @@ def _hold_key_async(key: str, seconds: float):
 
 
 @remote_bp.route('/hold-key', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def hold_key():
     """Taste gedrückt halten - async für schnelle UI"""
@@ -503,6 +516,7 @@ def philips_tv_mode():
 
 
 @remote_bp.route('/philips/ambilight', methods=['POST'])
+@limiter.limit(REMOTE_ACTION_LIMIT)
 @login_required
 def philips_ambilight():
     """

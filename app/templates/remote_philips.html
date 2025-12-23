@@ -313,25 +313,29 @@
 
         <!-- Color Buttons -->
         <div class="grid grid-cols-4 gap-3">
-            <button hx-post="{{ url_for('remote.send_key', key='RED') }}"
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_RED') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
-                    class="btn-remote btn-nav bg-red-600 hover:bg-red-500">
+                    class="btn-remote btn-nav bg-red-600 hover:bg-red-500 flex items-center justify-center">
+                <span class="w-4 h-4 rounded-full bg-red-300 opacity-60"></span>
             </button>
-            <button hx-post="{{ url_for('remote.send_key', key='GREEN') }}"
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_GREEN') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
-                    class="btn-remote btn-nav bg-green-600 hover:bg-green-500">
+                    class="btn-remote btn-nav bg-green-600 hover:bg-green-500 flex items-center justify-center">
+                <span class="w-4 h-4 rounded-full bg-green-300 opacity-60"></span>
             </button>
-            <button hx-post="{{ url_for('remote.send_key', key='YELLOW') }}"
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_YELLOW') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
-                    class="btn-remote btn-nav bg-yellow-500 hover:bg-yellow-400">
+                    class="btn-remote btn-nav bg-yellow-500 hover:bg-yellow-400 flex items-center justify-center">
+                <span class="w-4 h-4 rounded-full bg-yellow-200 opacity-60"></span>
             </button>
-            <button hx-post="{{ url_for('remote.send_key', key='BLUE') }}"
+            <button hx-post="{{ url_for('remote.send_key', key='KEY_BLUE') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
-                    class="btn-remote btn-nav bg-blue-600 hover:bg-blue-500">
+                    class="btn-remote btn-nav bg-blue-600 hover:bg-blue-500 flex items-center justify-center">
+                <span class="w-4 h-4 rounded-full bg-blue-300 opacity-60"></span>
             </button>
         </div>
 

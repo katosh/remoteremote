@@ -184,4 +184,17 @@ def create_app(config_name: str = None) -> Flask:
         from flask import render_template
         return render_template('errors/500.html'), 500
 
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        from flask import jsonify, request
+        # Return JSON for API/HTMX requests, HTML otherwise
+        if request.headers.get('HX-Request') or request.is_json or request.path.startswith('/api/'):
+            return jsonify({
+                'success': False,
+                'error': 'Rate limit exceeded',
+                'message': str(e.description)
+            }), 429
+        from flask import render_template
+        return render_template('errors/429.html', error=e.description), 429
+
     return app

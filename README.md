@@ -43,7 +43,7 @@ A web-based remote control application for Samsung and Philips Smart TVs. Contro
 - **Backend**: Flask, SQLAlchemy (SQLite), APScheduler
 - **Frontend**: TailwindCSS, HTMX
 - **Server**: Gunicorn (production), Caddy (reverse proxy)
-- **Security**: Flask-Login, bcrypt, CSRF protection
+- **Security**: Flask-Login, bcrypt, CSRF protection, rate limiting
 
 ## Installation
 
@@ -237,6 +237,7 @@ sudo systemctl start tvremote
 | TV communication | Token-based authentication over WebSocket |
 | Web traffic | HTTPS via Caddy with automatic certificates |
 | CSRF attacks | Token validation on all state-changing requests |
+| Brute force | Rate limiting on all endpoints |
 | Session hijacking | Secure, HTTPOnly, SameSite cookies |
 
 ### Recommended Security Practices
@@ -266,20 +267,38 @@ When deployed with Caddy, the following headers are applied:
 
 ## TV Pairing
 
-### Samsung TV
+Both TV types require initial pairing to establish a secure connection.
 
-1. Ensure TV is on and connected to the same network
-2. Navigate to Settings > TV Connection in the web interface
-3. Enter TV IP address and click "Connect"
-4. A pairing popup will appear on your TV screen
-5. Accept the connection on your TV using the physical remote
-6. Token is saved automatically for future connections
+**Prerequisites:**
+- TV must be powered on (not in deep standby)
+- TV and server must be on the same network subnet
 
-### Philips TV
+**Pairing Steps:**
 
-1. Enable API access in TV settings
-2. Configure TV IP in the web interface
-3. Some models require PIN pairing (follow on-screen instructions)
+1. Open the web interface and go to **Settings > TV Connection**
+2. Select your TV type (Samsung or Philips)
+3. Use **Search** to auto-discover your TV, or enter the IP/MAC manually
+4. Click **Connect** to initiate pairing
+5. **On your TV:** Accept the pairing request when prompted
+   - Samsung: A popup appears on screen - confirm with your physical remote
+   - Philips: Enter the PIN code shown on your TV screen (if required)
+6. Once paired, the token is saved automatically for future connections
+
+**Auto-Discovery:**
+
+The search function uses SSDP (Simple Service Discovery Protocol) to find TVs on the local network.
+
+Discovery requires:
+- TV is fully booted (wait ~30 seconds after power on)
+- Server and TV on the same network subnet
+- Router allows UDP multicast traffic (port 1900)
+
+If auto-discovery fails, enter the IP address manually (find it in your TV's network settings or router admin panel).
+
+**Troubleshooting:**
+- Ensure "Remote Control" or "Network Remote" is enabled in TV settings
+- Samsung: Requires port 8002 accessible (WebSocket API)
+- Philips: Requires port 1926 accessible (REST API), may need "API access" enabled
 
 ## API Endpoints
 

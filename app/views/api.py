@@ -5,13 +5,21 @@ from flask import Blueprint, jsonify, render_template, request
 from flask_babel import gettext as _
 from flask_login import login_required
 
+from .. import limiter
 from ..models import TVState, Schedule, Log, db
 from ..services.tv_service import get_tv_service
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+# Rate limits for API endpoints
+# Status polling is frequent, other endpoints less so
+API_STATUS_LIMIT = "180 per minute"  # 3 per second for polling
+API_DATA_LIMIT = "60 per minute"  # General data endpoints
+API_HEALTH_LIMIT = "30 per minute"  # Health checks (public)
+
 
 @api_bp.route('/tv/status')
+@limiter.limit(API_STATUS_LIMIT)
 @login_required
 def tv_status():
     """Aktueller TV-Status (für HTMX Polling)"""
@@ -83,6 +91,7 @@ def tv_status():
 
 
 @api_bp.route('/tv/info')
+@limiter.limit(API_DATA_LIMIT)
 @login_required
 def tv_info():
     """Vollständige TV-Informationen"""
@@ -109,6 +118,7 @@ def tv_info():
 
 
 @api_bp.route('/schedules/upcoming')
+@limiter.limit(API_DATA_LIMIT)
 @login_required
 def upcoming_schedules():
     """Nächste geplante Aktionen (für Dashboard - nur aktive)"""
@@ -131,6 +141,7 @@ def upcoming_schedules():
 
 
 @api_bp.route('/schedules/all')
+@limiter.limit(API_DATA_LIMIT)
 @login_required
 def all_schedules():
     """Alle Zeitpläne (für Zeitplan-Seite - aktive und inaktive)"""
@@ -154,6 +165,7 @@ def all_schedules():
 
 
 @api_bp.route('/logs/recent')
+@limiter.limit(API_DATA_LIMIT)
 @login_required
 def recent_logs():
     """Letzte Log-Einträge (für HTMX)"""
@@ -192,6 +204,7 @@ def recent_logs():
 
 
 @api_bp.route('/health')
+@limiter.limit(API_HEALTH_LIMIT)
 def health():
     """Health-Check Endpoint"""
     tv = get_tv_service()
