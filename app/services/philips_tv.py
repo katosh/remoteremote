@@ -18,6 +18,7 @@ except ImportError:
 
 
 # Map standard keys to Philips InputKeyValue
+# Keys can come with or without KEY_ prefix from Samsung-style remotes
 PHILIPS_KEY_MAP = {
     # Navigation
     'UP': 'CURSOR_UP',
@@ -25,9 +26,11 @@ PHILIPS_KEY_MAP = {
     'LEFT': 'CURSOR_LEFT',
     'RIGHT': 'CURSOR_RIGHT',
     'ENTER': 'CONFIRM',
+    'RETURN': 'BACK',  # Samsung uses RETURN for back
     'BACK': 'BACK',
     'EXIT': 'BACK',  # Philips uses BACK for exit
     'HOME': 'HOME',
+    'MENU': 'HOME',  # Map Samsung MENU to Philips HOME
 
     # Power
     'POWER': 'STANDBY',
@@ -41,6 +44,8 @@ PHILIPS_KEY_MAP = {
     # Channels
     'CHUP': 'CHANNEL_STEP_UP',
     'CHDOWN': 'CHANNEL_STEP_DOWN',
+    'CHLIST': 'CHANNEL_STEP_UP',  # No direct equivalent, use channel up
+    'PRECH': 'PREVIOUS',  # Previous channel
 
     # Numbers
     '0': 'DIGIT_0',
@@ -59,6 +64,7 @@ PHILIPS_KEY_MAP = {
     'PAUSE': 'PAUSE',
     'STOP': 'STOP',
     'REWIND': 'REWIND',
+    'FF': 'FAST_FORWARD',  # Samsung uses FF
     'FASTFORWARD': 'FAST_FORWARD',
     'RECORD': 'RECORD',
 
@@ -71,8 +77,11 @@ PHILIPS_KEY_MAP = {
     # Misc
     'INFO': 'INFO',
     'SOURCE': 'SOURCE',
+    'HDMI': 'SOURCE',
     'GUIDE': 'WATCH_TV',
     'TOOLS': 'OPTIONS',
+    'CAPTION': 'SUBTITLE',  # Samsung uses CAPTION for subtitles
+    'AD': 'ADJUST',  # Audio description -> Adjust
 
     # Philips-specific keys (direct passthrough)
     'AMBILIGHT': 'AMBILIGHT_ON_OFF',
@@ -80,6 +89,10 @@ PHILIPS_KEY_MAP = {
     'TELETEXT': 'TELETEXT',
     'ONLINE': 'ONLINE',
     'FIND': 'FIND',
+    'OPTIONS': 'OPTIONS',
+    'ADJUST': 'ADJUST',
+    'WATCH_TV': 'WATCH_TV',
+    'TV': 'WATCH_TV',
 }
 
 
@@ -168,6 +181,11 @@ class PhilipsTVService(BaseTVService):
         if not self._remote or not self.is_paired:
             return None
 
+        # Quick ping check first to avoid long timeout
+        if not self.ping(timeout=1.0):
+            print(f"[Philips TV] TV not reachable, skipping get_info", flush=True)
+            return None
+
         try:
             # Try to get power state as a basic info check
             power = self._remote.get_power()
@@ -213,15 +231,21 @@ class PhilipsTVService(BaseTVService):
     def send_key(self, key: str, delay: float = 0.3) -> bool:
         """Send a remote control key press"""
         if not self._remote or not self.is_paired:
+            print(f"[Philips TV] Cannot send key - not paired or no remote", flush=True)
             return False
 
+        # Strip KEY_ prefix if present (Samsung-style keys)
+        clean_key = key.upper()
+        if clean_key.startswith('KEY_'):
+            clean_key = clean_key[4:]
+
         # Map standard key to Philips key
-        philips_key = PHILIPS_KEY_MAP.get(key.upper(), key.upper())
+        philips_key = PHILIPS_KEY_MAP.get(clean_key, clean_key)
 
         try:
             key_value = getattr(InputKeyValue, philips_key, None)
             if key_value is None:
-                print(f"[Philips TV] Unknown key: {key} (mapped to {philips_key})", flush=True)
+                print(f"[Philips TV] Unknown key: {key} -> {clean_key} -> {philips_key}", flush=True)
                 return False
 
             self._remote.input_key(key_value)

@@ -48,6 +48,8 @@ def _send_key_async(key: str, delay: float = 0.1):
 @login_required
 def index():
     """Fernbedienungs-Seite"""
+    from ..services.tv_service import get_current_tv_type
+
     expert_mode = request.args.get('expert', '0') == '1'
 
     # Use cached TV status for fast page load
@@ -61,14 +63,19 @@ def index():
     tv = get_tv_service()
     tv_has_token = tv.is_paired
 
+    # Get TV type and select appropriate template
+    tv_type = get_current_tv_type()
+    template = 'remote_philips.html' if tv_type == 'philips' else 'remote.html'
+
     return render_template(
-        'remote.html',
+        template,
         expert_mode=expert_mode,
         reachable=reachable,
         power_state=power_state,
         in_transition=in_transition,
         transition_type=transition_type,
-        tv_has_token=tv_has_token
+        tv_has_token=tv_has_token,
+        tv_type=tv_type
     )
 
 
@@ -436,3 +443,44 @@ def hold_key():
     seconds = max(0.1, min(5.0, seconds))  # Limit to 0.1-5 seconds
     _hold_key_async(key, seconds)
     return jsonify({'success': True, 'message': f'Taste {key} für {seconds}s gehalten', 'async': True})
+
+
+@remote_bp.route('/philips/ambilight', methods=['POST'])
+@login_required
+def philips_ambilight():
+    """Philips Ambilight control"""
+    from ..services.tv_service import get_current_tv_type
+
+    if get_current_tv_type() != 'philips':
+        return jsonify({'success': False, 'error': 'Nur für Philips TVs verfügbar'}), 400
+
+    action = request.form.get('action', 'toggle')
+    tv = get_tv_service()
+
+    try:
+        if hasattr(tv, 'get_ambilight_power') and hasattr(tv, 'set_ambilight_power'):
+            if action == 'toggle':
+                current = tv.get_ambilight_power()
+                tv.set_ambilight_power(not current)
+                message = 'Ambilight ' + ('aus' if current else 'an')
+            elif action == 'on':
+                tv.set_ambilight_power(True)
+                message = 'Ambilight an'
+            elif action == 'off':
+                tv.set_ambilight_power(False)
+                message = 'Ambilight aus'
+            else:
+                return jsonify({'success': False, 'error': 'Ungültige Aktion'}), 400
+
+            log_event(
+                level='INFO',
+                category='action',
+                message=message,
+                details={'action': action},
+                source='manual'
+            )
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'error': 'Ambilight nicht verfügbar'}), 503
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

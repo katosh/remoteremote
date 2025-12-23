@@ -23,12 +23,8 @@ def settings_view():
 
     tv = get_tv_service()
     tv_info = None
-    has_token = False
-    try:
-        tv_info = tv.get_info()
-        has_token = tv.is_paired
-    except Exception:
-        pass
+    # Don't block on get_info() - just check if paired (fast, no network call)
+    has_token = tv.is_paired
 
     # Count active sessions
     session_count = Session.query.filter_by(user_id=current_user.id).count()
@@ -550,23 +546,28 @@ def revoke_all_sessions():
 def tv_diagnostics():
     """Fetch all available TV information for diagnostics"""
     from datetime import datetime
+    from ..services.tv_service import get_current_tv_type
 
     tv = get_tv_service()
+    tv_type = get_current_tv_type()
+
     result = {
         'success': False,
         'reachable': False,
         'paired': tv.is_paired,
+        'tv_type': tv_type,
         'config': {
             'ip': Config.get('tv_ip', current_app.config.get('TV_IP', '')),
             'mac': Config.get('tv_mac', current_app.config.get('TV_MAC', '')),
-            'token_file': current_app.config.get('TV_TOKEN_FILE', ''),
+            'tv_type': tv_type,
             'has_token': tv.is_paired
         },
         'ping': {},
         'api_response': None,
         'parsed_info': None,
-        'upnp': {},
+        'volume': {},
         'apps': None,
+        'philips_features': None,
         'error': None
     }
 
@@ -579,56 +580,82 @@ def tv_diagnostics():
         result['ping'] = {'reachable': False, 'error': str(e)}
 
     if result['reachable']:
-        # Get raw API response
+        # Get parsed info (works for both TV types)
         try:
-            # Access the internal _rest_request method to get raw data
-            raw_data = tv._rest_request("", port=8001)
-            if raw_data is None:
-                raw_data = tv._rest_request("", port=tv.port)
-
-            if raw_data:
+            info = tv.get_info()
+            if info:
                 result['success'] = True
-                result['api_response'] = raw_data
-
-                # Also get parsed info
-                info = tv.get_info()
-                if info:
-                    result['parsed_info'] = {
-                        'name': info.name,
-                        'model': info.model,
-                        'model_name': info.model_name,
-                        'ip': info.ip,
-                        'mac': info.mac,
-                        'power_state': info.power_state,
-                        'firmware': info.firmware,
-                        'os': info.os,
-                        'resolution': info.resolution,
-                        'uuid': info.uuid
-                    }
-            else:
-                result['error'] = 'API-Anfrage fehlgeschlagen'
+                result['parsed_info'] = {
+                    'name': info.name,
+                    'model': info.model,
+                    'model_name': getattr(info, 'model_name', None),
+                    'ip': info.ip,
+                    'mac': info.mac,
+                    'power_state': info.power_state,
+                    'firmware': getattr(info, 'firmware', None),
+                    'os': getattr(info, 'os', None),
+                    'resolution': getattr(info, 'resolution', None),
+                    'uuid': getattr(info, 'uuid', None)
+                }
         except Exception as e:
-            result['error'] = f'API-Fehler: {str(e)}'
+            result['error'] = f'Info-Fehler: {str(e)}'
 
-        # Try to get UPnP volume info
+        # Get volume info
         try:
             volume = tv.get_volume()
-            muted = tv.get_mute_status()
-            result['upnp'] = {
+            muted = getattr(tv, 'get_mute_status', lambda: None)()
+            result['volume'] = {
                 'available': volume is not None,
                 'volume': volume,
                 'muted': muted
             }
         except Exception as e:
-            result['upnp'] = {'available': False, 'error': str(e)}
+            result['volume'] = {'available': False, 'error': str(e)}
 
-        # Try to get installed apps list
-        try:
-            apps_data = tv._rest_request("applications", port=8001)
-            if apps_data:
-                result['apps'] = apps_data
-        except Exception:
-            pass
+        # TV-type specific diagnostics
+        if tv_type == 'samsung':
+            # Samsung: Get raw API response
+            try:
+                if hasattr(tv, '_rest_request'):
+                    raw_data = tv._rest_request("", port=8001)
+                    if raw_data is None:
+                        raw_data = tv._rest_request("", port=getattr(tv, 'port', 8002))
+                    if raw_data:
+                        result['api_response'] = raw_data
+
+                    # Try to get installed apps list
+                    apps_data = tv._rest_request("applications", port=8001)
+                    if apps_data:
+                        result['apps'] = apps_data
+            except Exception as e:
+                if not result['error']:
+                    result['error'] = f'Samsung API-Fehler: {str(e)}'
+
+        elif tv_type == 'philips':
+            # Philips: Get Philips-specific features
+            try:
+                philips_info = {}
+
+                # Get applications
+                if hasattr(tv, 'get_applications'):
+                    apps = tv.get_applications()
+                    if apps:
+                        result['apps'] = apps
+
+                # Get Ambilight status
+                if hasattr(tv, 'get_ambilight_power'):
+                    ambilight = tv.get_ambilight_power()
+                    philips_info['ambilight'] = ambilight
+
+                if philips_info:
+                    result['philips_features'] = philips_info
+
+            except Exception as e:
+                if not result['error']:
+                    result['error'] = f'Philips-Fehler: {str(e)}'
+
+        if not result['error'] and result['parsed_info']:
+            result['success'] = True
     else:
         result['error'] = 'TV nicht erreichbar (Ping fehlgeschlagen)'
 

@@ -6,16 +6,23 @@
         <span class="{{ 'text-green-400' if data.success else 'text-red-400' }}">
             {{ 'TV erreichbar und antwortet' if data.success else (data.error or 'TV nicht erreichbar') }}
         </span>
+        {% if data.tv_type %}
+        <span class="ml-auto text-xs px-2 py-0.5 rounded {{ 'bg-blue-900 text-blue-300' if data.tv_type == 'philips' else 'bg-gray-700 text-gray-300' }}">
+            {{ 'Philips' if data.tv_type == 'philips' else 'Samsung' }}
+        </span>
+        {% endif %}
     </div>
 
     <!-- Connection Info -->
     <div class="bg-gray-800 rounded-lg p-4">
         <h3 class="font-medium mb-3 text-gray-300">Verbindung</h3>
         <dl class="grid grid-cols-2 gap-2">
+            <dt class="text-gray-500">TV-Typ</dt>
+            <dd>{{ 'Philips Android TV' if data.tv_type == 'philips' else 'Samsung Smart TV' }}</dd>
             <dt class="text-gray-500">Ping</dt>
             <dd>{{ 'OK' if data.ping.reachable else 'Fehlgeschlagen' }}</dd>
-            <dt class="text-gray-500">Token</dt>
-            <dd>{{ 'Vorhanden' if data.paired else 'Nicht vorhanden' }}</dd>
+            <dt class="text-gray-500">Gekoppelt</dt>
+            <dd>{{ 'Ja' if data.paired else 'Nein' }}</dd>
             <dt class="text-gray-500">IP</dt>
             <dd class="font-mono">{{ data.config.ip or '-' }}</dd>
             <dt class="text-gray-500">MAC</dt>
@@ -52,22 +59,39 @@
     </div>
     {% endif %}
 
-    {% if data.upnp %}
-    <!-- UPnP Status -->
+    {% if data.volume %}
+    <!-- Volume Status -->
     <div class="bg-gray-800 rounded-lg p-4">
-        <h3 class="font-medium mb-3 text-gray-300">UPnP (Lautstarke-Steuerung)</h3>
+        <h3 class="font-medium mb-3 text-gray-300">Lautstärke</h3>
         <dl class="grid grid-cols-2 gap-2">
             <dt class="text-gray-500">Verfügbar</dt>
-            <dd>{{ 'Ja' if data.upnp.available else 'Nein' }}</dd>
-            {% if data.upnp.available %}
+            <dd>{{ 'Ja' if data.volume.available else 'Nein' }}</dd>
+            {% if data.volume.available %}
             <dt class="text-gray-500">Lautstärke</dt>
-            <dd>{{ data.upnp.volume }}%</dd>
+            <dd>{{ data.volume.volume }}%</dd>
             <dt class="text-gray-500">Stumm</dt>
-            <dd>{{ 'Ja' if data.upnp.muted else 'Nein' }}</dd>
+            <dd>{{ 'Ja' if data.volume.muted else 'Nein' }}</dd>
             {% endif %}
-            {% if data.upnp.error %}
+            {% if data.volume.error %}
             <dt class="text-gray-500">Fehler</dt>
-            <dd class="text-red-400">{{ data.upnp.error }}</dd>
+            <dd class="text-red-400">{{ data.volume.error }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    {% endif %}
+
+    {% if data.philips_features %}
+    <!-- Philips-Specific Features -->
+    <div class="bg-gray-800 rounded-lg p-4">
+        <h3 class="font-medium mb-3 text-gray-300">Philips-Funktionen</h3>
+        <dl class="grid grid-cols-2 gap-2">
+            {% if data.philips_features.ambilight is not none %}
+            <dt class="text-gray-500">Ambilight</dt>
+            <dd>
+                <span class="px-2 py-0.5 rounded text-xs {{ 'bg-purple-600' if data.philips_features.ambilight else 'bg-gray-600' }}">
+                    {{ 'An' if data.philips_features.ambilight else 'Aus' }}
+                </span>
+            </dd>
             {% endif %}
         </dl>
     </div>
