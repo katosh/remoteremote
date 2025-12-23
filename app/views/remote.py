@@ -445,6 +445,63 @@ def hold_key():
     return jsonify({'success': True, 'message': f'Taste {key} für {seconds}s gehalten', 'async': True})
 
 
+@remote_bp.route('/philips/status', methods=['GET'])
+@login_required
+def philips_status():
+    """Get Philips TV current status (activity, channel, etc.)"""
+    from ..services.tv_service import get_current_tv_type
+
+    if get_current_tv_type() != 'philips':
+        return jsonify({'success': False, 'error': 'Nur für Philips TVs'}), 400
+
+    tv = get_tv_service()
+
+    try:
+        if hasattr(tv, 'get_status'):
+            status = tv.get_status()
+            return jsonify({
+                'success': True,
+                'power': status.get('power'),
+                'activity': status.get('activity'),
+                'activity_name': status.get('activity_name'),
+                'channel_name': status.get('channel_name'),
+                'source': status.get('source'),
+                'volume': status.get('volume')
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Status nicht verfügbar'}), 503
+    except Exception as e:
+        print(f"[Philips Status] Error: {e}", flush=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@remote_bp.route('/philips/tv-mode', methods=['POST'])
+@login_required
+def philips_tv_mode():
+    """Switch Philips TV to live TV mode"""
+    from ..services.tv_service import get_current_tv_type
+
+    if get_current_tv_type() != 'philips':
+        return jsonify({'success': False, 'error': 'Nur für Philips TVs'}), 400
+
+    tv = get_tv_service()
+
+    try:
+        if hasattr(tv, 'switch_to_tv'):
+            tv.switch_to_tv()
+            log_event(
+                level='INFO',
+                category='action',
+                message='Zu TV-Modus gewechselt',
+                source='manual'
+            )
+            return jsonify({'success': True, 'message': 'TV-Modus aktiviert'})
+        else:
+            return jsonify({'success': False, 'error': 'Nicht verfügbar'}), 503
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @remote_bp.route('/philips/ambilight', methods=['POST'])
 @login_required
 def philips_ambilight():

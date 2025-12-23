@@ -301,6 +301,109 @@ class PhilipsTVService(BaseTVService):
             print(f"[Philips TV] Error getting applications: {e}", flush=True)
             return []
 
+    def get_current_channel(self) -> Optional[dict]:
+        """Get current channel info"""
+        if not self._remote or not self.is_paired:
+            return None
+
+        try:
+            channel_name = self._remote.get_current_channel()
+            if channel_name:
+                return {
+                    'name': channel_name
+                }
+            return None
+        except Exception as e:
+            print(f"[Philips TV] Error getting current channel: {e}", flush=True)
+            return None
+
+    def get_status(self) -> dict:
+        """Get TV status including power and channel info"""
+        status = {
+            'power': None,
+            'activity': None,
+            'activity_name': None,
+            'channel_name': None,
+            'volume': None
+        }
+
+        if not self._remote or not self.is_paired:
+            return status
+
+        # Get power state
+        try:
+            power = self._remote.get_power()
+            status['power'] = 'on' if power else 'standby'
+        except Exception:
+            pass
+
+        if status['power'] != 'on':
+            return status
+
+        # Get channel info (shows current/last tuned channel)
+        try:
+            channel = self._remote.get_current_channel()
+            if channel:
+                status['activity'] = 'tv'
+                status['activity_name'] = 'TV'
+                status['channel_name'] = channel
+            else:
+                status['activity'] = 'on'
+                status['activity_name'] = 'Eingeschaltet'
+        except Exception:
+            status['activity'] = 'on'
+            status['activity_name'] = 'Eingeschaltet'
+
+        # Get volume
+        try:
+            status['volume'] = self._remote.get_volume()
+        except Exception:
+            pass
+
+        return status
+
+    def set_channel(self, channel_number: int) -> bool:
+        """Set channel by number"""
+        if not self._remote or not self.is_paired:
+            return False
+
+        try:
+            # First ensure we're in TV mode
+            self._remote.input_key(InputKeyValue.WATCH_TV)
+            import time
+            time.sleep(0.5)
+
+            # Get all channels and find by number
+            channels = self._remote.get_all_channels()
+            for ch in channels:
+                ch_num = getattr(ch, 'channel', None) or getattr(ch, 'preset', None)
+                if ch_num == channel_number:
+                    self._remote.set_channel(ch)
+                    return True
+
+            # If not found by number, try sending digits
+            for digit in str(channel_number):
+                key = getattr(InputKeyValue, f'DIGIT_{digit}', None)
+                if key:
+                    self._remote.input_key(key)
+                    time.sleep(0.2)
+            return True
+        except Exception as e:
+            print(f"[Philips TV] Error setting channel: {e}", flush=True)
+            return False
+
+    def switch_to_tv(self) -> bool:
+        """Switch to live TV mode"""
+        if not self._remote or not self.is_paired:
+            return False
+
+        try:
+            self._remote.input_key(InputKeyValue.WATCH_TV)
+            return True
+        except Exception as e:
+            print(f"[Philips TV] Error switching to TV: {e}", flush=True)
+            return False
+
     def launch_application(self, app_name: str) -> bool:
         """Launch an application by name"""
         if not self._remote or not self.is_paired:

@@ -256,17 +256,19 @@ def _execute_startup_action(action_data: dict):
     """
     TV einschalten und optional Kanal und Lautstärke setzen.
     Wartet nach dem Einschalten, bis TV bereit ist.
+    Supports both Samsung and Philips TVs.
     """
-    from .tv_service import get_tv_service, set_cached_power_state
+    from .tv_service import get_tv_service, set_cached_power_state, get_current_tv_type
     from .logger import log_event
 
     tv = get_tv_service()
+    tv_type = get_current_tv_type()
     wait_time = action_data.get('wait', 15)
     channel = action_data.get('channel')
     volume = action_data.get('volume')
 
     # 1. TV einschalten (Wake-on-LAN)
-    print(f"[Startup] Schalte TV ein...", flush=True)
+    print(f"[Startup] Schalte TV ein ({tv_type})...", flush=True)
     tv.power_on()
     set_cached_power_state('on')
 
@@ -274,7 +276,23 @@ def _execute_startup_action(action_data: dict):
     print(f"[Startup] Warte {wait_time}s bis TV bereit ist...", flush=True)
     time.sleep(wait_time)
 
-    # 3. Optional: Lautstärke setzen (via UPnP - schnell)
+    # 3. For Philips: Switch to TV mode first (starts in Home screen)
+    if tv_type == 'philips' and channel is not None:
+        print(f"[Startup] Philips: Wechsle zu TV-Modus...", flush=True)
+        try:
+            if hasattr(tv, 'switch_to_tv'):
+                tv.switch_to_tv()
+                time.sleep(2)  # Wait for TV mode to activate
+        except Exception as e:
+            log_event(
+                level='WARNING',
+                category='schedule',
+                message=f'TV-Modus konnte nicht aktiviert werden: {e}',
+                details={'error': str(e)},
+                source='schedule'
+            )
+
+    # 4. Optional: Lautstärke setzen
     if volume is not None:
         print(f"[Startup] Setze Lautstärke auf {volume}%...", flush=True)
         try:
@@ -288,11 +306,15 @@ def _execute_startup_action(action_data: dict):
                 source='schedule'
             )
 
-    # 4. Optional: Kanal wechseln
+    # 5. Optional: Kanal wechseln
     if channel is not None:
         print(f"[Startup] Wechsle zu Kanal {channel}...", flush=True)
         try:
-            tv.channel(channel)
+            # For Philips, use set_channel method if available
+            if tv_type == 'philips' and hasattr(tv, 'set_channel'):
+                tv.set_channel(channel)
+            else:
+                tv.channel(channel)
         except Exception as e:
             log_event(
                 level='WARNING',
