@@ -1,6 +1,6 @@
 {
-  "name": "remoteremote",
-  "short_name": "remoteremote",
+  "name": "remoteRemote",
+  "short_name": "remoteRemote",
   "description": "Web-based remote control for Samsung and Philips Smart TVs",
   "start_url": "/",
   "display": "standalone",

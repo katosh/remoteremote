@@ -956,8 +956,8 @@ msgid "Setup"
 msgstr "Ersteinrichtung"
 
 #: app/templates/setup.html:28
-msgid "This is the initial setup for remoteremote."
-msgstr "Dies ist die Ersteinrichtung für remoteremote."
+msgid "This is the initial setup for remoteRemote."
+msgstr "Dies ist die Ersteinrichtung für remoteRemote."
 
 #: app/templates/base.html:14
 msgid "Smart TV Remote Control"

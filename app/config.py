@@ -86,7 +86,7 @@ class Config:
     BACKUP_SSH_PATH = os.environ.get('BACKUP_SSH_PATH', '')
 
     # Application
-    APP_NAME = 'remoteremote'
+    APP_NAME = 'remoteRemote'
 
 
 class DevelopmentConfig(Config):

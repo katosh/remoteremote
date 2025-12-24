@@ -1,4 +1,4 @@
-# remoteremote
+# remoteRemote
 
 A web-based remote control for Samsung and Philips Smart TVs. Control your TV from any device on your local network through a responsive web interface.
 
