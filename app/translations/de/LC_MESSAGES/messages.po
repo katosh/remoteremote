@@ -1099,3 +1099,11 @@ msgstr "Ein Fehler ist aufgetreten"
 msgid "Please try again later."
 msgstr "Bitte versuchen Sie es später erneut."
 
+#: app/templates/settings.html
+msgid "Fetching TV information..."
+msgstr "Rufe TV-Informationen ab..."
+
+#: app/templates/settings.html
+msgid "Failed to fetch TV information. Please try again."
+msgstr "TV-Informationen konnten nicht abgerufen werden. Bitte versuchen Sie es erneut."
+
