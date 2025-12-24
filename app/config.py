@@ -30,7 +30,10 @@ def get_or_create_secret_key():
 
 
 class Config:
-    """Basis-Konfiguration"""
+    """Base configuration"""
+    # Application
+    APP_NAME = 'remoteRemote'
+
     # Flask
     SECRET_KEY = get_or_create_secret_key()
 
@@ -39,7 +42,7 @@ class Config:
     BABEL_TRANSLATION_DIRECTORIES = 'translations'
     LANGUAGES = ['en', 'de']
 
-    # Datenbank
+    # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         f"sqlite:///{os.path.join(instance_dir, 'tvremote.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -52,41 +55,41 @@ class Config:
         'pool_pre_ping': True  # Verify connections before use
     }
 
-    # Session
-    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    # Session & Authentication
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)  # Session timeout
+    REMEMBER_ME_DURATION_DAYS = 90  # "Remember me" token validity
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 
     # CSRF
     WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = 3600  # 1 Stunde
+    WTF_CSRF_TIME_LIMIT = 3600  # 1 hour
 
-    # Rate Limiting
+    # Rate Limiting (Flask-Limiter)
     RATELIMIT_STORAGE_URL = "memory://"
     RATELIMIT_DEFAULT = "200 per day"
     RATELIMIT_HEADERS_ENABLED = True
 
-    # TV-Einstellungen (Standardwerte)
-    TV_IP = os.environ.get('TV_IP') or '192.168.178.103'
+    # Rate Limits per endpoint category
+    RATELIMIT_API_STATUS = "180 per minute"  # Status polling (3/sec)
+    RATELIMIT_API_DATA = "60 per minute"  # General data endpoints
+    RATELIMIT_API_HEALTH = "30 per minute"  # Health checks
+    RATELIMIT_REMOTE_KEY = "120 per minute"  # Key presses (2/sec)
+    RATELIMIT_REMOTE_ACTION = "60 per minute"  # Power, volume, etc.
+    RATELIMIT_AUTH = "5 per minute"  # Login attempts
+
+    # TV defaults (can be overridden via UI or environment)
+    TV_IP = os.environ.get('TV_IP', '')
     TV_PORT = int(os.environ.get('TV_PORT') or 8002)
-    TV_MAC = os.environ.get('TV_MAC') or '80:47:86:E9:B2:17'
+    TV_MAC = os.environ.get('TV_MAC', '')
     TV_TOKEN_FILE = os.environ.get('TV_TOKEN_FILE') or os.path.join(instance_dir, 'tv_token')
 
-    # Zeitzone
+    # Timezone (default, configurable via UI)
     TIMEZONE = 'Europe/Berlin'
 
-    # Logging
-    LOG_RETENTION_DAYS = 365  # 1 Jahr
-
-    # Backup
-    BACKUP_METHOD = 'ssh'  # 'ssh' oder 'local'
-    BACKUP_SSH_HOST = os.environ.get('BACKUP_SSH_HOST', '')
-    BACKUP_SSH_USER = os.environ.get('BACKUP_SSH_USER', '')
-    BACKUP_SSH_PATH = os.environ.get('BACKUP_SSH_PATH', '')
-
-    # Application
-    APP_NAME = 'remoteRemote'
+    # Logging & Retention
+    LOG_RETENTION_DAYS = 365  # Activity log retention (1 year)
 
 
 class DevelopmentConfig(Config):

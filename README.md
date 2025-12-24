@@ -75,29 +75,37 @@ On first launch, you'll be prompted to create an admin account and configure you
 
 ## Configuration
 
-### Environment Variables
+Most settings are configured through the **web interface** after initial setup:
+- TV connection (IP, MAC, type) - with auto-discovery
+- Language preference
+- Timezone for scheduled actions
 
-Create a `.env` file in the project root:
+### Environment Variables (Optional)
+
+For headless or automated deployments, you can pre-configure settings via environment variables or a `.env` file:
 
 ```bash
-# Required
+# TV connection (optional - can be configured via UI)
 TV_IP=192.168.1.100          # Your TV's IP address
 TV_MAC=AA:BB:CC:DD:EE:FF     # TV MAC address (for Wake-on-LAN)
-TV_TYPE=samsung              # samsung or philips
 
-# Optional
-TV_PORT=8002                 # Default: 8002 (Samsung), 1926 (Philips)
+# Advanced (rarely needed)
 SECRET_KEY=your-secret-key   # Auto-generated if not set
 DATABASE_URL=sqlite:///instance/tvremote.db
 ```
 
-### Application Settings
+### Application Constants
 
-After login, configure additional settings via the web interface:
-- TV connection parameters
-- Timezone
-- Language preference
-- Log retention period
+Security and performance settings are defined in `app/config.py`. These require code changes and application restart:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `LOG_RETENTION_DAYS` | 365 | Activity log retention period |
+| `REMEMBER_ME_DURATION_DAYS` | 90 | "Remember me" token validity |
+| `PERMANENT_SESSION_LIFETIME` | 7 days | Session timeout |
+| `RATELIMIT_AUTH` | 5/min | Login attempt rate limit |
+| `RATELIMIT_REMOTE_KEY` | 120/min | Key press rate limit |
+| `RATELIMIT_REMOTE_ACTION` | 60/min | Action (power, volume) rate limit |
 
 ## Startup Options
 

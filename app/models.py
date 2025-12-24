@@ -80,14 +80,12 @@ class Session(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     is_current = db.Column(db.Boolean, default=False)  # Marked during request
 
-    # Default session duration: 90 days
-    DEFAULT_DURATION_DAYS = 90
-
     @classmethod
     def create_session(cls, user_id: int, user_agent: str, client_ip: str, duration_days: int = None):
         """Neue Session erstellen und Token zurückgeben"""
         if duration_days is None:
-            duration_days = cls.DEFAULT_DURATION_DAYS
+            from flask import current_app
+            duration_days = current_app.config.get('REMEMBER_ME_DURATION_DAYS', 90)
 
         # Generate secure token
         token = secrets.token_urlsafe(32)
