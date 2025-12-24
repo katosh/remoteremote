@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required
 
 from ..models import User, Schedule, Log, TVState, Config, db
-from ..services.tv_service import get_cached_status, get_tv_service
+from ..services.tv_service import get_cached_status, get_tv_service, get_last_error, is_token_valid
 
 main_bp = Blueprint('main', __name__)
 
@@ -41,10 +41,13 @@ def dashboard():
     in_transition = status.get('in_transition', False)
     transition_type = status.get('transition_type')
     just_confirmed = status.get('just_confirmed', False)
+    startup_failed = status.get('startup_failed', False)
 
-    # Check if TV has a token
-    tv = get_tv_service()
-    tv_has_token = tv.is_paired
+    # Check for recent errors from async operations
+    last_error = get_last_error()
+
+    # Check if TV has a valid token
+    tv_has_token = is_token_valid()
 
     # Favorite channels (not yet implemented as model, use empty list)
     favorites = []
@@ -69,6 +72,8 @@ def dashboard():
         in_transition=in_transition,
         transition_type=transition_type,
         just_confirmed=just_confirmed,
+        startup_failed=startup_failed,
+        last_error=last_error,
         tv_has_token=tv_has_token,
         favorites=favorites,
         schedules=upcoming_schedules,

@@ -38,19 +38,38 @@ _status_cache: dict = {
     'target_state': None,  # Expected state after transition ('on' or 'off')
     'just_confirmed': False,  # True when transition just completed
     'confirmed_at': 0,  # Timestamp when state was confirmed
-    'unreachable_since': 0  # Timestamp when TV first became unreachable during shutdown
+    'unreachable_since': 0,  # Timestamp when TV first became unreachable during shutdown
+    'startup_failed': False,  # True when startup timed out (TV didn't respond)
+    'startup_failed_at': 0  # Timestamp when startup failed
 }
+
+# Error tracking for async operations
+_last_error: dict = {
+    'message': None,
+    'error_type': None,  # 'pairing', 'timeout', 'connection', 'unknown'
+    'timestamp': 0,
+    'action': None  # What was being attempted
+}
+ERROR_DISPLAY_SECONDS = 15  # How long to show errors
+
+# Track if token is known to be invalid (detected from errors)
+_token_invalid: bool = False
 CACHE_TTL_SECONDS = 10  # Cache TV status for 10 seconds (shorter for responsiveness)
 
-# Maximum transition duration (safety timeout if API never confirms)
-MAX_TRANSITION_SECONDS = 60  # Give up after 60 seconds if API never confirms
+# Maximum transition duration for turning OFF - after this, check actual state
+MAX_TRANSITION_SECONDS = 60
+
+# Maximum transition duration for turning ON - if TV doesn't respond, return to off
+# Shorter timeout so user can try again quickly if WoL fails
+MAX_STARTUP_SECONDS = 10
 
 # Minimum time to show transition state before checking API
 # Keep this short to not miss standby phase, but long enough to avoid immediate flicker
 MIN_TRANSITION_SECONDS = 0.5
 
 # Minimum time unreachable during shutdown before marking as fully off
-# Wait a bit to ensure TV is truly off, not just temporarily unreachable
+# This is the ONLY timeout-based state assumption: if TV is in standby and becomes
+# unreachable for this duration, we mark it as fully off (since we can't ping a powered-off TV)
 MIN_SHUTTING_DOWN_SECONDS = 3
 
 
@@ -184,6 +203,113 @@ def invalidate_status_cache():
     _status_cache['last_check'] = 0
 
 
+def set_last_error(message: str, action: str = None, error_type: str = None):
+    """
+    Record an error from an async operation for display in the UI.
+
+    Args:
+        message: The error message
+        action: What was being attempted (e.g., 'send_key', 'power_off')
+        error_type: Category of error - 'pairing', 'timeout', 'connection', 'unknown'
+    """
+    global _last_error, _token_invalid
+
+    # Auto-detect error type from message if not provided
+    if error_type is None:
+        msg_lower = message.lower()
+        if 'ssl' in msg_lower or 'handshake' in msg_lower or 'timeout' in msg_lower:
+            error_type = 'timeout'
+        elif 'token' in msg_lower or 'pair' in msg_lower or 'auth' in msg_lower:
+            error_type = 'pairing'
+        elif 'connect' in msg_lower or 'refused' in msg_lower or 'unreachable' in msg_lower:
+            error_type = 'connection'
+        else:
+            error_type = 'unknown'
+
+    _last_error['message'] = message
+    _last_error['error_type'] = error_type
+    _last_error['timestamp'] = time.time()
+    _last_error['action'] = action
+    print(f"[TV Service] Error recorded: {error_type} - {message}", flush=True)
+
+    # Mark token as invalid if this looks like an auth/pairing error
+    # SSL handshake timeouts often indicate the token is rejected
+    if error_type in ('pairing', 'timeout'):
+        _token_invalid = True
+        print(f"[TV Service] Token marked as potentially invalid due to {error_type} error", flush=True)
+
+
+def get_last_error() -> dict:
+    """
+    Get the last error if it's still within the display window.
+    Returns None if no recent error or error has expired.
+    """
+    global _last_error
+
+    if _last_error['timestamp'] == 0:
+        return None
+
+    age = time.time() - _last_error['timestamp']
+    if age > ERROR_DISPLAY_SECONDS:
+        # Error expired, clear it
+        _last_error['message'] = None
+        _last_error['error_type'] = None
+        _last_error['timestamp'] = 0
+        _last_error['action'] = None
+        return None
+
+    return {
+        'message': _last_error['message'],
+        'error_type': _last_error['error_type'],
+        'action': _last_error['action'],
+        'age': age
+    }
+
+
+def clear_last_error():
+    """Clear the last error (e.g., when user acknowledges it)"""
+    global _last_error
+    _last_error['message'] = None
+    _last_error['error_type'] = None
+    _last_error['timestamp'] = 0
+    _last_error['action'] = None
+
+
+def is_token_valid() -> bool:
+    """
+    Check if the TV token is valid.
+    Returns False if:
+    - No token exists (is_paired is False)
+    - Token was marked invalid due to auth errors
+    """
+    global _token_invalid
+    tv = get_tv_service()
+    if not tv.is_paired:
+        return False
+    return not _token_invalid
+
+
+def mark_token_valid():
+    """
+    Mark the token as valid again (e.g., after successful re-pairing or
+    after a successful command).
+    """
+    global _token_invalid
+    if _token_invalid:
+        print(f"[TV Service] Token marked as valid", flush=True)
+        _token_invalid = False
+
+
+def mark_token_invalid():
+    """
+    Mark the token as invalid (e.g., when we detect auth errors).
+    """
+    global _token_invalid
+    if not _token_invalid:
+        print(f"[TV Service] Token marked as invalid", flush=True)
+        _token_invalid = True
+
+
 def set_cached_power_state(power_state: str, is_transition: bool = True):
     """
     Set the expected power state in cache and database after a power action.
@@ -197,13 +323,15 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
     now = time.time()
 
     if power_state == 'on' or power_state == 'turning_on':
-        # TV is turning on - set transition state
+        # TV is turning on - set transition state with shorter timeout
         _status_cache['power_state'] = 'turning_on' if is_transition else 'on'
         _status_cache['connected'] = False  # Not connected yet
         _status_cache['info'] = None
         _status_cache['target_state'] = 'on'  # Remember expected end state
+        _status_cache['startup_failed'] = False  # Clear any previous failure
+        _status_cache['startup_failed_at'] = 0
         if is_transition:
-            _status_cache['transition_until'] = now + MAX_TRANSITION_SECONDS
+            _status_cache['transition_until'] = now + MAX_STARTUP_SECONDS
             _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_on'
     elif power_state in ('off', 'standby', 'turning_off'):
@@ -599,29 +727,34 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                 'transition_remaining': int(_status_cache['transition_until'] - now)
             }
 
-    # Safety timeout expired - assume target state was reached if we have one
-    target_state = _status_cache.get('target_state')
+    # Transition timeout expired - handle based on transition type
     expired_transition_type = _status_cache.get('transition_type')
-    if target_state and expired_transition_type:
-        print(f"[TV Service] Transition timeout - assuming target state: {target_state}", flush=True)
+    if expired_transition_type:
+        print(f"[TV Service] Transition timeout expired ({expired_transition_type})", flush=True)
         _status_cache['transition_until'] = 0
         _status_cache['transition_type'] = None
-        _status_cache['power_state'] = target_state
-        _status_cache['connected'] = (target_state == 'on')
         _status_cache['target_state'] = None
-        _status_cache['last_check'] = now
-        _status_cache['just_confirmed'] = True
-        _status_cache['confirmed_at'] = now
-        return {
-            'connected': (target_state == 'on'),
-            'power_state': target_state,
-            'info': None,
-            'cached': False,
-            'cache_age': 0,
-            'in_transition': False,
-            'transition_type': None,
-            'just_confirmed': True
-        }
+
+        # For startup timeout: if TV never responded, return to off state so user can retry
+        if expired_transition_type == 'turning_on':
+            print(f"[TV Service] Startup timeout - TV did not respond, returning to off state", flush=True)
+            _status_cache['power_state'] = 'off'
+            _status_cache['connected'] = False
+            _status_cache['last_check'] = now
+            _status_cache['startup_failed'] = True
+            _status_cache['startup_failed_at'] = now
+            return {
+                'connected': False,
+                'power_state': 'off',
+                'info': None,
+                'cached': False,
+                'cache_age': 0,
+                'in_transition': False,
+                'transition_type': None,
+                'just_confirmed': False,
+                'startup_failed': True
+            }
+        # For shutdown: fall through to check actual state via ping/API
 
     # Check database for recent state updates from other processes
     db_power_state = None
@@ -645,6 +778,15 @@ def get_cached_status(force_refresh: bool = False) -> dict:
         # Clear the flag after 3 seconds
         _status_cache['just_confirmed'] = False
 
+    # Check if startup recently failed (show for 30 seconds to give user time to read tips)
+    startup_failed = False
+    startup_failed_age = now - _status_cache.get('startup_failed_at', 0)
+    if _status_cache.get('startup_failed') and startup_failed_age < 30:
+        startup_failed = True
+    elif _status_cache.get('startup_failed'):
+        # Clear the flag after 30 seconds
+        _status_cache['startup_failed'] = False
+
     # Return memory cached status if still valid
     if not force_refresh and cache_age < CACHE_TTL_SECONDS and _status_cache['connected'] is not None:
         power_state = _status_cache['power_state']
@@ -659,7 +801,8 @@ def get_cached_status(force_refresh: bool = False) -> dict:
             'cache_age': cache_age,
             'in_transition': False,
             'transition_type': None,
-            'just_confirmed': just_confirmed
+            'just_confirmed': just_confirmed,
+            'startup_failed': startup_failed
         }
 
     # Fetch fresh status from TV
@@ -685,7 +828,8 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     'cache_age': cache_age,
                     'in_transition': False,
                     'transition_type': None,
-                    'just_confirmed': just_confirmed
+                    'just_confirmed': just_confirmed,
+                    'startup_failed': startup_failed
                 }
             # Otherwise assume off
             power_state = 'off'
@@ -714,7 +858,8 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                 'cache_age': cache_age,
                 'in_transition': False,
                 'transition_type': None,
-                'just_confirmed': just_confirmed
+                'just_confirmed': just_confirmed,
+                'startup_failed': startup_failed
             }
         power_state = 'off'
 
@@ -735,7 +880,8 @@ def get_cached_status(force_refresh: bool = False) -> dict:
         'cache_age': 0,
         'in_transition': False,
         'transition_type': None,
-        'just_confirmed': just_confirmed
+        'just_confirmed': just_confirmed,
+        'startup_failed': startup_failed
     }
 
 
@@ -755,7 +901,7 @@ def _create_tv_instance() -> TVInstance:
         tv_ip = os.environ.get('TV_IP', '192.168.178.103')
         tv_mac = os.environ.get('TV_MAC', '80:47:86:E9:B2:17')
 
-    print(f"[TV Service] Creating {_tv_type.upper()} TV instance: ip={tv_ip}", flush=True)
+    print(f"[TV Service] Creating {_tv_type.upper()} TV instance: ip={tv_ip}, mac={tv_mac or 'NOT SET'}", flush=True)
 
     if _tv_type == 'philips':
         return _create_philips_instance(tv_ip, tv_mac)
@@ -921,6 +1067,8 @@ class TVServiceWrapper:
 __all__ = [
     'get_tv_service', 'reinit_tv_service', 'get_cached_status',
     'invalidate_status_cache', 'set_cached_power_state',
+    'set_last_error', 'get_last_error', 'clear_last_error',
+    'is_token_valid', 'mark_token_valid', 'mark_token_invalid',
     'get_current_tv_type', 'set_tv_type',
     'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper',
     'PHILIPS_AVAILABLE'

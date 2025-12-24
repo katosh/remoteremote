@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required
 
 from .. import limiter
-from ..services.tv_service import get_tv_service, invalidate_status_cache, set_cached_power_state, get_cached_status
+from ..services.tv_service import get_tv_service, invalidate_status_cache, set_cached_power_state, get_cached_status, set_last_error, get_last_error, is_token_valid, mark_token_valid
 from ..services.logger import log_event
 
 remote_bp = Blueprint('remote', __name__, url_prefix='/remote')
@@ -38,14 +38,28 @@ def _send_key_async(key: str, delay: float = 0.1):
     """Send key in background thread for faster UI response."""
     def _send():
         tv = get_tv_service()
-        tv.send_key(key, delay=delay)
-        log_event(
-            level='INFO',
-            category='action',
-            message=f'Taste gesendet: {key}',
-            details={'key': key, 'async': True},
-            source='manual'
-        )
+        try:
+            tv.send_key(key, delay=delay)
+            # Command succeeded - token is working, clear any invalid flag
+            mark_token_valid()
+            log_event(
+                level='INFO',
+                category='action',
+                message=f'Taste gesendet: {key}',
+                details={'key': key, 'async': True},
+                source='manual'
+            )
+        except Exception as e:
+            error_msg = str(e)
+            log_event(
+                level='ERROR',
+                category='action',
+                message=f'Fehler beim Senden der Taste: {key}',
+                details={'key': key, 'error': error_msg},
+                source='manual'
+            )
+            set_last_error(error_msg, action='send_key')
+            raise
 
     _run_async(_send)
 
@@ -65,9 +79,8 @@ def index():
     in_transition = status.get('in_transition', False)
     transition_type = status.get('transition_type')
 
-    # Check if TV has a token (needed to know which controls are available)
-    tv = get_tv_service()
-    tv_has_token = tv.is_paired
+    # Check if TV has a valid token (needed to know which controls are available)
+    tv_has_token = is_token_valid()
 
     # Get TV type and select appropriate template
     tv_type = get_current_tv_type()
@@ -135,13 +148,29 @@ def _power_action_async(action: str):
         print(f"[Power] Executing power action: {action}", flush=True)
         try:
             if action == 'on':
+                # Log MAC address for Wake-on-LAN debugging
+                mac = getattr(tv, 'mac', None)
+                print(f"[Power] Sending Wake-on-LAN to MAC: {mac or 'NOT SET'}", flush=True)
+                if not mac:
+                    print(f"[Power] WARNING: No MAC address configured - WoL will fail!", flush=True)
                 result = tv.power_on()
                 print(f"[Power] power_on() returned: {result}", flush=True)
             else:
                 result = tv.power_off()
                 print(f"[Power] power_off() returned: {result}", flush=True)
+            # Command succeeded - token is working, clear any invalid flag
+            mark_token_valid()
         except Exception as e:
-            print(f"[Power] Error executing power action: {e}", flush=True)
+            error_msg = str(e)
+            print(f"[Power] Error executing power action: {error_msg}", flush=True)
+            log_event(
+                level='ERROR',
+                category='action',
+                message=f'Fehler bei Power-Aktion: {action}',
+                details={'action': action, 'error': error_msg},
+                source='manual'
+            )
+            set_last_error(error_msg, action=f'power_{action}')
             raise
     _run_async(_execute)
 
@@ -202,6 +231,8 @@ def power():
                     in_transition=True,
                     transition_type='turning_on',
                     just_confirmed=False,
+                    startup_failed=False,
+                    last_error=None,
                     tv_state=tv_state,
                     tv_info=None
                 )
@@ -213,6 +244,8 @@ def power():
                     in_transition=True,
                     transition_type='turning_off',
                     just_confirmed=False,
+                    startup_failed=False,
+                    last_error=None,
                     tv_state=tv_state,
                     tv_info=None
                 )

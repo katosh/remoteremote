@@ -161,15 +161,14 @@ def create_app(config_name: str = None) -> Flask:
                 'language_auto': user_language is None
             }
 
-        from .services.tv_service import get_tv_service, get_cached_status
+        from .services.tv_service import get_tv_service, get_cached_status, is_token_valid
         try:
-            tv = get_tv_service()
             # Use cached status to avoid slow network calls on every page load
             status = get_cached_status()
             return {
                 'app_name': app.config['APP_NAME'],
                 'tv_connected': status['connected'],
-                'tv_has_token': tv.is_paired if tv else False,
+                'tv_has_token': is_token_valid(),
                 'languages': LANGUAGES,
                 'current_language': str(get_locale()),
                 'tv_timezone': tv_timezone,

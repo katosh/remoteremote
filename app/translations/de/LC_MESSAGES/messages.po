@@ -1131,3 +1131,75 @@ msgstr "Rufe TV-Informationen ab..."
 msgid "Failed to fetch TV information. Please try again."
 msgstr "TV-Informationen konnten nicht abgerufen werden. Bitte versuchen Sie es erneut."
 
+#: app/templates/partials/tv_status.html
+msgid "Startup failed"
+msgstr "Start fehlgeschlagen"
+
+#: app/templates/partials/tv_status.html
+msgid "TV did not respond"
+msgstr "TV hat nicht geantwortet"
+
+#: app/templates/partials/tv_status.html
+msgid "Check the following:"
+msgstr "Überprüfen Sie Folgendes:"
+
+#: app/templates/partials/tv_status.html
+msgid "MAC address configured in Settings"
+msgstr "MAC-Adresse in den Einstellungen konfiguriert"
+
+#: app/templates/partials/tv_status.html
+msgid "TV has network standby enabled"
+msgstr "TV hat Netzwerk-Standby aktiviert"
+
+#: app/templates/partials/tv_status.html
+msgid "TV and server on same network"
+msgstr "TV und Server im selben Netzwerk"
+
+#: app/templates/partials/tv_status.html
+msgid "Check Settings"
+msgstr "Einstellungen prüfen"
+
+#: app/views/api.py
+msgid "Command failed"
+msgstr "Befehl fehlgeschlagen"
+
+#: app/views/api.py
+msgid "Connection timeout - check if TV is on"
+msgstr "Verbindungs-Timeout - prüfen Sie ob der TV eingeschaltet ist"
+
+#: app/views/api.py
+msgid "Pairing required"
+msgstr "Kopplung erforderlich"
+
+#: app/templates/partials/tv_status.html
+msgid "Connection timed out. The TV may be off or not responding."
+msgstr "Verbindungs-Timeout. Der TV ist möglicherweise aus oder antwortet nicht."
+
+#: app/templates/partials/tv_status.html
+msgid "Check if TV is turned on"
+msgstr "Prüfen Sie ob der TV eingeschaltet ist"
+
+#: app/templates/partials/tv_status.html
+msgid "TV may need to be re-paired"
+msgstr "TV muss möglicherweise neu gekoppelt werden"
+
+#: app/templates/partials/tv_status.html
+msgid "Re-pair TV"
+msgstr "TV neu koppeln"
+
+#: app/templates/partials/tv_status.html
+msgid "Authentication failed. The TV needs to be paired again."
+msgstr "Authentifizierung fehlgeschlagen. Der TV muss neu gekoppelt werden."
+
+#: app/templates/partials/tv_status.html
+msgid "Could not connect to TV. Check network connection."
+msgstr "Verbindung zum TV fehlgeschlagen. Prüfen Sie die Netzwerkverbindung."
+
+#: app/templates/partials/tv_status.html
+msgid "Check TV IP address in Settings"
+msgstr "TV IP-Adresse in den Einstellungen prüfen"
+
+#: app/templates/partials/tv_status.html
+msgid "An error occurred while sending the command."
+msgstr "Beim Senden des Befehls ist ein Fehler aufgetreten."
+

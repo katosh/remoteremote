@@ -7,7 +7,7 @@ from flask_login import login_required
 
 from .. import limiter
 from ..models import TVState, Schedule, Log, db
-from ..services.tv_service import get_tv_service
+from ..services.tv_service import get_tv_service, get_last_error, clear_last_error, is_token_valid
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -35,11 +35,30 @@ def tv_status():
     in_transition = cached.get('in_transition', False)
     transition_type = cached.get('transition_type')
     just_confirmed = cached.get('just_confirmed', False)
+    startup_failed = cached.get('startup_failed', False)
+
+    # Check for recent errors from async operations
+    last_error = get_last_error()
 
     # HTMX erwartet HTML, normale Requests bekommen JSON
     if request.headers.get('HX-Request'):
         if mini:
-            # Mini status for remote view
+            # Mini status for remote view - check for errors first
+            if last_error:
+                error_type = last_error.get('error_type', 'unknown')
+                if error_type == 'timeout':
+                    hint = _('Connection timeout - check if TV is on')
+                elif error_type == 'pairing':
+                    hint = _('Pairing required')
+                else:
+                    hint = _('Check Settings')
+                return f'''<div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                        <span class="text-sm text-red-400">{_('Command failed')}</span>
+                    </div>
+                    <a href="/settings#tv-pairing" class="text-xs text-blue-400 hover:text-blue-300 ml-6">{hint}</a>
+                </div>'''
             checkmark = '<svg class="w-3 h-3 inline ml-1 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' if just_confirmed else ''
             if in_transition:
                 if transition_type == 'turning_on':
@@ -62,6 +81,15 @@ def tv_status():
                     <div class="w-3 h-3 rounded-full bg-green-500"></div>
                     <span class="text-sm">{_('Powered On')}{checkmark}</span>
                 </div>'''
+            elif startup_failed:
+                # Startup failed - show warning with link to settings
+                return f'''<div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <span class="text-sm text-red-400">{_('Startup failed')}</span>
+                    </div>
+                    <a href="/settings#tv-config" class="text-xs text-blue-400 hover:text-blue-300 ml-6">{_('Check Settings')}</a>
+                </div>'''
             else:
                 return f'''<div class="flex items-center gap-3">
                     <div class="w-3 h-3 rounded-full bg-gray-500"></div>
@@ -74,6 +102,8 @@ def tv_status():
             in_transition=in_transition,
             transition_type=transition_type,
             just_confirmed=just_confirmed,
+            startup_failed=startup_failed,
+            last_error=last_error,
             tv_state=tv_state,
             tv_info=cached.get('info')
         )
@@ -218,5 +248,5 @@ def health():
     return jsonify({
         'status': 'ok',
         'tv_reachable': tv_reachable,
-        'tv_paired': tv.is_paired
+        'tv_paired': is_token_valid()
     })

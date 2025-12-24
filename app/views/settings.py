@@ -10,7 +10,7 @@ from flask_babel import gettext as _
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ..models import db, Config, User, Log, Session
-from ..services.tv_service import get_tv_service, reinit_tv_service
+from ..services.tv_service import get_tv_service, reinit_tv_service, mark_token_valid, mark_token_invalid
 from ..services.logger import log_event
 from ..services.discovery import discover_samsung_tvs, discover_all_tvs
 
@@ -25,12 +25,12 @@ COMMON_TIMEZONES = sorted(pytz.common_timezones)
 def settings_view():
     """Einstellungen-Übersicht"""
     from flask_login import current_user
-    from ..services.tv_service import get_current_tv_type
+    from ..services.tv_service import get_current_tv_type, is_token_valid
 
     tv = get_tv_service()
     tv_info = None
-    # Don't block on get_info() - just check if paired (fast, no network call)
-    has_token = tv.is_paired
+    # Check if token exists AND is valid (not marked as invalid due to errors)
+    has_token = is_token_valid()
 
     # Count active sessions
     session_count = Session.query.filter_by(user_id=current_user.id).count()
@@ -128,6 +128,10 @@ def update_tv():
     tv_ip = request.form.get('tv_ip', '').strip()
     tv_mac = request.form.get('tv_mac', '').strip()
 
+    # Get current values to detect changes
+    old_ip = Config.get('tv_ip', '')
+    old_type = Config.get('tv_type', 'samsung')
+
     # Validate TV type
     if tv_type not in ('samsung', 'philips'):
         tv_type = 'samsung'
@@ -145,10 +149,13 @@ def update_tv():
         return redirect(url_for('settings.settings_view'))
 
     Config.set('tv_type', tv_type)
-    if tv_ip:
-        Config.set('tv_ip', tv_ip)
-    if tv_mac:
-        Config.set('tv_mac', tv_mac)
+    # Always store IP and MAC (even if empty, to clear old values)
+    Config.set('tv_ip', tv_ip or '')
+    Config.set('tv_mac', tv_mac or '')
+
+    # If IP or TV type changed, token is no longer valid for new TV
+    if tv_ip != old_ip or tv_type != old_type:
+        mark_token_invalid()
 
     reinit_tv_service()
 
@@ -276,6 +283,9 @@ def pair():
 
             # Reinitialize TV service to ensure token is loaded
             reinit_tv_service()
+
+            # Mark token as valid (clear any previous invalid flag)
+            mark_token_valid()
 
             log_event(
                 level='INFO',
@@ -493,6 +503,9 @@ def pair_philips_complete():
 
             # Reinitialize TV service with new credentials
             reinit_tv_service()
+
+            # Mark token as valid (clear any previous invalid flag)
+            mark_token_valid()
 
             # Clean up
             with _philips_pairing_lock:
@@ -718,21 +731,22 @@ def revoke_all_sessions():
 def tv_diagnostics():
     """Fetch all available TV information for diagnostics"""
     from datetime import datetime
-    from ..services.tv_service import get_current_tv_type
+    from ..services.tv_service import get_current_tv_type, is_token_valid
 
     tv = get_tv_service()
     tv_type = get_current_tv_type()
+    token_valid = is_token_valid()
 
     result = {
         'success': False,
         'reachable': False,
-        'paired': tv.is_paired,
+        'paired': token_valid,
         'tv_type': tv_type,
         'config': {
             'ip': Config.get('tv_ip', current_app.config.get('TV_IP', '')),
             'mac': Config.get('tv_mac', current_app.config.get('TV_MAC', '')),
             'tv_type': tv_type,
-            'has_token': tv.is_paired
+            'has_token': token_valid
         },
         'ping': {},
         'api_response': None,
