@@ -246,6 +246,73 @@ def pair():
     """TV-Pairing starten (Samsung)"""
     tv = get_tv_service()
 
+    # Pre-check: Verify TV is reachable and is actually a Samsung TV
+    tv_ip = Config.get('tv_ip', current_app.config.get('TV_IP', ''))
+    if not tv_ip:
+        return f'''
+        <div class="p-4 bg-red-900/30 border border-red-700 rounded-xl text-red-400">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="font-medium">{_('TV IP Address')} {_('not configured')}</p>
+                    <p class="text-sm mt-1 opacity-80">{_('Please enter and save the TV IP address first.')}</p>
+                </div>
+            </div>
+        </div>
+        '''
+
+    # Check if device is reachable
+    print(f"[Pairing] Checking if TV at {tv_ip} is reachable...", flush=True)
+    if not tv.ping(timeout=3.0):
+        return f'''
+        <div class="p-4 bg-red-900/30 border border-red-700 rounded-xl text-red-400">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="font-medium">{_('TV not reachable')}</p>
+                    <p class="text-sm mt-1 opacity-80">{_('The TV at')} {tv_ip} {_('is not reachable. Please check:')}</p>
+                    <ul class="text-sm mt-2 ml-4 list-disc opacity-80">
+                        <li>{_('Is the TV turned on?')}</li>
+                        <li>{_('Is the IP address correct?')}</li>
+                        <li>{_('Are TV and server on the same network?')}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        '''
+
+    # Try to get TV info to verify it's actually a Samsung TV
+    print(f"[Pairing] Verifying device is a Samsung TV...", flush=True)
+    try:
+        info = tv.get_info()
+        if info is None:
+            return f'''
+            <div class="p-4 bg-yellow-900/30 border border-yellow-700 rounded-xl text-yellow-400">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div>
+                        <p class="font-medium">{_('No Samsung TV found')}</p>
+                        <p class="text-sm mt-1 opacity-80">{_('The device at')} {tv_ip} {_('does not respond like a Samsung TV. Please check:')}</p>
+                        <ul class="text-sm mt-2 ml-4 list-disc opacity-80">
+                            <li>{_('Is it really a Samsung Smart TV?')}</li>
+                            <li>{_('Is the TV in network standby instead of completely off?')}</li>
+                            <li>{_('For Philips TVs please select "Philips" as TV type.')}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            '''
+        print(f"[Pairing] Found Samsung TV: {info.model_name} ({info.model_id})", flush=True)
+    except Exception as e:
+        print(f"[Pairing] Could not verify TV: {e}", flush=True)
+        # Continue anyway - some TVs may require pairing before responding fully
+
     try:
         # Clear existing token to force new pairing request
         token_file = current_app.config.get('TV_TOKEN_FILE', '~/.tv_token')
@@ -367,6 +434,7 @@ _philips_pairing_lock = threading.Lock()
 def pair_philips_start():
     """Start Philips TV pairing - initiates connection and shows PIN on TV"""
     import secrets
+    import socket
     from ..services.tv_service import PHILIPS_AVAILABLE
 
     if not PHILIPS_AVAILABLE:
@@ -374,7 +442,60 @@ def pair_philips_start():
 
     tv_ip = Config.get('tv_ip', current_app.config.get('TV_IP', ''))
     if not tv_ip:
-        return jsonify({'success': False, 'error': 'TV IP-Adresse nicht konfiguriert. Bitte zuerst IP eingeben und speichern.'}), 400
+        return jsonify({'success': False, 'error': _('Please enter and save the TV IP address first.')}), 400
+
+    # Pre-check: Verify TV is reachable on Philips API port (1926)
+    print(f"[Philips Pairing] Checking if TV at {tv_ip} is reachable...", flush=True)
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3.0)
+        result = sock.connect_ex((tv_ip, 1926))
+        sock.close()
+        if result != 0:
+            return jsonify({
+                'success': False,
+                'error': _('The TV at') + f' {tv_ip} ' + _('is not reachable.') + ' ' + _('Please check:') + ' ' + _('Is the TV turned on?') + ' ' + _('Is the IP address correct?') + ' ' + _('Are TV and server on the same network?')
+            }), 400
+        print(f"[Philips Pairing] TV is reachable on port 1926", flush=True)
+    except Exception as e:
+        print(f"[Philips Pairing] Connectivity check failed: {e}", flush=True)
+        return jsonify({
+            'success': False,
+            'error': _('Connection test failed:') + f' {str(e)}'
+        }), 400
+
+    # Try to verify it's actually a Philips TV by checking the API
+    print(f"[Philips Pairing] Verifying device is a Philips TV...", flush=True)
+    try:
+        import urllib.request
+        import urllib.error
+        import ssl
+        import json
+
+        # Philips TVs have a system info endpoint that works without auth
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        req = urllib.request.Request(f'https://{tv_ip}:1926/6/system', method='GET')
+        req.add_header('Content-Type', 'application/json')
+
+        with urllib.request.urlopen(req, timeout=5, context=ctx) as response:
+            data = json.loads(response.read().decode())
+            model = data.get('name', 'Unknown')
+            print(f"[Philips Pairing] Found Philips TV: {model}", flush=True)
+    except urllib.error.HTTPError as e:
+        # 401 is expected without auth - means it's a Philips TV
+        if e.code == 401:
+            print(f"[Philips Pairing] Got 401 - confirmed Philips TV (needs pairing)", flush=True)
+        else:
+            print(f"[Philips Pairing] HTTP error: {e.code}", flush=True)
+    except Exception as e:
+        print(f"[Philips Pairing] Could not verify TV type: {e}", flush=True)
+        return jsonify({
+            'success': False,
+            'error': _('The device at') + f' {tv_ip} ' + _('does not respond like a Philips TV.') + ' ' + _('Is it really a Philips Smart TV?') + ' ' + _('For Samsung TVs please select "Samsung" as TV type.')
+        }), 400
 
     # Generate a unique request ID
     request_id = secrets.token_urlsafe(16)

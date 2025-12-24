@@ -1203,3 +1203,79 @@ msgstr "TV IP-Adresse in den Einstellungen prüfen"
 msgid "An error occurred while sending the command."
 msgstr "Beim Senden des Befehls ist ein Fehler aufgetreten."
 
+#: app/views/settings.py (pairing pre-checks)
+msgid "not configured"
+msgstr "nicht konfiguriert"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Please enter and save the TV IP address first."
+msgstr "Bitte zuerst die IP-Adresse des TVs eingeben und speichern."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "The TV at"
+msgstr "Der TV unter"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "is not reachable. Please check:"
+msgstr "ist nicht erreichbar. Bitte prüfen Sie:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is the TV turned on?"
+msgstr "Ist der TV eingeschaltet?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is the IP address correct?"
+msgstr "Ist die IP-Adresse korrekt?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Are TV and server on the same network?"
+msgstr "Sind TV und Server im selben Netzwerk?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "No Samsung TV found"
+msgstr "Kein Samsung TV gefunden"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "The device at"
+msgstr "Das Gerät unter"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "does not respond like a Samsung TV. Please check:"
+msgstr "antwortet nicht wie ein Samsung TV. Bitte prüfen Sie:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is it really a Samsung Smart TV?"
+msgstr "Ist es wirklich ein Samsung Smart TV?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is the TV in network standby instead of completely off?"
+msgstr "Ist der TV im Netzwerk-Standby statt komplett aus?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "For Philips TVs please select \"Philips\" as TV type."
+msgstr "Für Philips TVs bitte \"Philips\" als TV-Typ auswählen."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "is not reachable."
+msgstr "ist nicht erreichbar."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Please check:"
+msgstr "Bitte prüfen Sie:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Connection test failed:"
+msgstr "Verbindungstest fehlgeschlagen:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "does not respond like a Philips TV."
+msgstr "antwortet nicht wie ein Philips TV."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is it really a Philips Smart TV?"
+msgstr "Ist es wirklich ein Philips Smart TV?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "For Samsung TVs please select \"Samsung\" as TV type."
+msgstr "Für Samsung TVs bitte \"Samsung\" als TV-Typ auswählen."
+
