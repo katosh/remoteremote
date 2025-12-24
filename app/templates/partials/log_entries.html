@@ -27,7 +27,7 @@
             <span class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
                 {{ log.category }}
             </span>
-            <span class="text-xs text-gray-500">
+            <span class="text-xs text-gray-500" data-locale-time="{{ log.timestamp.isoformat() }}" data-timezone="{{ tv_timezone }}" data-format="datetime-seconds">
                 {{ log.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}
             </span>
         </div>
@@ -36,7 +36,7 @@
 
         {% if log.details %}
         <details class="mt-2">
-            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-400">Details anzeigen</summary>
+            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-400">{{ _('Show details') }}</summary>
             <pre class="mt-2 text-xs bg-gray-800 rounded-lg p-2 overflow-x-auto">{{ log.details }}</pre>
         </details>
         {% endif %}
@@ -57,6 +57,6 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
     </svg>
-    <p>Keine Einträge gefunden</p>
+    <p>{{ _('No entries found') }}</p>
 </div>
 {% endif %}

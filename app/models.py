@@ -50,6 +50,14 @@ class Config(db.Model):
             db.session.add(config)
         db.session.commit()
 
+    @classmethod
+    def delete(cls, key: str):
+        """Konfigurationswert löschen"""
+        config = db.session.get(cls, key)
+        if config:
+            db.session.delete(config)
+            db.session.commit()
+
 
 class User(UserMixin, db.Model):
     """Benutzer (nur ein Admin-Benutzer)"""

@@ -16,50 +16,8 @@ from ..services.discovery import discover_samsung_tvs, discover_all_tvs
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
-# Common timezones for the selector (grouped by region)
-COMMON_TIMEZONES = [
-    # Europe
-    'Europe/Berlin',
-    'Europe/London',
-    'Europe/Paris',
-    'Europe/Rome',
-    'Europe/Madrid',
-    'Europe/Amsterdam',
-    'Europe/Brussels',
-    'Europe/Vienna',
-    'Europe/Zurich',
-    'Europe/Stockholm',
-    'Europe/Oslo',
-    'Europe/Copenhagen',
-    'Europe/Helsinki',
-    'Europe/Warsaw',
-    'Europe/Prague',
-    'Europe/Athens',
-    'Europe/Moscow',
-    # Americas
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Los_Angeles',
-    'America/Toronto',
-    'America/Vancouver',
-    'America/Sao_Paulo',
-    'America/Mexico_City',
-    # Asia
-    'Asia/Tokyo',
-    'Asia/Shanghai',
-    'Asia/Hong_Kong',
-    'Asia/Singapore',
-    'Asia/Seoul',
-    'Asia/Dubai',
-    'Asia/Kolkata',
-    # Pacific
-    'Australia/Sydney',
-    'Australia/Melbourne',
-    'Pacific/Auckland',
-    # UTC
-    'UTC',
-]
+# All common timezones from pytz, sorted alphabetically
+COMMON_TIMEZONES = sorted(pytz.common_timezones)
 
 
 @settings_bp.route('/')
@@ -104,21 +62,29 @@ def change_language():
 
     language = request.form.get('language')
 
-    if language not in LANGUAGES:
+    if language == 'auto':
+        # Clear user preference to use browser auto-detection
+        Config.delete('user_language')
+        log_event(
+            level='INFO',
+            category='config',
+            message=_('Language changed'),
+            details={'language': 'auto', 'language_name': 'Auto (Browser)'},
+            source='manual'
+        )
+        flash(_('Language changed successfully.'), 'success')
+    elif language in LANGUAGES:
+        Config.set('user_language', language)
+        log_event(
+            level='INFO',
+            category='config',
+            message=_('Language changed'),
+            details={'language': language, 'language_name': LANGUAGES[language]},
+            source='manual'
+        )
+        flash(_('Language changed successfully.'), 'success')
+    else:
         flash(_('Invalid language selected.'), 'error')
-        return redirect(url_for('settings.settings_view'))
-
-    Config.set('user_language', language)
-
-    log_event(
-        level='INFO',
-        category='config',
-        message=_('Language changed'),
-        details={'language': language, 'language_name': LANGUAGES[language]},
-        source='manual'
-    )
-
-    flash(_('Language changed successfully.'), 'success')
     return redirect(url_for('settings.settings_view'))
 
 
@@ -126,6 +92,8 @@ def change_language():
 @login_required
 def change_timezone():
     """Change application timezone"""
+    from ..services.scheduler import reload_all_schedules
+
     timezone = request.form.get('timezone')
 
     # Validate timezone
@@ -134,6 +102,9 @@ def change_timezone():
         return redirect(url_for('settings.settings_view'))
 
     Config.set('timezone', timezone)
+
+    # Reload all schedules with new timezone
+    reload_all_schedules()
 
     log_event(
         level='INFO',

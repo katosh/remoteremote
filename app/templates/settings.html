@@ -6,35 +6,6 @@
 <div class="max-w-2xl mx-auto px-4 py-6 space-y-6">
     <h1 class="text-2xl font-bold mb-6">{{ _('Settings') }}</h1>
 
-    <!-- Language Selection -->
-    <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">{{ _('Language') }}</h2>
-
-        <form method="POST" action="{{ url_for('settings.change_language') }}" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-            <div class="flex gap-3">
-                {% for code, name in languages.items() %}
-                <label class="flex-1">
-                    <input type="radio" name="language" value="{{ code }}"
-                           {{ 'checked' if current_language == code else '' }}
-                           class="sr-only peer">
-                    <div class="py-3 px-4 bg-gray-800 border border-gray-700 rounded-xl text-center cursor-pointer
-                                peer-checked:border-tv-accent peer-checked:bg-tv-accent/20
-                                hover:bg-gray-700 transition-colors">
-                        {{ name }}
-                    </div>
-                </label>
-                {% endfor %}
-            </div>
-
-            <button type="submit"
-                    class="w-full py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
-                {{ _('Save Language') }}
-            </button>
-        </form>
-    </div>
-
     <!-- TV Configuration -->
     <div class="bg-tv-dark rounded-xl p-6">
         <h2 class="text-lg font-semibold mb-4">{{ _('TV Configuration') }}</h2>
@@ -185,51 +156,7 @@
     })();
     </script>
 
-    <!-- TV Diagnostics -->
-    <div class="bg-tv-dark rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-4">{{ _('TV Diagnostics') }}</h2>
-
-        <p class="text-sm text-gray-400 mb-4">
-            {{ _('Shows all available TV information (API data, UPnP status, apps).') }}
-        </p>
-
-        <button id="fetch-diagnostics"
-                hx-get="{{ url_for('settings.tv_diagnostics') }}"
-                hx-target="#diagnostics-result"
-                class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors flex items-center justify-center gap-2">
-            <span id="diagnostics-text">{{ _('Fetch TV Information') }}</span>
-        </button>
-
-        <div id="diagnostics-result" class="mt-4"></div>
-    </div>
-
-    <script>
-    (function() {
-        var fetchBtn = document.getElementById('fetch-diagnostics');
-        var fetchText = document.getElementById('diagnostics-text');
-        var diagnosticsResult = document.getElementById('diagnostics-result');
-        var originalText = fetchText.textContent;
-
-        fetchBtn.addEventListener('htmx:beforeRequest', function() {
-            fetchBtn.disabled = true;
-            fetchBtn.classList.add('opacity-50', 'cursor-wait');
-            fetchText.innerHTML = '<span class="flex items-center gap-2"><svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>{{ _("Loading...") }}</span>';
-            diagnosticsResult.innerHTML = '<div class="p-4 bg-gray-800 rounded-xl"><div class="flex items-center gap-3 text-gray-400"><svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>{{ _("Fetching TV information...") }}</span></div></div>';
-        });
-
-        fetchBtn.addEventListener('htmx:afterRequest', function() {
-            fetchBtn.disabled = false;
-            fetchBtn.classList.remove('opacity-50', 'cursor-wait');
-            fetchText.textContent = originalText;
-        });
-
-        fetchBtn.addEventListener('htmx:responseError', function() {
-            diagnosticsResult.innerHTML = '<div class="p-4 bg-red-900/30 border border-red-700 rounded-xl text-red-400"><div class="flex items-start gap-3"><svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><div><p class="font-medium">{{ _("Error") }}</p><p class="text-sm mt-1 opacity-80">{{ _("Failed to fetch TV information. Please try again.") }}</p></div></div></div>';
-        });
-    })();
-    </script>
-
-    <!-- Token Management -->
+    <!-- TV Pairing -->
     <div id="tv-pairing" class="bg-tv-dark rounded-xl p-6 scroll-mt-4">
         <h2 class="text-lg font-semibold mb-4">{{ _('TV Pairing') }}</h2>
 
@@ -442,6 +369,50 @@
     }
     </script>
 
+    <!-- TV Diagnostics -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">{{ _('TV Diagnostics') }}</h2>
+
+        <p class="text-sm text-gray-400 mb-4">
+            {{ _('Shows all available TV information (API data, UPnP status, apps).') }}
+        </p>
+
+        <button id="fetch-diagnostics"
+                hx-get="{{ url_for('settings.tv_diagnostics') }}"
+                hx-target="#diagnostics-result"
+                class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors flex items-center justify-center gap-2">
+            <span id="diagnostics-text">{{ _('Fetch TV Information') }}</span>
+        </button>
+
+        <div id="diagnostics-result" class="mt-4"></div>
+    </div>
+
+    <script>
+    (function() {
+        var fetchBtn = document.getElementById('fetch-diagnostics');
+        var fetchText = document.getElementById('diagnostics-text');
+        var diagnosticsResult = document.getElementById('diagnostics-result');
+        var originalText = fetchText.textContent;
+
+        fetchBtn.addEventListener('htmx:beforeRequest', function() {
+            fetchBtn.disabled = true;
+            fetchBtn.classList.add('opacity-50', 'cursor-wait');
+            fetchText.innerHTML = '<span class="flex items-center gap-2"><svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>{{ _("Loading...") }}</span>';
+            diagnosticsResult.innerHTML = '<div class="p-4 bg-gray-800 rounded-xl"><div class="flex items-center gap-3 text-gray-400"><svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>{{ _("Fetching TV information...") }}</span></div></div>';
+        });
+
+        fetchBtn.addEventListener('htmx:afterRequest', function() {
+            fetchBtn.disabled = false;
+            fetchBtn.classList.remove('opacity-50', 'cursor-wait');
+            fetchText.textContent = originalText;
+        });
+
+        fetchBtn.addEventListener('htmx:responseError', function() {
+            diagnosticsResult.innerHTML = '<div class="p-4 bg-red-900/30 border border-red-700 rounded-xl text-red-400"><div class="flex items-start gap-3"><svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><div><p class="font-medium">{{ _("Error") }}</p><p class="text-sm mt-1 opacity-80">{{ _("Failed to fetch TV information. Please try again.") }}</p></div></div></div>';
+        });
+    })();
+    </script>
+
     <!-- Password Change -->
     <div class="bg-tv-dark rounded-xl p-6">
         <h2 class="text-lg font-semibold mb-4">{{ _('Change Password') }}</h2>
@@ -535,6 +506,45 @@
             <button type="submit"
                     class="w-full py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
                 {{ _('Save Timezone') }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Language Selection -->
+    <div class="bg-tv-dark rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">{{ _('Language') }}</h2>
+
+        <form method="POST" action="{{ url_for('settings.change_language') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="flex gap-3">
+                <label class="flex-1">
+                    <input type="radio" name="language" value="auto"
+                           {{ 'checked' if language_auto else '' }}
+                           class="sr-only peer">
+                    <div class="py-3 px-4 bg-gray-800 border border-gray-700 rounded-xl text-center cursor-pointer
+                                peer-checked:border-tv-accent peer-checked:bg-tv-accent/20
+                                hover:bg-gray-700 transition-colors">
+                        Auto
+                    </div>
+                </label>
+                {% for code, name in languages.items() %}
+                <label class="flex-1">
+                    <input type="radio" name="language" value="{{ code }}"
+                           {{ 'checked' if not language_auto and current_language == code else '' }}
+                           class="sr-only peer">
+                    <div class="py-3 px-4 bg-gray-800 border border-gray-700 rounded-xl text-center cursor-pointer
+                                peer-checked:border-tv-accent peer-checked:bg-tv-accent/20
+                                hover:bg-gray-700 transition-colors">
+                        {{ name }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit"
+                    class="w-full py-3 bg-tv-accent hover:bg-indigo-500 rounded-xl font-medium transition-colors">
+                {{ _('Save Language') }}
             </button>
         </form>
     </div>

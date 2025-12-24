@@ -127,6 +127,6 @@
 
     <!-- Timestamp -->
     <p class="text-xs text-gray-600 text-right">
-        {{ _('Retrieved:') }} {{ now.strftime('%d.%m.%Y %H:%M:%S') }}
+        {{ _('Retrieved:') }} <span data-locale-time="{{ now.isoformat() }}" data-timezone="{{ tv_timezone }}" data-format="datetime-seconds">{{ now.strftime('%d.%m.%Y %H:%M:%S') }}</span>
     </p>
 </div>

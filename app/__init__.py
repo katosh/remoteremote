@@ -141,6 +141,13 @@ def create_app(config_name: str = None) -> Flask:
     @app.context_processor
     def inject_globals():
         from flask_babel import get_locale
+        from .models import Config
+
+        # Get configured timezone for display purposes
+        tv_timezone = Config.get('timezone') or app.config.get('TIMEZONE', 'Europe/Berlin')
+
+        # Check if user has explicitly set a language (vs using browser auto-detection)
+        user_language = Config.get('user_language')
 
         # In test mode, don't try to connect to real TV
         if app.config.get('TESTING'):
@@ -149,7 +156,9 @@ def create_app(config_name: str = None) -> Flask:
                 'tv_connected': False,
                 'tv_has_token': False,
                 'languages': LANGUAGES,
-                'current_language': str(get_locale())
+                'current_language': str(get_locale()),
+                'tv_timezone': tv_timezone,
+                'language_auto': user_language is None
             }
 
         from .services.tv_service import get_tv_service, get_cached_status
@@ -162,7 +171,9 @@ def create_app(config_name: str = None) -> Flask:
                 'tv_connected': status['connected'],
                 'tv_has_token': tv.is_paired if tv else False,
                 'languages': LANGUAGES,
-                'current_language': str(get_locale())
+                'current_language': str(get_locale()),
+                'tv_timezone': tv_timezone,
+                'language_auto': user_language is None
             }
         except Exception:
             return {
@@ -170,7 +181,9 @@ def create_app(config_name: str = None) -> Flask:
                 'tv_connected': False,
                 'tv_has_token': False,
                 'languages': LANGUAGES,
-                'current_language': str(get_locale())
+                'current_language': str(get_locale()),
+                'tv_timezone': tv_timezone,
+                'language_auto': user_language is None
             }
 
     # Error Handler

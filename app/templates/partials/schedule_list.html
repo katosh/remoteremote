@@ -23,7 +23,7 @@
                     <span class="text-yellow-500">{{ _('Disabled') }}</span> &middot;
                     {% endif %}
                     {% if schedule.next_run and schedule.enabled %}
-                    {{ _('Next:') }} {{ schedule.next_run.strftime('%d.%m. %H:%M') }}
+                    {{ _('Next:') }} <span data-locale-time="{{ schedule.next_run.isoformat() }}" data-timezone="{{ tv_timezone }}" data-format="datetime-short">{{ schedule.next_run.strftime('%d.%m. %H:%M') }}</span>
                     {% elif schedule.cron_expression %}
                     {% set parts = schedule.cron_expression.split() %}
                     {% if parts|length >= 2 %}

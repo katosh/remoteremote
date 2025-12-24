@@ -22,14 +22,17 @@ def get_tv_timezone_info():
         current_time = datetime.now(tz)
         return {
             'name': tz_name,
+            'current_time_iso': current_time.isoformat(),
             'current_time': current_time.strftime('%H:%M'),
             'current_date': current_time.strftime('%d.%m.%Y')
         }
     except Exception:
+        now = datetime.now()
         return {
             'name': tz_name,
-            'current_time': datetime.now().strftime('%H:%M'),
-            'current_date': datetime.now().strftime('%d.%m.%Y')
+            'current_time_iso': now.isoformat(),
+            'current_time': now.strftime('%H:%M'),
+            'current_date': now.strftime('%d.%m.%Y')
         }
 
 
@@ -67,8 +70,8 @@ def create():
             if repeat == 'once':
                 # For one-time, set next_run directly
                 from datetime import timedelta
-                import pytz
-                tz = pytz.timezone('Europe/Berlin')
+                tz_name = Config.get('timezone') or 'Europe/Berlin'
+                tz = pytz.timezone(tz_name)
                 now = datetime.now(tz)
                 run_time = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
                 if run_time <= now:
@@ -168,8 +171,8 @@ def edit(schedule_id: int):
             if repeat == 'once':
                 # For one-time, set next_run directly
                 from datetime import timedelta
-                import pytz
-                tz = pytz.timezone('Europe/Berlin')
+                tz_name = Config.get('timezone') or 'Europe/Berlin'
+                tz = pytz.timezone(tz_name)
                 now = datetime.now(tz)
                 run_time = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
                 if run_time <= now:

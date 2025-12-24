@@ -182,7 +182,7 @@
                         </svg>
                         <span class="font-semibold text-lg">remoteRemote</span>
                     </a>
-                    <span id="nav-clock" class="ml-3 text-sm text-gray-400"></span>
+                    <span id="nav-clock" class="ml-3 text-sm text-gray-400" data-timezone="{{ tv_timezone }}"></span>
                 </div>
 
                 <!-- Desktop Nav -->
@@ -341,15 +341,77 @@
     {% block scripts %}{% endblock %}
 
     <script>
+        // Format times according to browser locale
+        function formatLocaleTime(date, options) {
+            return date.toLocaleTimeString(undefined, options || { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatLocaleDateTime(date, options) {
+            return date.toLocaleString(undefined, options || {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function formatLocaleDateTimeShort(date) {
+            return date.toLocaleString(undefined, {
+                month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        // Update nav clock using browser locale format but TV timezone
         function updateNavClock() {
             const clock = document.getElementById('nav-clock');
             if (clock) {
-                const now = new Date();
-                clock.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                const tz = clock.getAttribute('data-timezone');
+                const options = { hour: '2-digit', minute: '2-digit' };
+                if (tz) {
+                    options.timeZone = tz;
+                }
+                clock.textContent = new Date().toLocaleTimeString(undefined, options);
             }
         }
         updateNavClock();
         setInterval(updateNavClock, 1000);
+
+        // Format all elements with data-locale-time attribute
+        // Uses browser locale for format (12h/24h) but keeps displayed timezone
+        function formatAllLocaleTimes() {
+            document.querySelectorAll('[data-locale-time]').forEach(function(el) {
+                const iso = el.getAttribute('data-locale-time');
+                const tz = el.getAttribute('data-timezone');
+                if (iso) {
+                    const date = new Date(iso);
+                    const format = el.getAttribute('data-format') || 'datetime';
+                    const options = { timeZone: tz || undefined };
+
+                    if (format === 'time') {
+                        el.textContent = date.toLocaleTimeString(undefined, {
+                            ...options, hour: '2-digit', minute: '2-digit'
+                        });
+                    } else if (format === 'datetime-short') {
+                        el.textContent = date.toLocaleString(undefined, {
+                            ...options, month: '2-digit', day: '2-digit',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                    } else if (format === 'datetime-seconds') {
+                        el.textContent = date.toLocaleString(undefined, {
+                            ...options, year: 'numeric', month: '2-digit', day: '2-digit',
+                            hour: '2-digit', minute: '2-digit', second: '2-digit'
+                        });
+                    } else {
+                        el.textContent = date.toLocaleString(undefined, {
+                            ...options, year: 'numeric', month: '2-digit', day: '2-digit',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                    }
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', formatAllLocaleTimes);
+        // Also run after HTMX swaps content
+        document.body.addEventListener('htmx:afterSwap', formatAllLocaleTimes);
     </script>
 </body>
 </html>

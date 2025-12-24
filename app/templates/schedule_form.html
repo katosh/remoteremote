@@ -68,26 +68,19 @@
 
             <!-- Simple Mode -->
             <div x-show="cronMode === 'simple'" class="space-y-4" x-data="{ repeat: 'daily' }">
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2">{{ _('Hour') }}</label>
-                        <select name="hour"
-                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
-                                       focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                            {% for h in range(24) %}
-                            <option value="{{ h }}" {{ 'selected' if schedule and schedule.cron_expression and schedule.cron_expression.split()[1]|int == h else ('selected' if not schedule and h == 7 else '') }}>{{ '%02d'|format(h) }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-2">{{ _('Minute') }}</label>
-                        <select name="minute"
-                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
-                                       focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                            {% for m in range(0, 60, 5) %}
-                            <option value="{{ m }}" {{ 'selected' if schedule and schedule.cron_expression and schedule.cron_expression.split()[0]|int == m else ('selected' if not schedule and m == 0 else '') }}>{{ '%02d'|format(m) }}</option>
-                            {% endfor %}
-                        </select>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Time') }}</label>
+                        <input type="time"
+                               name="schedule_time"
+                               id="schedule_time"
+                               value="{% if schedule and schedule.cron_expression %}{{ '%02d:%02d'|format(schedule.cron_expression.split()[1]|int, schedule.cron_expression.split()[0]|int) }}{% else %}07:00{% endif %}"
+                               class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-lg
+                                      focus:outline-none focus:ring-2 focus:ring-tv-accent
+                                      [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-50">
+                        <!-- Hidden fields for backend compatibility -->
+                        <input type="hidden" name="hour" id="hidden_hour" value="{% if schedule and schedule.cron_expression %}{{ schedule.cron_expression.split()[1] }}{% else %}7{% endif %}">
+                        <input type="hidden" name="minute" id="hidden_minute" value="{% if schedule and schedule.cron_expression %}{{ schedule.cron_expression.split()[0] }}{% else %}0{% endif %}">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-400 mb-2">{{ _('Repeat') }}</label>
@@ -339,4 +332,30 @@
 <style>
     [x-cloak] { display: none !important; }
 </style>
+
+<script>
+// Sync time input with hidden hour/minute fields
+document.addEventListener('DOMContentLoaded', function() {
+    const timeInput = document.getElementById('schedule_time');
+    const hourInput = document.getElementById('hidden_hour');
+    const minuteInput = document.getElementById('hidden_minute');
+
+    if (timeInput && hourInput && minuteInput) {
+        timeInput.addEventListener('change', function() {
+            const [hours, minutes] = this.value.split(':');
+            hourInput.value = parseInt(hours, 10);
+            minuteInput.value = parseInt(minutes, 10);
+        });
+
+        // Also update on form submit to ensure values are current
+        timeInput.closest('form').addEventListener('submit', function() {
+            if (timeInput.value) {
+                const [hours, minutes] = timeInput.value.split(':');
+                hourInput.value = parseInt(hours, 10);
+                minuteInput.value = parseInt(minutes, 10);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

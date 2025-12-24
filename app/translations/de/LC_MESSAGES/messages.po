@@ -1055,6 +1055,10 @@ msgstr "Details anzeigen"
 msgid "No persistent sessions"
 msgstr "Keine persistenten Sitzungen vorhanden"
 
+#: app/templates/partials/log_entries.html
+msgid "No entries found"
+msgstr "Keine Einträge gefunden"
+
 #: app/templates/sessions.html
 msgid "Enable \"Remember me\" when logging in."
 msgstr "Aktivieren Sie \"Angemeldet bleiben\" beim Login."
@@ -1098,6 +1102,10 @@ msgstr "Ein Fehler ist aufgetreten"
 #: app/templates/errors/500.html
 msgid "Please try again later."
 msgstr "Bitte versuchen Sie es später erneut."
+
+#: app/templates/schedule_form.html
+msgid "Time"
+msgstr "Uhrzeit"
 
 #: app/templates/settings.html
 msgid "Fetching TV information..."

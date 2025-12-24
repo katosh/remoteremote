@@ -12,6 +12,7 @@ import pytz
 
 # Globale Scheduler-Instanz
 _scheduler: Optional[BackgroundScheduler] = None
+_app_instance = None  # Store app reference for reloading
 
 
 def get_scheduler() -> Optional[BackgroundScheduler]:
@@ -19,12 +20,33 @@ def get_scheduler() -> Optional[BackgroundScheduler]:
     return _scheduler
 
 
+def get_configured_timezone():
+    """Get timezone from database config, fallback to app config."""
+    from flask import current_app
+    from ..models import Config
+
+    # Try database first
+    tz_name = Config.get('timezone')
+    if not tz_name:
+        # Fallback to app config
+        tz_name = current_app.config.get('TIMEZONE', 'Europe/Berlin')
+
+    try:
+        return pytz.timezone(tz_name)
+    except Exception:
+        return pytz.timezone('Europe/Berlin')
+
+
 def init_scheduler(app):
     """Scheduler initialisieren und starten"""
-    global _scheduler
+    global _scheduler, _app_instance
     from .logger import log_event
 
-    timezone = pytz.timezone(app.config.get('TIMEZONE', 'Europe/Berlin'))
+    _app_instance = app
+
+    # Get timezone from database or config
+    with app.app_context():
+        timezone = get_configured_timezone()
 
     _scheduler = BackgroundScheduler(timezone=timezone)
     _scheduler.start()
@@ -89,16 +111,19 @@ def add_schedule(schedule, app=None):
     if not schedule.enabled:
         return
 
+    # Get current configured timezone (from database)
+    timezone = get_configured_timezone()
+
     # Trigger erstellen
     if schedule.cron_expression:
         trigger = CronTrigger.from_crontab(
             schedule.cron_expression,
-            timezone=_scheduler.timezone
+            timezone=timezone
         )
     elif schedule.next_run:
         trigger = DateTrigger(
             run_date=schedule.next_run,
-            timezone=_scheduler.timezone
+            timezone=timezone
         )
     else:
         return
@@ -125,6 +150,39 @@ def update_schedule(schedule, app=None):
     """Zeitplan im Scheduler aktualisieren"""
     remove_schedule(schedule.id)
     add_schedule(schedule, app)
+
+
+def reload_all_schedules():
+    """Reload all schedules with current timezone. Call after timezone change."""
+    global _app_instance
+    from .logger import log_event
+
+    if not _scheduler or not _app_instance:
+        return
+
+    with _app_instance.app_context():
+        from ..models import Schedule
+
+        # Get new timezone
+        new_tz = get_configured_timezone()
+
+        # Remove all schedule jobs (keep system jobs like cleanup_logs)
+        for job in _scheduler.get_jobs():
+            if job.id.startswith('schedule_'):
+                _scheduler.remove_job(job.id)
+
+        # Reload all enabled schedules with new timezone
+        schedules = Schedule.query.filter_by(enabled=True).all()
+        for schedule in schedules:
+            add_schedule(schedule, _app_instance)
+
+        log_event(
+            level='INFO',
+            category='system',
+            message=f'Schedules reloaded with timezone: {new_tz}',
+            details={'schedule_count': len(schedules)},
+            source='system'
+        )
 
 
 def remove_schedule(schedule_id: int):
