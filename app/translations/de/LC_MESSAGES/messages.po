@@ -707,6 +707,14 @@ msgstr ""
 "Zeitzone für geplante Aktionen (z.B. Ein-/Ausschalten des TVs zu "
 "bestimmten Zeiten)."
 
+#: app/templates/settings.html
+msgid "Search timezone..."
+msgstr "Zeitzone suchen..."
+
+#: app/templates/settings.html
+msgid "No matches"
+msgstr "Keine Treffer"
+
 #: app/templates/settings.html:516
 msgid "Save Timezone"
 msgstr "Zeitzone speichern"

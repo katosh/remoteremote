@@ -492,15 +492,33 @@
         <form method="POST" action="{{ url_for('settings.change_timezone') }}" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-            <div>
-                <select name="timezone"
-                        id="timezone"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
-                               focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                    {% for tz in timezones %}
-                    <option value="{{ tz }}" {{ 'selected' if timezone == tz else '' }}>{{ tz }}</option>
-                    {% endfor %}
-                </select>
+            <div x-data="timezoneSearch()" class="relative">
+                <input type="hidden" name="timezone" :value="selected">
+                <input type="text"
+                       x-model="search"
+                       @focus="open = true"
+                       @click="open = true"
+                       @input="open = true"
+                       @keydown.escape="open = false"
+                       @keydown.enter.prevent="if (filtered.length) select(filtered[0])"
+                       placeholder="{{ _('Search timezone...') }}"
+                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                              focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                <div x-show="open"
+                     x-transition
+                     @click.outside="open = false"
+                     class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    <template x-for="tz in filtered" :key="tz">
+                        <button type="button"
+                                @click="select(tz)"
+                                :class="{'bg-tv-accent/20': tz === selected}"
+                                class="w-full px-4 py-2 text-left hover:bg-gray-700 first:rounded-t-xl last:rounded-b-xl"
+                                x-text="tz"></button>
+                    </template>
+                    <div x-show="filtered.length === 0" class="px-4 py-2 text-gray-500">
+                        {{ _('No matches') }}
+                    </div>
+                </div>
             </div>
 
             <button type="submit"
@@ -509,6 +527,29 @@
             </button>
         </form>
     </div>
+
+    <script>
+    function timezoneSearch() {
+        return {
+            open: false,
+            search: '{{ timezone }}',
+            selected: '{{ timezone }}',
+            timezones: {{ timezones | tojson | safe }},
+            get filtered() {
+                if (!this.search) return this.timezones.slice(0, 20);
+                var s = this.search.toLowerCase();
+                return this.timezones.filter(function(tz) {
+                    return tz.toLowerCase().includes(s);
+                }).slice(0, 20);
+            },
+            select: function(tz) {
+                this.selected = tz;
+                this.search = tz;
+                this.open = false;
+            }
+        };
+    }
+    </script>
 
     <!-- Language Selection -->
     <div class="bg-tv-dark rounded-xl p-6">
