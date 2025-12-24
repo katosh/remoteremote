@@ -707,6 +707,14 @@ msgstr ""
 "Zeitzone für geplante Aktionen (z.B. Ein-/Ausschalten des TVs zu "
 "bestimmten Zeiten)."
 
+#: app/views/settings.py
+msgid "Invalid IP address format."
+msgstr "Ungültiges IP-Adressformat."
+
+#: app/views/settings.py
+msgid "Invalid MAC address format."
+msgstr "Ungültiges MAC-Adressformat."
+
 #: app/templates/settings.html
 msgid "Search timezone..."
 msgstr "Zeitzone suchen..."

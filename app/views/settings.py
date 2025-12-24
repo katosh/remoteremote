@@ -122,13 +122,27 @@ def change_timezone():
 @login_required
 def update_tv():
     """TV-Einstellungen aktualisieren"""
+    import re
+
     tv_type = request.form.get('tv_type', 'samsung')
-    tv_ip = request.form.get('tv_ip')
-    tv_mac = request.form.get('tv_mac')
+    tv_ip = request.form.get('tv_ip', '').strip()
+    tv_mac = request.form.get('tv_mac', '').strip()
 
     # Validate TV type
     if tv_type not in ('samsung', 'philips'):
         tv_type = 'samsung'
+
+    # Validate IP address format (security: prevent injection)
+    ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
+    if tv_ip and not ip_pattern.match(tv_ip):
+        flash(_('Invalid IP address format.'), 'error')
+        return redirect(url_for('settings.settings_view'))
+
+    # Validate MAC address format (security: prevent injection)
+    mac_pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$')
+    if tv_mac and not mac_pattern.match(tv_mac):
+        flash(_('Invalid MAC address format.'), 'error')
+        return redirect(url_for('settings.settings_view'))
 
     Config.set('tv_type', tv_type)
     if tv_ip:
