@@ -963,3 +963,139 @@ msgstr "Dies ist die Ersteinrichtung für remoteRemote."
 msgid "Smart TV Remote Control"
 msgstr "Smart TV Fernbedienung"
 
+#: app/templates/logs.html
+msgid "Category"
+msgstr "Kategorie"
+
+#: app/templates/logs.html
+msgid "All"
+msgstr "Alle"
+
+#: app/templates/logs.html
+msgid "Authentication"
+msgstr "Authentifizierung"
+
+#: app/templates/logs.html
+msgid "Actions"
+msgstr "Aktionen"
+
+#: app/templates/logs.html
+msgid "Configuration"
+msgstr "Konfiguration"
+
+#: app/templates/logs.html
+msgid "Level"
+msgstr "Level"
+
+#: app/templates/logs.html
+msgid "Warning"
+msgstr "Warnung"
+
+#: app/templates/logs.html
+msgid "Search messages..."
+msgstr "Nachricht suchen..."
+
+#: app/templates/logs.html
+msgid "Loading logs..."
+msgstr "Lade Protokoll..."
+
+#: app/templates/logs.html
+msgid "Load more"
+msgstr "Mehr laden"
+
+#: app/templates/logs.html
+msgid "Export as JSON"
+msgstr "Als JSON exportieren"
+
+#: app/templates/logs.html
+msgid "Failed to load"
+msgstr "Fehler beim Laden"
+
+#: app/templates/sessions.html
+msgid "Here you can see all devices with persistent login sessions."
+msgstr "Hier sehen Sie alle Geräte, die dauerhaft angemeldet sind."
+
+#: app/templates/sessions.html
+msgid "Sessions are automatically terminated after 90 days of inactivity."
+msgstr "Sessions werden nach 90 Tagen Inaktivität automatisch beendet."
+
+#: app/templates/sessions.html
+msgid "Really end all other sessions?"
+msgstr "Alle anderen Sitzungen wirklich beenden?"
+
+#: app/templates/sessions.html
+msgid "End all other sessions"
+msgstr "Alle anderen Sitzungen beenden"
+
+#: app/templates/sessions.html
+msgid "Current"
+msgstr "Aktuell"
+
+#: app/templates/sessions.html
+msgid "Unknown"
+msgstr "Unbekannt"
+
+#: app/templates/sessions.html
+msgid "Last active:"
+msgstr "Zuletzt aktiv:"
+
+#: app/templates/sessions.html
+msgid "Created:"
+msgstr "Erstellt:"
+
+#: app/templates/sessions.html
+msgid "Really end this session?"
+msgstr "Diese Sitzung wirklich beenden?"
+
+#: app/templates/sessions.html
+msgid "Show details"
+msgstr "Details anzeigen"
+
+#: app/templates/sessions.html
+msgid "No persistent sessions"
+msgstr "Keine persistenten Sitzungen vorhanden"
+
+#: app/templates/sessions.html
+msgid "Enable \"Remember me\" when logging in."
+msgstr "Aktivieren Sie \"Angemeldet bleiben\" beim Login."
+
+#: app/templates/setup.html
+msgid "Welcome"
+msgstr "Willkommen"
+
+#: app/templates/setup.html
+msgid "Set up your password"
+msgstr "Richten Sie Ihr Passwort ein"
+
+#: app/templates/setup.html
+msgid "Set a secure password to protect access."
+msgstr "Legen Sie ein sicheres Passwort fest, um den Zugriff zu schützen."
+
+#: app/templates/setup.html
+msgid "At least 8 characters"
+msgstr "Mindestens 8 Zeichen"
+
+#: app/templates/setup.html
+msgid "Confirm password"
+msgstr "Passwort bestätigen"
+
+#: app/templates/setup.html
+msgid "Repeat password"
+msgstr "Passwort wiederholen"
+
+#: app/templates/setup.html
+msgid "Complete setup"
+msgstr "Einrichtung abschließen"
+
+#: app/templates/setup.html
+msgid "Password is stored securely encrypted"
+msgstr "Das Passwort wird sicher verschlüsselt gespeichert"
+
+#: app/templates/errors/500.html
+msgid "An error occurred"
+msgstr "Ein Fehler ist aufgetreten"
+
+#: app/templates/errors/500.html
+msgid "Please try again later."
+msgstr "Bitte versuchen Sie es später erneut."
+

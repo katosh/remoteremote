@@ -13,8 +13,8 @@
                           d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
             </div>
-            <h1 class="text-3xl font-bold">Willkommen</h1>
-            <p class="mt-2 text-gray-400">Richten Sie Ihr Passwort ein</p>
+            <h1 class="text-3xl font-bold">{{ _('Welcome') }}</h1>
+            <p class="mt-2 text-gray-400">{{ _('Set up your password') }}</p>
         </div>
 
         <!-- Info Box -->
@@ -26,7 +26,7 @@
                 </svg>
                 <div class="text-sm text-blue-200">
                     <p>{{ _('This is the initial setup for remoteRemote.') }}</p>
-                    <p class="mt-1">Legen Sie ein sicheres Passwort fest, um den Zugriff zu schützen.</p>
+                    <p class="mt-1">{{ _('Set a secure password to protect access.') }}</p>
                 </div>
             </div>
         </div>
@@ -38,7 +38,7 @@
             <div class="space-y-4">
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-                        Neues Passwort
+                        {{ _('New Password') }}
                     </label>
                     <input type="password"
                            name="password"
@@ -50,12 +50,12 @@
                                   text-white placeholder-gray-500
                                   focus:outline-none focus:ring-2 focus:ring-tv-accent focus:border-transparent
                                   transition-all duration-200"
-                           placeholder="Mindestens 8 Zeichen">
+                           placeholder="{{ _('At least 8 characters') }}">
                 </div>
 
                 <div>
                     <label for="password_confirm" class="block text-sm font-medium text-gray-300 mb-2">
-                        Passwort bestätigen
+                        {{ _('Confirm password') }}
                     </label>
                     <input type="password"
                            name="password_confirm"
@@ -66,7 +66,7 @@
                                   text-white placeholder-gray-500
                                   focus:outline-none focus:ring-2 focus:ring-tv-accent focus:border-transparent
                                   transition-all duration-200"
-                           placeholder="Passwort wiederholen">
+                           placeholder="{{ _('Repeat password') }}">
                 </div>
             </div>
 
@@ -88,13 +88,13 @@
                            text-white font-medium
                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tv-accent focus:ring-offset-tv-darker
                            transition-all duration-200">
-                Einrichtung abschließen
+                {{ _('Complete setup') }}
             </button>
         </form>
 
         <!-- Security Note -->
         <p class="text-center text-sm text-gray-500">
-            Das Passwort wird sicher verschlüsselt gespeichert
+            {{ _('Password is stored securely encrypted') }}
         </p>
     </div>
 </div>

@@ -12,46 +12,46 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
-        <h1 class="text-2xl font-bold">Aktivitätsprotokoll</h1>
+        <h1 class="text-2xl font-bold">{{ _('Activity Log') }}</h1>
     </div>
 
     <!-- Filters -->
     <div class="bg-tv-dark rounded-xl p-4 mb-6">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-                <label class="block text-sm text-gray-400 mb-2">Kategorie</label>
+                <label class="block text-sm text-gray-400 mb-2">{{ _('Category') }}</label>
                 <select x-model="category"
                         @change="loadLogs()"
                         class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white
                                focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                    <option value="">Alle</option>
-                    <option value="auth">Authentifizierung</option>
-                    <option value="action">Aktionen</option>
-                    <option value="schedule">Zeitpläne</option>
-                    <option value="config">Konfiguration</option>
-                    <option value="system">System</option>
+                    <option value="">{{ _('All') }}</option>
+                    <option value="auth">{{ _('Authentication') }}</option>
+                    <option value="action">{{ _('Actions') }}</option>
+                    <option value="schedule">{{ _('Schedules') }}</option>
+                    <option value="config">{{ _('Configuration') }}</option>
+                    <option value="system">{{ _('System') }}</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-sm text-gray-400 mb-2">Level</label>
+                <label class="block text-sm text-gray-400 mb-2">{{ _('Level') }}</label>
                 <select x-model="level"
                         @change="loadLogs()"
                         class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white
                                focus:outline-none focus:ring-2 focus:ring-tv-accent">
-                    <option value="">Alle</option>
-                    <option value="INFO">Info</option>
-                    <option value="WARNING">Warnung</option>
-                    <option value="ERROR">Fehler</option>
+                    <option value="">{{ _('All') }}</option>
+                    <option value="INFO">{{ _('Info') }}</option>
+                    <option value="WARNING">{{ _('Warning') }}</option>
+                    <option value="ERROR">{{ _('Error') }}</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-sm text-gray-400 mb-2">Suche</label>
+                <label class="block text-sm text-gray-400 mb-2">{{ _('Search') }}</label>
                 <input type="text"
                        x-model="search"
                        @input.debounce.300ms="loadLogs()"
-                       placeholder="Nachricht suchen..."
+                       placeholder="{{ _('Search messages...') }}"
                        class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white
                               placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tv-accent">
             </div>
@@ -66,7 +66,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Lade Protokoll...
+            {{ _('Loading logs...') }}
         </div>
     </div>
 
@@ -75,8 +75,8 @@
         <button @click="loadMore()"
                 :disabled="loading"
                 class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors disabled:opacity-50">
-            <span x-show="!loading">Mehr laden</span>
-            <span x-show="loading">Laden...</span>
+            <span x-show="!loading">{{ _('Load more') }}</span>
+            <span x-show="loading">{{ _('Loading...') }}</span>
         </button>
     </div>
 
@@ -84,7 +84,7 @@
     <div class="mt-6 text-center">
         <a href="{{ url_for('settings.export_logs') }}"
            class="text-tv-accent hover:underline">
-            Als JSON exportieren
+            {{ _('Export as JSON') }}
         </a>
     </div>
 </div>
@@ -118,7 +118,7 @@ function logsPage() {
                 this.logsHtml = await response.text();
                 this.hasMore = this.logsHtml.includes('bg-tv-dark');
             } catch (e) {
-                this.logsHtml = '<div class="bg-tv-dark rounded-xl p-8 text-center text-red-400">Fehler beim Laden</div>';
+                this.logsHtml = '<div class="bg-tv-dark rounded-xl p-8 text-center text-red-400">{{ _("Failed to load") }}</div>';
             }
             this.loading = false;
         },

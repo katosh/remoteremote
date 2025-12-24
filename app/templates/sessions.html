@@ -12,7 +12,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
-        <h1 class="text-2xl font-bold">Aktive Sitzungen</h1>
+        <h1 class="text-2xl font-bold">{{ _('Active Sessions') }}</h1>
     </div>
 
     <!-- Info -->
@@ -23,8 +23,8 @@
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div class="text-sm text-blue-200">
-                <p>Hier sehen Sie alle Geräte, die dauerhaft angemeldet sind.</p>
-                <p class="mt-1">Sessions werden nach 90 Tagen Inaktivität automatisch beendet.</p>
+                <p>{{ _('Here you can see all devices with persistent login sessions.') }}</p>
+                <p class="mt-1">{{ _('Sessions are automatically terminated after 90 days of inactivity.') }}</p>
             </div>
         </div>
     </div>
@@ -33,9 +33,9 @@
     {% if sessions|length > 1 %}
     <form method="POST" action="{{ url_for('settings.revoke_all_sessions') }}" class="mb-6">
         <button type="submit"
-                onclick="return confirm('Alle anderen Sitzungen wirklich beenden?')"
+                onclick="return confirm('{{ _('Really end all other sessions?') }}')"
                 class="w-full py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-colors">
-            Alle anderen Sitzungen beenden
+            {{ _('End all other sessions') }}
         </button>
     </form>
     {% endif %}
@@ -76,14 +76,14 @@
                         <div class="flex items-center gap-2">
                             <h3 class="font-medium">{{ session.device_name }}</h3>
                             {% if session.is_current %}
-                            <span class="text-xs bg-tv-accent px-2 py-0.5 rounded-full">Aktuell</span>
+                            <span class="text-xs bg-tv-accent px-2 py-0.5 rounded-full">{{ _('Current') }}</span>
                             {% endif %}
                         </div>
 
                         <div class="text-sm text-gray-400 mt-1 space-y-0.5">
-                            <p>IP: {{ session.client_ip or 'Unbekannt' }}</p>
-                            <p>Zuletzt aktiv: {{ session.last_used.strftime('%d.%m.%Y %H:%M') if session.last_used else 'Unbekannt' }}</p>
-                            <p>Erstellt: {{ session.created_at.strftime('%d.%m.%Y %H:%M') if session.created_at else 'Unbekannt' }}</p>
+                            <p>IP: {{ session.client_ip or _('Unknown') }}</p>
+                            <p>{{ _('Last active:') }} {{ session.last_used.strftime('%d.%m.%Y %H:%M') if session.last_used else _('Unknown') }}</p>
+                            <p>{{ _('Created:') }} {{ session.created_at.strftime('%d.%m.%Y %H:%M') if session.created_at else _('Unknown') }}</p>
                         </div>
                     </div>
                 </div>
@@ -93,7 +93,7 @@
                 <button hx-post="{{ url_for('settings.revoke_session', session_id=session.id) }}"
                         hx-target="#session-{{ session.id }}"
                         hx-swap="outerHTML"
-                        hx-confirm="Diese Sitzung wirklich beenden?"
+                        hx-confirm="{{ _('Really end this session?') }}"
                         class="p-2 rounded-lg hover:bg-red-600/20 text-red-400 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -107,7 +107,7 @@
             {% if session.user_agent %}
             <details class="mt-3">
                 <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-400">
-                    Details anzeigen
+                    {{ _('Show details') }}
                 </summary>
                 <p class="mt-2 text-xs text-gray-600 break-all bg-gray-800 rounded-lg p-2">
                     {{ session.user_agent }}
@@ -121,8 +121,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
             </svg>
-            <p>Keine persistenten Sitzungen vorhanden</p>
-            <p class="text-sm mt-2">Aktivieren Sie "Angemeldet bleiben" beim Login.</p>
+            <p>{{ _('No persistent sessions') }}</p>
+            <p class="text-sm mt-2">{{ _('Enable "Remember me" when logging in.') }}</p>
         </div>
         {% endfor %}
     </div>
