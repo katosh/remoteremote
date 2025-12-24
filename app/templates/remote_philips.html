@@ -461,18 +461,36 @@
 <style>
     [x-cloak] { display: none !important; }
 
+    /* Button press feedback - brightness + shadow pulse (no scale to preserve absolute positioning) */
     .btn-remote {
-        transition: opacity 0.1s ease, filter 0.1s ease;
+        transition: filter 0.1s ease,
+                    box-shadow 0.15s ease,
+                    outline 0.1s ease;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
     }
 
     .btn-remote:active,
     .btn-remote.btn-pressed {
-        opacity: 0.5;
+        filter: brightness(0.7);
+        outline: 2px solid rgba(99, 102, 241, 0.5);
+        outline-offset: -2px;
     }
 
     .btn-remote.btn-success {
-        opacity: 1;
         filter: brightness(1.3);
+        box-shadow: 0 0 16px rgba(99, 102, 241, 0.6);
+    }
+
+    /* Pulse animation on successful press */
+    @keyframes btn-pulse {
+        0% { filter: brightness(0.7); }
+        40% { filter: brightness(1.4); box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        100% { filter: brightness(1); box-shadow: none; }
+    }
+
+    .btn-remote.btn-pulse {
+        animation: btn-pulse 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .volume-slider-vertical {
@@ -519,11 +537,12 @@
 </style>
 
 <script>
-    // Button press feedback
+    // Button press feedback with satisfying pulse animation
     document.addEventListener('htmx:beforeRequest', function(evt) {
         const btn = evt.target;
         if (btn.classList.contains('btn-remote')) {
             btn.classList.add('btn-pressed');
+            btn.classList.remove('btn-pulse');
         }
     });
 
@@ -531,8 +550,14 @@
         const btn = evt.target;
         if (btn.classList.contains('btn-remote')) {
             btn.classList.remove('btn-pressed');
+            // Trigger pulse animation for satisfying feedback
+            btn.classList.add('btn-pulse');
             btn.classList.add('btn-success');
-            setTimeout(() => btn.classList.remove('btn-success'), 300);
+            // Clean up classes after animation
+            setTimeout(() => {
+                btn.classList.remove('btn-success');
+                btn.classList.remove('btn-pulse');
+            }, 300);
         }
     });
 
