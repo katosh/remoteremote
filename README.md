@@ -368,6 +368,22 @@ Contributions are welcome! Please:
 2. Create a feature branch
 3. Submit a pull request
 
+## Disclaimer
+
+**USE AT YOUR OWN RISK.** This software is provided "as is" without warranty of any kind.
+
+- **No Affiliation**: This project is not affiliated with, endorsed by, or connected to Samsung, Philips, or any TV manufacturer. All product names, logos, and brands are property of their respective owners.
+
+- **Hardware Risk**: This software sends commands to your TV. While designed to be safe, the authors are not responsible for any damage to your TV, unexpected behavior, or voided warranties that may result from using this software.
+
+- **Network Security**: This application is designed for use on trusted home networks. Exposing it to the internet without proper security measures (HTTPS, strong passwords, firewall rules) may create security risks.
+
+- **Personal Use**: This software is intended for personal, non-commercial home automation use.
+
+- **No Warranty**: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. See the LICENSE file for the complete legal terms.
+
+By using this software, you acknowledge that you have read and understood these terms.
+
 ## License
 
 MIT License - See LICENSE file for details.
