@@ -17,7 +17,7 @@
                 <label for="tv_type" class="block text-sm text-gray-400 mb-2">{{ _('TV Type') }}</label>
                 <select name="tv_type"
                         id="tv_type"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                        class="w-full h-12 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white
                                focus:outline-none focus:ring-2 focus:ring-tv-accent">
                     <option value="samsung" {{ 'selected' if config.tv_type == 'samsung' or not config.tv_type else '' }}>Samsung Smart TV</option>
                     <option value="philips" {{ 'selected' if config.tv_type == 'philips' else '' }}>Philips Android TV</option>
@@ -31,7 +31,7 @@
                        id="tv_ip"
                        value="{{ config.tv_ip or '' }}"
                        pattern="^(\d{1,3}\.){3}\d{1,3}$"
-                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                       class="w-full h-12 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white
                               focus:outline-none focus:ring-2 focus:ring-tv-accent"
                        placeholder="192.168.178.103">
             </div>
@@ -43,7 +43,7 @@
                        id="tv_mac"
                        value="{{ config.tv_mac or '' }}"
                        pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
-                       class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                       class="w-full h-12 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white
                               focus:outline-none focus:ring-2 focus:ring-tv-accent"
                        placeholder="80:47:86:E9:B2:17">
             </div>
