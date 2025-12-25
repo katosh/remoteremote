@@ -102,55 +102,98 @@ def discover_philips_tvs(timeout: int = 2) -> List[Dict]:
     return discovered
 
 
-def discover_samsung_tvs(timeout: int = 2) -> List[Dict]:
+def discover_samsung_tvs(timeout: int = 3) -> List[Dict]:
     """
-    Discover Samsung Smart TVs on the local network via SSDP.
+    Discover Samsung Smart TVs on the local network via SSDP and HTTP probing.
 
     Returns:
         List of found TVs with IP and info
     """
+    import time
+    import urllib.request
+    import json
+
     discovered = []
+    seen_ips = set()
 
     # SSDP Multicast address
     ssdp_addr = '239.255.255.250'
     ssdp_port = 1900
 
-    # SSDP M-SEARCH Request
-    ssdp_request = (
-        'M-SEARCH * HTTP/1.1\r\n'
-        f'HOST: {ssdp_addr}:{ssdp_port}\r\n'
-        'MAN: "ssdp:discover"\r\n'
-        f'MX: {timeout}\r\n'
-        'ST: urn:samsung.com:device:RemoteControlReceiver:1\r\n'
-        '\r\n'
-    )
+    # Try multiple search targets - Samsung-specific one often doesn't work
+    search_targets = [
+        'urn:dial-multiscreen-org:service:dial:1',  # Works best for Samsung
+        'ssdp:all',
+        'urn:samsung.com:device:RemoteControlReceiver:1',
+    ]
 
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.settimeout(timeout)
+    for st in search_targets:
+        ssdp_request = (
+            'M-SEARCH * HTTP/1.1\r\n'
+            f'HOST: {ssdp_addr}:{ssdp_port}\r\n'
+            'MAN: "ssdp:discover"\r\n'
+            f'MX: {timeout}\r\n'
+            f'ST: {st}\r\n'
+            '\r\n'
+        )
 
-        sock.sendto(ssdp_request.encode(), (ssdp_addr, ssdp_port))
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.settimeout(timeout)
 
-        while True:
-            try:
-                data, addr = sock.recvfrom(4096)
-                response = data.decode('utf-8', errors='ignore')
+            sock.sendto(ssdp_request.encode(), (ssdp_addr, ssdp_port))
 
-                if 'samsung' in response.lower():
-                    tv_info = _parse_ssdp_response(response, addr[0])
-                    if tv_info and tv_info['ip'] not in [d['ip'] for d in discovered]:
-                        discovered.append(tv_info)
+            start = time.time()
+            while time.time() - start < timeout:
+                try:
+                    data, addr = sock.recvfrom(4096)
+                    response = data.decode('utf-8', errors='ignore')
 
-            except socket.timeout:
-                break
+                    if 'samsung' in response.lower() and addr[0] not in seen_ips:
+                        tv_info = _parse_ssdp_response(response, addr[0])
+                        if tv_info:
+                            # Try to get detailed info via HTTP
+                            details = _get_samsung_details_http(addr[0])
+                            if details:
+                                tv_info.update(details)
+                            discovered.append(tv_info)
+                            seen_ips.add(addr[0])
 
-        sock.close()
+                except socket.timeout:
+                    break
 
-    except Exception:
-        pass
+            sock.close()
+
+        except Exception:
+            pass
+
+        # If we found something, no need to try other search targets
+        if discovered:
+            break
 
     return discovered
+
+
+def _get_samsung_details_http(ip: str, timeout: float = 2.0) -> Dict:
+    """Get Samsung TV details via HTTP API (works without pairing)."""
+    import urllib.request
+    import json
+
+    try:
+        req = urllib.request.Request(f'http://{ip}:8001/api/v2/', method='GET')
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode())
+            device = data.get('device', {})
+            return {
+                'name': data.get('name', 'Samsung TV'),
+                'model': device.get('modelName'),
+                'mac': device.get('wifiMac'),
+                'source': 'http'
+            }
+    except Exception:
+        pass
+    return {}
 
 
 def _parse_ssdp_response(response: str, ip: str) -> Dict:
