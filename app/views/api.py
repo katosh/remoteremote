@@ -119,6 +119,32 @@ def tv_status():
     })
 
 
+@api_bp.route('/tv/status/json')
+@limiter.limit(lambda: get_limit('RATELIMIT_API_STATUS', '180 per minute'))
+@login_required
+def tv_status_json():
+    """JSON-only TV status for Alpine.js component"""
+    from ..services.tv_service import get_cached_status
+
+    cached = get_cached_status()
+    tv = get_tv_service()
+    tv_name = ''
+
+    # Get TV name
+    try:
+        info = cached.get('info')
+        if info:
+            tv_name = info.name
+    except Exception:
+        pass
+
+    return jsonify({
+        'power_state': cached['power_state'],
+        'reachable': cached['connected'],
+        'tv_name': tv_name
+    })
+
+
 @api_bp.route('/tv/info')
 @limiter.limit(lambda: get_limit('RATELIMIT_API_DATA', '60 per minute'))
 @login_required

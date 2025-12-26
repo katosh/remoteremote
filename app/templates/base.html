@@ -423,6 +423,287 @@
         document.addEventListener('DOMContentLoaded', formatAllLocaleTimes);
         // Also run after HTMX swaps content
         document.body.addEventListener('htmx:afterSwap', formatAllLocaleTimes);
+
+        // Helper to get CSRF token
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]').content;
+        }
+
+        // TV State Control Alpine.js Component
+        function tvStateControl() {
+            return {
+                // State
+                state: 'unknown',        // Current display state: unknown, off, standby, on, turning_on, turning_off
+                actualState: 'unknown',  // Last known from API
+                tvName: '',
+                reachable: false,
+                loading: false,
+                lastError: null,
+                startupFailed: false,    // Show troubleshooting tips
+                pollInterval: null,
+                transitionTimeout: null,
+                startupFailedTimeout: null,
+
+                // Configuration (set via x-init)
+                shouldPoll: false,
+                statusUrl: '',
+                powerUrl: '',
+                settingsUrl: '',
+
+                // i18n (read from data attributes)
+                get i18n() {
+                    const el = this.$el;
+                    return {
+                        starting: el?.dataset.i18nStarting || 'Starting...',
+                        shuttingDown: el?.dataset.i18nShuttingDown || 'Shutting down...',
+                        poweredOn: el?.dataset.i18nPoweredOn || 'Powered On',
+                        standby: el?.dataset.i18nStandby || 'Standby',
+                        poweredOff: el?.dataset.i18nPoweredOff || 'Powered Off',
+                        turnOn: el?.dataset.i18nTurnOn || 'Turn On',
+                        turnOff: el?.dataset.i18nTurnOff || 'Turn Off',
+                        pleaseWait: el?.dataset.i18nPleaseWait || 'Please wait...',
+                        tvDidNotRespond: el?.dataset.i18nTvDidNotRespond || 'TV did not respond',
+                        checkFollowing: el?.dataset.i18nCheckFollowing || 'Check the following:',
+                        macConfigured: el?.dataset.i18nMacConfigured || 'MAC address configured in Settings',
+                        networkStandby: el?.dataset.i18nNetworkStandby || 'TV has network standby enabled',
+                        sameNetwork: el?.dataset.i18nSameNetwork || 'TV and server on same network',
+                        checkSettings: el?.dataset.i18nCheckSettings || 'Check Settings',
+                        commandFailed: el?.dataset.i18nCommandFailed || 'Command failed',
+                        tvIsOff: el?.dataset.i18nTvIsOff || 'The TV is off. Turn it on first to send commands.'
+                    };
+                },
+
+                // Computed
+                get isTransitioning() {
+                    return this.state === 'turning_on' || this.state === 'turning_off';
+                },
+
+                get statusText() {
+                    switch (this.state) {
+                        case 'turning_on': return this.i18n.starting;
+                        case 'turning_off': return this.i18n.shuttingDown;
+                        case 'on': return this.i18n.poweredOn;
+                        case 'standby': return this.i18n.standby;
+                        default: return this.i18n.poweredOff;
+                    }
+                },
+
+                // Lifecycle - start() is called from x-init AFTER config is set
+                start() {
+                    this.fetchStatus();
+                    if (this.shouldPoll) {
+                        this.startPolling(5000);
+                    }
+                },
+
+                destroy() {
+                    this.stopPolling();
+                    this.clearTransitionTimeout();
+                    if (this.startupFailedTimeout) {
+                        clearTimeout(this.startupFailedTimeout);
+                    }
+                },
+
+                // Methods
+                async fetchStatus() {
+                    if (this.loading) return;
+                    this.loading = true;
+                    try {
+                        const response = await fetch(this.statusUrl, {
+                            headers: { 'X-CSRFToken': getCsrfToken() }
+                        });
+                        const data = await response.json();
+                        this.tvName = data.tv_name || '';
+                        this.reachable = data.reachable;
+
+                        // Determine actual state from API
+                        // Trust power_state first (handles temporary network blips when recently confirmed on)
+                        if (data.power_state === 'on') {
+                            this.actualState = 'on';
+                        } else if (data.reachable) {
+                            this.actualState = 'standby';
+                        } else {
+                            this.actualState = 'off';
+                        }
+
+                        // Only update display state if not transitioning
+                        if (!this.isTransitioning) {
+                            this.state = this.actualState;
+                        }
+                    } catch (e) {
+                        console.log('Could not fetch TV status:', e);
+                    }
+                    this.loading = false;
+                },
+
+                async powerOn() {
+                    if (this.isTransitioning) return;
+
+                    // Immediate visual feedback
+                    this.state = 'turning_on';
+                    this.startupFailed = false;
+                    this.lastError = null;
+                    this.startTransitionTimeout(10000, true); // 10s timeout
+                    this.startPolling(2000); // Poll faster during transition
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'on');
+                        const response = await fetch(this.powerUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCsrfToken() },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (!data.success) {
+                            this.lastError = data.error || 'Unknown error';
+                            // Fetch and show actual current state
+                            await this.fetchStatus();
+                            this.state = this.actualState;
+                            this.clearTransitionTimeout();
+                            this.startPolling(5000);
+                        }
+                    } catch (e) {
+                        this.lastError = 'Network error';
+                        await this.fetchStatus();
+                        this.state = this.actualState;
+                        this.clearTransitionTimeout();
+                        this.startPolling(5000);
+                    }
+                },
+
+                async powerOff() {
+                    if (this.isTransitioning) return;
+
+                    // Immediate visual feedback
+                    this.state = 'turning_off';
+                    this.lastError = null;
+                    this.startTransitionTimeout(20000, false); // 20s timeout
+                    this.startPolling(2000); // Poll faster during transition
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'off');
+                        const response = await fetch(this.powerUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCsrfToken() },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (!data.success) {
+                            this.lastError = data.error || 'Unknown error';
+                            await this.fetchStatus();
+                            this.state = this.actualState;
+                            this.clearTransitionTimeout();
+                            this.startPolling(5000);
+                        }
+                    } catch (e) {
+                        this.lastError = 'Network error';
+                        await this.fetchStatus();
+                        this.state = this.actualState;
+                        this.clearTransitionTimeout();
+                        this.startPolling(5000);
+                    }
+                },
+
+                startPolling(interval) {
+                    this.stopPolling();
+                    this.pollInterval = setInterval(() => {
+                        this.fetchStatus().then(() => {
+                            // During transition, check if state changed
+                            if (this.isTransitioning && this.actualState !== 'unknown') {
+                                const targetState = this.state === 'turning_on' ? 'on' : 'off';
+                                // Accept standby as success for turning off
+                                if (this.actualState === targetState ||
+                                    (this.state === 'turning_off' && (this.actualState === 'standby' || this.actualState === 'off'))) {
+                                    // Transition complete
+                                    this.state = this.actualState;
+                                    this.clearTransitionTimeout();
+                                    this.startPolling(5000);
+                                }
+                            }
+                        });
+                    }, interval);
+                },
+
+                stopPolling() {
+                    if (this.pollInterval) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                    }
+                },
+
+                startTransitionTimeout(ms, isTurningOn) {
+                    this.clearTransitionTimeout();
+                    this.transitionTimeout = setTimeout(() => {
+                        // Timeout reached - fetch actual state
+                        this.fetchStatus().then(() => {
+                            this.state = this.actualState;
+                            this.startPolling(5000); // Back to normal polling
+                            // Show troubleshooting tips if turn-on failed
+                            if (isTurningOn && this.actualState !== 'on') {
+                                this.startupFailed = true;
+                                // Auto-hide tips after 30 seconds
+                                this.startupFailedTimeout = setTimeout(() => {
+                                    this.startupFailed = false;
+                                }, 30000);
+                            }
+                        });
+                    }, ms);
+                },
+
+                clearTransitionTimeout() {
+                    if (this.transitionTimeout) {
+                        clearTimeout(this.transitionTimeout);
+                        this.transitionTimeout = null;
+                    }
+                },
+
+                // Called when external HTMX buttons trigger power actions
+                externalPowerAction(action) {
+                    if (this.isTransitioning) return;
+
+                    if (action === 'on') {
+                        this.state = 'turning_on';
+                        this.startupFailed = false;
+                        this.lastError = null;
+                        this.startTransitionTimeout(10000, true);
+                        this.startPolling(2000);
+                    } else if (action === 'off') {
+                        this.state = 'turning_off';
+                        this.lastError = null;
+                        this.startTransitionTimeout(20000, false);
+                        this.startPolling(2000);
+                    }
+                }
+            };
+        }
+
+        // Listen for HTMX requests to power endpoint and notify Alpine.js components
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            const target = evt.detail.elt;
+            const path = evt.detail.pathInfo?.requestPath || '';
+
+            // Check if this was a power action request
+            if (path.includes('/remote/power')) {
+                // Get the action from hx-vals
+                const hxVals = target.getAttribute('hx-vals');
+                let action = 'toggle';
+                if (hxVals) {
+                    try {
+                        const vals = JSON.parse(hxVals);
+                        action = vals.action || 'toggle';
+                    } catch (e) {}
+                }
+
+                // Notify all TV status components via custom event
+                document.querySelectorAll('.tv-status-component').forEach(function(el) {
+                    if (el._x_dataStack && el._x_dataStack[0]) {
+                        el._x_dataStack[0].externalPowerAction(action);
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

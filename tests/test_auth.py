@@ -13,7 +13,8 @@ class TestSetup:
         """Setup page should be accessible when no user exists"""
         response = client.get('/auth/setup')
         assert response.status_code == 200
-        assert b'passwort' in response.data.lower() or b'einricht' in response.data.lower()
+        # Check for password field (works in any language)
+        assert b'type="password"' in response.data or b'password' in response.data.lower()
 
     def test_setup_creates_user(self, client, app, db):
         """Setup should create admin user"""

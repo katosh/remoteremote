@@ -98,13 +98,24 @@ class TestTVStateDisplay:
     """Test TV state display in templates"""
 
     def test_dashboard_shows_tv_status(self, auth_client, app):
-        """Test dashboard renders TV status"""
+        """Test dashboard renders TV status with Alpine.js component"""
         with app.app_context():
             response = auth_client.get('/dashboard')
             assert response.status_code == 200
             html = response.data.decode('utf-8')
-            # Should contain TV status section
-            assert 'Samsung TV' in html
+            # Should contain Alpine.js TV status component
+            assert 'tvStateControl()' in html
+            assert 'tv-status-card' in html
+
+    def test_remote_shows_tv_status(self, auth_client, app):
+        """Test remote page renders TV status with Alpine.js component"""
+        with app.app_context():
+            response = auth_client.get('/remote/')
+            assert response.status_code == 200
+            html = response.data.decode('utf-8')
+            # Should contain Alpine.js TV status component
+            assert 'tvStateControl()' in html
+            assert 'tv-status-card' in html
 
     def test_api_returns_transition_state(self, auth_client, app):
         """Test API returns transition state info"""
@@ -120,69 +131,97 @@ class TestTVStateDisplay:
             assert 'in_transition' in data
             assert 'transition_type' in data
 
-    def test_api_mini_status_during_transition(self, auth_client, app):
-        """Test mini status shows transition state"""
-        from app.services.tv_service import set_cached_power_state
-
-        with app.app_context():
-            set_cached_power_state('on')
-
-            response = auth_client.get('/api/tv/status?mini=1',
-                                       headers={'HX-Request': 'true'})
-            assert response.status_code == 200
-            html = response.data.decode('utf-8')
-            # Should show transition text
-            assert 'Starting...' in html or 'animate-pulse' in html
-
-    def test_api_mini_status_when_off(self, auth_client, app):
-        """Test mini status shows off state"""
+    def test_tv_status_json_returns_power_state(self, auth_client, app):
+        """Test JSON status endpoint returns current power state"""
         from app.services.tv_service import _status_cache
         import time
 
         with app.app_context():
-            # Set to off state (no transition)
+            # Set known state
+            _status_cache['transition_until'] = 0
+            _status_cache['transition_type'] = None
+            _status_cache['connected'] = True
+            _status_cache['power_state'] = 'on'
+            _status_cache['last_check'] = time.time()
+
+            response = auth_client.get('/api/tv/status/json')
+            assert response.status_code == 200
+
+            data = response.get_json()
+            assert data['power_state'] == 'on'
+            assert data['reachable'] is True
+
+    def test_tv_status_json_when_off(self, auth_client, app):
+        """Test JSON status shows off state when TV unreachable"""
+        from app.services.tv_service import _status_cache
+        import time
+
+        with app.app_context():
+            # Set to off state
             _status_cache['transition_until'] = 0
             _status_cache['transition_type'] = None
             _status_cache['connected'] = False
             _status_cache['power_state'] = 'off'
             _status_cache['last_check'] = time.time()
 
-            response = auth_client.get('/api/tv/status?mini=1',
-                                       headers={'HX-Request': 'true'})
+            response = auth_client.get('/api/tv/status/json')
             assert response.status_code == 200
-            html = response.data.decode('utf-8')
-            assert 'Powered Off' in html
+
+            data = response.get_json()
+            assert data['power_state'] == 'off'
+            assert data['reachable'] is False
 
 
 class TestPowerActions:
     """Test power action endpoints"""
 
-    def test_power_on_sets_transition(self, auth_client, app):
-        """Test power on sets transition state"""
-        from app.services.tv_service import get_cached_status
+    def test_power_on_returns_json(self, auth_client, app):
+        """Test power on returns JSON response for Alpine.js"""
+        with app.app_context():
+            response = auth_client.post('/remote/power',
+                                        data={'action': 'on'})
+            assert response.status_code == 200
+
+            # Should return JSON with success status
+            data = response.get_json()
+            assert data is not None
+            assert 'success' in data
+            assert data['success'] is True
+
+    def test_power_off_returns_json(self, auth_client, app):
+        """Test power off returns JSON response for Alpine.js"""
+        with app.app_context():
+            response = auth_client.post('/remote/power',
+                                        data={'action': 'off'})
+            assert response.status_code == 200
+
+            # Should return JSON with success status
+            data = response.get_json()
+            assert data is not None
+            assert 'success' in data
+            assert data['success'] is True
+
+    def test_power_toggle_returns_json(self, auth_client, app):
+        """Test power toggle returns JSON response"""
+        with app.app_context():
+            response = auth_client.post('/remote/power',
+                                        data={'action': 'toggle'})
+            assert response.status_code == 200
+
+            data = response.get_json()
+            assert data is not None
+            assert 'success' in data
+
+    def test_power_on_logs_event(self, auth_client, app):
+        """Test power on action is logged"""
+        from app.models import Log
 
         with app.app_context():
             response = auth_client.post('/remote/power',
                                         data={'action': 'on'})
             assert response.status_code == 200
 
-            status = get_cached_status()
-            # Should be in turning_on transition
-            assert status['in_transition'] is True
-            assert status['transition_type'] == 'turning_on'
-
-    def test_power_off_sets_transition(self, auth_client, app):
-        """Test power off sets transition state"""
-        from app.services.tv_service import get_cached_status
-
-        with app.app_context():
-            response = auth_client.post('/remote/power',
-                                        data={'action': 'off'})
-            assert response.status_code == 200
-
-            status = get_cached_status()
-            # During MIN_TRANSITION_SECONDS (3s), we show transition state without
-            # checking the API to prevent flickering on slow connections.
-            # So immediately after power off, we should be in turning_off transition.
-            assert status['in_transition'] is True
-            assert status['transition_type'] == 'turning_off'
+            # Check that the action was logged
+            log = Log.query.filter(Log.category == 'action').order_by(Log.id.desc()).first()
+            assert log is not None
+            assert 'eingeschaltet' in log.message or 'Wake-on-LAN' in log.message

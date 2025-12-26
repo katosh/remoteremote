@@ -192,9 +192,45 @@ def get_tv_service() -> SamsungTV:
 
 def reinit_tv_service():
     """TV-Service neu initialisieren (nach Konfigurationsänderung)"""
-    global _tv_instance
+    global _tv_instance, _token_invalid
     _tv_instance = _create_tv_instance()
     invalidate_status_cache()
+    # Clear token invalid flag - give the token a fresh chance with new config
+    # The actual connection attempt will determine if token works
+    _token_invalid = False
+
+
+def verify_token_works() -> bool:
+    """
+    Verify if the current token actually works by attempting a connection.
+    This is useful after IP changes to check if the existing token is still valid.
+    Returns True if token works, False otherwise.
+    """
+    global _token_invalid
+    tv = get_tv_service()
+
+    if not tv.is_paired:
+        return False
+
+    try:
+        # Try to get info - this requires a working token
+        info = tv.get_info()
+        if info is not None:
+            # Token works!
+            _token_invalid = False
+            print(f"[TV Service] Token verified - connection successful", flush=True)
+            return True
+    except Exception as e:
+        error_msg = str(e).lower()
+        # Only mark invalid on auth errors, not connection issues
+        if 'token' in error_msg or 'pair' in error_msg or 'auth' in error_msg or 'denied' in error_msg:
+            _token_invalid = True
+            print(f"[TV Service] Token verification failed - auth error: {e}", flush=True)
+        else:
+            # Connection issue - don't mark token invalid
+            print(f"[TV Service] Token verification inconclusive - connection error: {e}", flush=True)
+
+    return False
 
 
 def invalidate_status_cache():
@@ -232,11 +268,11 @@ def set_last_error(message: str, action: str = None, error_type: str = None):
     _last_error['action'] = action
     print(f"[TV Service] Error recorded: {error_type} - {message}", flush=True)
 
-    # Mark token as invalid if this looks like an auth/pairing error
-    # SSL handshake timeouts often indicate the token is rejected
-    if error_type in ('pairing', 'timeout'):
+    # Only mark token as invalid on explicit authentication/pairing errors
+    # Don't mark invalid on timeouts - those could be connection issues (wrong IP, TV off, network)
+    if error_type == 'pairing':
         _token_invalid = True
-        print(f"[TV Service] Token marked as potentially invalid due to {error_type} error", flush=True)
+        print(f"[TV Service] Token marked as invalid due to pairing error", flush=True)
 
 
 def get_last_error() -> dict:
@@ -1068,7 +1104,7 @@ __all__ = [
     'get_tv_service', 'reinit_tv_service', 'get_cached_status',
     'invalidate_status_cache', 'set_cached_power_state',
     'set_last_error', 'get_last_error', 'clear_last_error',
-    'is_token_valid', 'mark_token_valid', 'mark_token_invalid',
+    'is_token_valid', 'mark_token_valid', 'mark_token_invalid', 'verify_token_works',
     'get_current_tv_type', 'set_tv_type',
     'SamsungTV', 'Key', 'TVInfo', 'TVServiceWrapper',
     'PHILIPS_AVAILABLE'

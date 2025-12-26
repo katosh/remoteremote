@@ -4,12 +4,11 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
-    <!-- TV Status Card -->
-    <div id="tv-status-card" class="bg-tv-dark rounded-2xl p-6"
-         hx-get="{{ url_for('api.tv_status') }}"
-         hx-trigger="every 10s"
-         hx-swap="innerHTML">
+    <!-- TV Status Card - Alpine.js powered, polls every 5s -->
+    <div id="tv-status-card" class="bg-tv-dark rounded-2xl p-6">
+        {% with should_poll=true %}
         {% include 'partials/tv_status.html' %}
+        {% endwith %}
     </div>
 
     <!-- Quick Actions -->
@@ -29,7 +28,6 @@
                     hx-vals='{"action": "on"}'
                     hx-swap="none"
                     hx-disabled-elt="this"
-                    hx-on::after-request="setTimeout(() => location.reload(), 3000)"
                     class="btn-remote py-4 flex flex-col items-center gap-2 bg-green-700 hover:bg-green-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -43,7 +41,6 @@
                     hx-vals='{"action": "off"}'
                     hx-swap="none"
                     hx-disabled-elt="this"
-                    hx-on::after-request="setTimeout(() => location.reload(), 2000)"
                     {% if not tv_has_token %}disabled{% endif %}
                     class="btn-remote btn-power py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -179,29 +179,23 @@ def _power_action_async(action: str):
 @limiter.limit(lambda: get_limit('RATELIMIT_REMOTE_ACTION', '60 per minute'))
 @login_required
 def power():
-    """TV ein-/ausschalten"""
-    from flask import render_template
-    from ..models import TVState
-
+    """TV ein-/ausschalten - returns JSON for Alpine.js component"""
     action = request.form.get('action', 'toggle')
 
     try:
         if action == 'on':
-            # Set cache immediately, send command async
-            set_cached_power_state('on')
+            set_cached_power_state('on')  # Update cache immediately for UI feedback
             _power_action_async('on')
             message = 'TV eingeschaltet (Wake-on-LAN)'
         elif action == 'off':
-            # Set cache immediately, send command async
-            set_cached_power_state('standby')
+            set_cached_power_state('off')  # Update cache immediately for UI feedback
             _power_action_async('off')
             message = 'TV ausgeschaltet'
         else:
-            # Toggle based on current cached status (avoid blocking API call)
-            tv = get_tv_service()
+            # Toggle based on current cached status
             status = get_cached_status()
             if status['power_state'] == 'on':
-                set_cached_power_state('standby')
+                set_cached_power_state('off')
                 _power_action_async('off')
                 message = 'TV ausgeschaltet'
             else:
@@ -217,39 +211,7 @@ def power():
             source='manual'
         )
 
-        # If HTMX request, return transition state HTML immediately
-        # Don't call get_cached_status() here - it would check API and might
-        # clear the transition before the UI even sees it. Let polling handle confirmation.
-        if request.headers.get('HX-Request'):
-            tv_state = TVState.get_instance()
-            # Return the transition state we just set up
-            if action == 'on' or (action == 'toggle' and message.startswith('TV eingeschaltet')):
-                return render_template(
-                    'partials/tv_status.html',
-                    power_state='turning_on',
-                    reachable=False,
-                    in_transition=True,
-                    transition_type='turning_on',
-                    just_confirmed=False,
-                    startup_failed=False,
-                    last_error=None,
-                    tv_state=tv_state,
-                    tv_info=None
-                )
-            else:
-                return render_template(
-                    'partials/tv_status.html',
-                    power_state='turning_off',
-                    reachable=False,
-                    in_transition=True,
-                    transition_type='turning_off',
-                    just_confirmed=False,
-                    startup_failed=False,
-                    last_error=None,
-                    tv_state=tv_state,
-                    tv_info=None
-                )
-
+        # Always return JSON - Alpine.js handles UI updates
         return jsonify({'success': True, 'message': message})
     except Exception as e:
         log_event(

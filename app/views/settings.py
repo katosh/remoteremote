@@ -10,7 +10,7 @@ from flask_babel import gettext as _
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ..models import db, Config, User, Log, Session
-from ..services.tv_service import get_tv_service, reinit_tv_service, mark_token_valid, mark_token_invalid
+from ..services.tv_service import get_tv_service, reinit_tv_service, mark_token_valid, mark_token_invalid, verify_token_works
 from ..services.logger import log_event
 from ..services.discovery import discover_samsung_tvs, discover_all_tvs
 
@@ -153,11 +153,14 @@ def update_tv():
     Config.set('tv_ip', tv_ip or '')
     Config.set('tv_mac', tv_mac or '')
 
-    # If IP or TV type changed, token is no longer valid for new TV
-    if tv_ip != old_ip or tv_type != old_type:
-        mark_token_invalid()
-
+    # Reinitialize TV service with new config (this clears the invalid flag)
     reinit_tv_service()
+
+    # If IP or TV type changed, verify if existing token still works
+    # Don't assume it's invalid - it might work with the new IP (e.g., DHCP change)
+    if tv_ip != old_ip or tv_type != old_type:
+        # Try to verify the token works - this will mark it invalid only if auth fails
+        verify_token_works()
 
     log_event(
         level='INFO',

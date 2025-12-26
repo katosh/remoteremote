@@ -19,53 +19,42 @@
         </label>
     </div>
 
-    <!-- TV Status Mini -->
-    <div id="tv-status-mini" class="bg-tv-dark rounded-xl p-4 mb-6">
-        <div class="flex items-center justify-between"
-             hx-get="{{ url_for('api.tv_status') }}?mini=1"
-             hx-trigger="load, every 5s"
-             hx-swap="innerHTML">
-            <div class="flex items-center gap-3">
-                <div class="w-3 h-3 rounded-full {{ 'bg-green-500' if reachable else 'bg-red-500' }}"></div>
-                <span class="text-sm">{{ _('Connected') if reachable else _('Not connected') }}</span>
-            </div>
-        </div>
+    <!-- TV Status Card - Alpine.js powered, polls every 5s -->
+    <div id="tv-status-card" class="bg-tv-dark rounded-xl p-4 mb-4">
+        {% with should_poll=true %}
+        {% include 'partials/tv_status.html' %}
+        {% endwith %}
+    </div>
+
+    <!-- Quick Power Actions -->
+    <div class="grid grid-cols-2 gap-3 mb-6">
+        <button hx-post="{{ url_for('remote.power') }}"
+                hx-vals='{"action": "on"}'
+                hx-swap="none"
+                hx-disabled-elt="this"
+                class="btn-remote py-3 flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+            </svg>
+            <span class="text-sm">{{ _('Turn On') }}</span>
+        </button>
+        <button hx-post="{{ url_for('remote.power') }}"
+                hx-vals='{"action": "off"}'
+                hx-swap="none"
+                hx-disabled-elt="this"
+                {% if not tv_has_token %}disabled{% endif %}
+                class="btn-remote btn-power py-3 flex items-center justify-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+            </svg>
+            <span class="text-sm">{{ _('Turn Off') }}</span>
+        </button>
     </div>
 
     <!-- Normal Mode Controls -->
     <div x-show="!expertMode" class="space-y-6">
-        <!-- Power Row -->
-        <div class="flex justify-center gap-4">
-            <!-- Wake-on-LAN always available -->
-            <button hx-post="{{ url_for('remote.power') }}"
-                    hx-vals='{"action": "on"}'
-                    hx-swap="none"
-                    hx-disabled-elt="this"
-                    hx-on::after-request="setTimeout(() => location.reload(), 3000)"
-                    class="btn-remote w-20 h-20 rounded-full flex flex-col items-center justify-center bg-green-700 hover:bg-green-600">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-                </svg>
-                <span class="text-xs mt-1">{{ _('On') }}</span>
-            </button>
-
-            <!-- Power off (requires token) -->
-            <button hx-post="{{ url_for('remote.power') }}"
-                    hx-vals='{"action": "off"}'
-                    hx-swap="none"
-                    hx-disabled-elt="this"
-                    hx-on::after-request="setTimeout(() => location.reload(), 2000)"
-                    {% if not tv_has_token %}disabled{% endif %}
-                    class="btn-remote btn-power w-20 h-20 rounded-full flex flex-col items-center justify-center {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-                </svg>
-                <span class="text-xs mt-1">{{ _('Off') }}</span>
-            </button>
-        </div>
-
         <!-- Volume & Navigation -->
         <div class="flex justify-between items-center">
             <!-- Volume Slider (UPnP) -->
@@ -504,11 +493,6 @@
             setTimeout(() => btn.classList.remove('btn-pulse'), 350);
         }
     });
-
-    // Get CSRF token from meta tag
-    function getCsrfToken() {
-        return document.querySelector('meta[name="csrf-token"]').content;
-    }
 
     // Volume control via UPnP
     function volumeControl() {
