@@ -785,9 +785,30 @@ class SamsungTV:
         mac = self.mac.replace(":", "").replace("-", "")
         magic = b'\xff' * 6 + bytes.fromhex(mac) * 16
 
+        # Calculate subnet broadcast address from TV IP (assumes /24 subnet)
+        ip_parts = self.ip.split('.')
+        subnet_broadcast = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.255"
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.sendto(magic, ('255.255.255.255', 9))
+
+        # Send multiple packets for reliability (UDP can drop packets)
+        # Try global broadcast, subnet broadcast, and direct to TV IP
+        targets = [
+            ('255.255.255.255', 9),   # Global broadcast
+            (subnet_broadcast, 9),     # Subnet-directed broadcast
+            (self.ip, 9),              # Direct to TV (unicast)
+        ]
+
+        for i in range(3):
+            for target in targets:
+                try:
+                    sock.sendto(magic, target)
+                except Exception:
+                    pass  # Some targets may fail, that's ok
+            if i < 2:
+                time.sleep(0.1)
+
         sock.close()
 
         if close_menu:
