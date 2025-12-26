@@ -22,7 +22,9 @@ babel = Babel()
 # Supported languages
 LANGUAGES = {
     'en': 'English',
-    'de': 'Deutsch'
+    'de': 'Deutsch',
+    'es': 'Espanol',
+    'fr': 'Francais'
 }
 
 

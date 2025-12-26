@@ -1,0 +1,1279 @@
+# Spanish translations for TV Remote.
+# Copyright (C) 2025
+# This file is distributed under the same license as the TV Remote project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TV Remote 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-23 18:37+0100\n"
+"PO-Revision-Date: 2025-12-26 12:00+0100\n"
+"Last-Translator: \n"
+"Language: es\n"
+"Language-Team: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app/templates/base.html:14
+msgid "Samsung TV Remote Control"
+msgstr "Control Remoto Samsung TV"
+
+#: app/templates/base.html:22 app/templates/dashboard.html:3
+#: app/templates/login.html:3 app/templates/login.html:16
+#: app/templates/remote.html:3 app/templates/schedule.html:3
+#: app/templates/schedule_form.html:3 app/templates/settings.html:3
+msgid "TV Remote Control"
+msgstr "Control Remoto TV"
+
+#: app/templates/base.html:192 app/templates/base.html:228
+#: app/templates/dashboard.html:3
+msgid "Dashboard"
+msgstr "Panel"
+
+#: app/templates/base.html:196 app/templates/base.html:232
+#: app/templates/base.html:318 app/templates/dashboard.html:76
+#: app/templates/remote.html:3 app/templates/remote.html:9
+#: app/templates/remote_philips.html:3 app/templates/remote_philips.html:10
+msgid "Remote"
+msgstr "Mando"
+
+#: app/templates/base.html:200 app/templates/base.html:236
+#: app/templates/schedule.html:3 app/templates/schedule.html:10
+msgid "Schedules"
+msgstr "Programaciones"
+
+#: app/templates/base.html:204 app/templates/base.html:240
+#: app/templates/base.html:335 app/templates/settings.html:3
+#: app/templates/settings.html:7
+msgid "Settings"
+msgstr "Ajustes"
+
+#: app/templates/base.html:207 app/templates/base.html:243
+#: app/templates/settings.html:540
+msgid "Logout"
+msgstr "Cerrar sesion"
+
+#: app/templates/base.html:283
+msgid "TV not paired"
+msgstr "TV no emparejado"
+
+#: app/templates/base.html:284
+msgid "Pair the remote with your TV to use all features."
+msgstr "Empareje el mando con su TV para usar todas las funciones."
+
+#: app/templates/base.html:289
+msgid "Pair now"
+msgstr "Emparejar ahora"
+
+#: app/templates/base.html:310 app/templates/remote.html:177
+#: app/templates/remote_philips.html:42 app/templates/remote_philips.html:215
+#: app/templates/schedule_form.html:270
+msgid "Home"
+msgstr "Inicio"
+
+#: app/templates/base.html:326 app/templates/schedule_form.html:3
+msgid "Schedule"
+msgstr "Programacion"
+
+#: app/templates/dashboard.html:17
+msgid "Quick Actions"
+msgstr "Acciones rapidas"
+
+#: app/templates/dashboard.html:23
+msgid "TV control not available. Please"
+msgstr "Control de TV no disponible. Por favor"
+
+#: app/templates/dashboard.html:23
+msgid "pair TV"
+msgstr "emparejar TV"
+
+#: app/templates/dashboard.html:23
+msgid "first."
+msgstr "primero."
+
+#: app/templates/dashboard.html:38 app/templates/partials/tv_status.html:110
+#: app/templates/schedule_form.html:221
+msgid "Turn On"
+msgstr "Encender"
+
+#: app/templates/dashboard.html:53 app/templates/partials/tv_status.html:96
+#: app/templates/schedule_form.html:233 app/templates/schedule_form.html:248
+msgid "Turn Off"
+msgstr "Apagar"
+
+#: app/templates/dashboard.html:67 app/templates/remote.html:183
+#: app/templates/remote_philips.html:308 app/templates/remote_philips.html:309
+#: app/templates/schedule_form.html:262
+msgid "Mute"
+msgstr "Silenciar"
+
+#: app/templates/dashboard.html:84
+msgid "Favorites"
+msgstr "Favoritos"
+
+#: app/templates/dashboard.html:103
+msgid "Upcoming Schedules"
+msgstr "Proximas programaciones"
+
+#: app/templates/dashboard.html:105 app/templates/dashboard.html:120
+msgid "Show all"
+msgstr "Mostrar todo"
+
+#: app/templates/dashboard.html:118
+msgid "Recent Activity"
+msgstr "Actividad reciente"
+
+#: app/templates/login.html:3 app/templates/login.html:72
+msgid "Login"
+msgstr "Iniciar sesion"
+
+#: app/templates/login.html:17
+msgid "Please log in"
+msgstr "Por favor inicie sesion"
+
+#: app/templates/login.html:27
+msgid "Password"
+msgstr "Contrasena"
+
+#: app/templates/login.html:39
+msgid "Enter password"
+msgstr "Introducir contrasena"
+
+#: app/templates/login.html:49
+msgid "Remember me"
+msgstr "Recordarme"
+
+#: app/templates/login.html:78
+msgid "Secure connection via HTTPS"
+msgstr "Conexion segura via HTTPS"
+
+#: app/templates/remote.html:11 app/templates/remote_philips.html:14
+msgid "Expert"
+msgstr "Experto"
+
+#: app/templates/remote.html:30 app/templates/remote_philips.html:33
+msgid "Connected"
+msgstr "Conectado"
+
+#: app/templates/remote.html:30 app/templates/remote_philips.html:33
+msgid "Not connected"
+msgstr "No conectado"
+
+#: app/templates/partials/tv_diagnostics.html:92 app/templates/remote.html:50
+#: app/templates/remote_philips.html:45 app/templates/remote_philips.html:89
+#: app/templates/remote_philips.html:434
+msgid "On"
+msgstr "Enc"
+
+#: app/templates/partials/tv_diagnostics.html:92 app/templates/remote.html:65
+#: app/templates/remote_philips.html:103 app/templates/remote_philips.html:444
+msgid "Off"
+msgstr "Apag"
+
+#: app/templates/remote.html:171 app/templates/remote_philips.html:209
+#: app/templates/schedule_form.html:256
+msgid "Back"
+msgstr "Atras"
+
+#: app/templates/remote.html:189 app/templates/remote_philips.html:44
+#: app/templates/remote_philips.html:227
+msgid "Source"
+msgstr "Fuente"
+
+#: app/templates/remote.html:211 app/templates/remote_philips.html:268
+msgid "Previous"
+msgstr "Anterior"
+
+#: app/templates/remote.html:223
+msgid "List"
+msgstr "Lista"
+
+#: app/templates/remote.html:229
+msgid "Go to channel:"
+msgstr "Ir al canal:"
+
+#: app/templates/remote.html:237
+msgid "Channel number"
+msgstr "Numero de canal"
+
+#: app/templates/remote.html:248
+msgid "Volume (UPnP)"
+msgstr "Volumen (UPnP)"
+
+#: app/templates/remote.html:276
+msgid "Enter text (for search fields):"
+msgstr "Introducir texto (para campos de busqueda):"
+
+#: app/templates/remote.html:281
+msgid "Enter text..."
+msgstr "Introducir texto..."
+
+#: app/templates/remote.html:285
+msgid "Send"
+msgstr "Enviar"
+
+#: app/templates/remote.html:363 app/templates/remote_philips.html:388
+msgid "Info"
+msgstr "Info"
+
+#: app/templates/remote.html:369 app/templates/remote_philips.html:450
+msgid "Menu"
+msgstr "Menu"
+
+#: app/templates/remote.html:375
+msgid "Tools"
+msgstr "Herramientas"
+
+#: app/templates/remote.html:381 app/templates/schedule_form.html:257
+msgid "Exit"
+msgstr "Salir"
+
+#: app/templates/remote.html:387 app/templates/remote_philips.html:406
+msgid "Subtitles"
+msgstr "Subtitulos"
+
+#: app/templates/remote.html:393
+msgid "Audio"
+msgstr "Audio"
+
+#: app/templates/partials/tv_status.html:50
+#: app/templates/remote_philips.html:38
+msgid "Standby"
+msgstr "Espera"
+
+#: app/templates/remote_philips.html:39
+msgid "Offline"
+msgstr "Desconectado"
+
+#: app/templates/remote_philips.html:40
+msgid "Loading..."
+msgstr "Cargando..."
+
+#: app/templates/remote_philips.html:41
+msgid "Live TV"
+msgstr "TV en vivo"
+
+#: app/templates/remote_philips.html:43
+msgid "App"
+msgstr "App"
+
+#: app/templates/remote_philips.html:46
+msgid "TV is in standby"
+msgstr "TV en modo espera"
+
+#: app/templates/remote_philips.html:47
+msgid "Not reachable"
+msgstr "No accesible"
+
+#: app/templates/remote_philips.html:247 app/templates/remote_philips.html:394
+msgid "Options"
+msgstr "Opciones"
+
+#: app/templates/remote_philips.html:280
+msgid "Search"
+msgstr "Buscar"
+
+#: app/templates/partials/tv_diagnostics.html:65
+#: app/templates/partials/tv_diagnostics.html:70
+#: app/templates/partials/tv_status.html:123
+#: app/templates/remote_philips.html:287 app/templates/schedule_form.html:259
+msgid "Volume"
+msgstr "Volumen"
+
+#: app/templates/remote_philips.html:308
+msgid "Unmute"
+msgstr "Activar sonido"
+
+#: app/templates/remote_philips.html:400
+msgid "Adjust"
+msgstr "Ajustar"
+
+#: app/templates/remote_philips.html:412
+msgid "Teletext"
+msgstr "Teletexto"
+
+#: app/templates/remote_philips.html:418
+msgid "Record"
+msgstr "Grabar"
+
+#: app/templates/partials/tv_diagnostics.html:89
+#: app/templates/remote_philips.html:424
+msgid "Ambilight"
+msgstr "Ambilight"
+
+#: app/templates/schedule.html:16
+msgid "TV Time"
+msgstr "Hora del TV"
+
+#: app/templates/schedule.html:25 app/templates/schedule_form.html:3
+msgid "New"
+msgstr "Nuevo"
+
+#: app/templates/schedule.html:41
+msgid "Loading schedules..."
+msgstr "Cargando programaciones..."
+
+#: app/templates/partials/schedule_list.html:76
+#: app/templates/schedule_form.html:3
+msgid "Edit"
+msgstr "Editar"
+
+#: app/templates/schedule_form.html:18
+msgid "Edit Schedule"
+msgstr "Editar programacion"
+
+#: app/templates/schedule_form.html:18
+msgid "New Schedule"
+msgstr "Nueva programacion"
+
+#: app/templates/partials/tv_diagnostics.html:38
+#: app/templates/schedule_form.html:27
+msgid "Name"
+msgstr "Nombre"
+
+#: app/templates/schedule_form.html:36
+msgid "e.g. Morning turn on"
+msgstr "ej. Encendido matutino"
+
+#: app/templates/schedule_form.html:38
+msgid "Description (optional)"
+msgstr "Descripcion (opcional)"
+
+#: app/templates/schedule_form.html:46
+msgid "Short description"
+msgstr "Descripcion breve"
+
+#: app/templates/schedule_form.html:51
+msgid "Scheduling"
+msgstr "Programacion"
+
+#: app/templates/schedule_form.html:59
+msgid "Simple"
+msgstr "Simple"
+
+#: app/templates/schedule_form.html:65
+msgid "Cron"
+msgstr "Cron"
+
+#: app/templates/schedule_form.html:73
+msgid "Hour"
+msgstr "Hora"
+
+#: app/templates/schedule_form.html:83
+msgid "Minute"
+msgstr "Minuto"
+
+#: app/templates/schedule_form.html:93
+msgid "Repeat"
+msgstr "Repetir"
+
+#: app/templates/partials/schedule_list.html:36
+#: app/templates/schedule_form.html:97
+msgid "Once"
+msgstr "Una vez"
+
+#: app/templates/schedule_form.html:98
+msgid "Daily"
+msgstr "Diario"
+
+#: app/templates/partials/schedule_list.html:31
+#: app/templates/schedule_form.html:99
+msgid "Mon-Fri"
+msgstr "Lun-Vie"
+
+#: app/templates/partials/schedule_list.html:31
+#: app/templates/schedule_form.html:100
+msgid "Sat-Sun"
+msgstr "Sab-Dom"
+
+#: app/templates/schedule_form.html:101
+msgid "Weekly"
+msgstr "Semanal"
+
+#: app/templates/schedule_form.html:107
+msgid "Weekdays"
+msgstr "Dias de la semana"
+
+#: app/templates/schedule_form.html:109
+msgid "Mon"
+msgstr "Lun"
+
+#: app/templates/schedule_form.html:109
+msgid "Tue"
+msgstr "Mar"
+
+#: app/templates/schedule_form.html:109
+msgid "Wed"
+msgstr "Mie"
+
+#: app/templates/schedule_form.html:109
+msgid "Thu"
+msgstr "Jue"
+
+#: app/templates/schedule_form.html:109
+msgid "Fri"
+msgstr "Vie"
+
+#: app/templates/schedule_form.html:109
+msgid "Sat"
+msgstr "Sab"
+
+#: app/templates/schedule_form.html:109
+msgid "Sun"
+msgstr "Dom"
+
+#: app/templates/schedule_form.html:123
+msgid "Cron Expression"
+msgstr "Expresion Cron"
+
+#: app/templates/schedule_form.html:130
+msgid "Format: Minute Hour Day Month Weekday"
+msgstr "Formato: Minuto Hora Dia Mes DiaSemana"
+
+#: app/templates/schedule_form.html:136
+msgid "Action"
+msgstr "Accion"
+
+#: app/templates/schedule_form.html:143
+msgid "Startup"
+msgstr "Arranque"
+
+#: app/templates/partials/schedule_list.html:39
+#: app/templates/schedule_form.html:149 app/templates/schedule_form.html:246
+msgid "Power"
+msgstr "Energia"
+
+#: app/templates/schedule_form.html:155
+msgid "Single Key"
+msgstr "Tecla unica"
+
+#: app/templates/partials/schedule_list.html:39
+#: app/templates/schedule_form.html:161
+msgid "Sequence"
+msgstr "Secuencia"
+
+#: app/templates/schedule_form.html:169
+msgid "Turn on TV and optionally set channel and volume."
+msgstr "Encender TV y opcionalmente configurar canal y volumen."
+
+#: app/templates/schedule_form.html:173
+msgid "Channel (optional)"
+msgstr "Canal (opcional)"
+
+#: app/templates/schedule_form.html:178
+msgid "e.g. 1"
+msgstr "ej. 1"
+
+#: app/templates/schedule_form.html:184
+msgid "Volume (optional)"
+msgstr "Volumen (opcional)"
+
+#: app/templates/schedule_form.html:189
+msgid "e.g. 20"
+msgstr "ej. 20"
+
+#: app/templates/schedule_form.html:197
+msgid "Wait time after turn on (seconds)"
+msgstr "Tiempo de espera despues de encender (segundos)"
+
+#: app/templates/schedule_form.html:205
+msgid "Time until TV is ready (default: 15s)"
+msgstr "Tiempo hasta que el TV este listo (predeterminado: 15s)"
+
+#: app/templates/schedule_form.html:211
+msgid "Power Action"
+msgstr "Accion de energia"
+
+#: app/templates/partials/schedule_list.html:39
+#: app/templates/schedule_form.html:242
+msgid "Key"
+msgstr "Tecla"
+
+#: app/templates/schedule_form.html:247
+msgid "Power On/Off"
+msgstr "Encendido/Apagado"
+
+#: app/templates/schedule_form.html:250
+msgid "Navigation"
+msgstr "Navegacion"
+
+#: app/templates/schedule_form.html:251
+msgid "Up"
+msgstr "Arriba"
+
+#: app/templates/schedule_form.html:252
+msgid "Down"
+msgstr "Abajo"
+
+#: app/templates/schedule_form.html:253
+msgid "Left"
+msgstr "Izquierda"
+
+#: app/templates/schedule_form.html:254
+msgid "Right"
+msgstr "Derecha"
+
+#: app/templates/schedule_form.html:255
+msgid "OK/Enter"
+msgstr "OK/Entrar"
+
+#: app/templates/schedule_form.html:260
+msgid "Volume Up"
+msgstr "Subir volumen"
+
+#: app/templates/schedule_form.html:261
+msgid "Volume Down"
+msgstr "Bajar volumen"
+
+#: app/templates/schedule_form.html:264
+msgid "Channels"
+msgstr "Canales"
+
+#: app/templates/schedule_form.html:265
+msgid "Channel +"
+msgstr "Canal +"
+
+#: app/templates/schedule_form.html:266
+msgid "Channel -"
+msgstr "Canal -"
+
+#: app/templates/schedule_form.html:267
+msgid "TV Guide"
+msgstr "Guia de TV"
+
+#: app/templates/schedule_form.html:269
+msgid "Apps"
+msgstr "Apps"
+
+#: app/templates/schedule_form.html:281
+msgid "Keys (comma-separated)"
+msgstr "Teclas (separadas por comas)"
+
+#: app/templates/schedule_form.html:290
+msgid "Delay between keys (ms)"
+msgstr "Retardo entre teclas (ms)"
+
+#: app/templates/schedule_form.html:306
+msgid "Enabled"
+msgstr "Activado"
+
+#: app/templates/schedule_form.html:325 app/templates/settings.html:83
+msgid "Save"
+msgstr "Guardar"
+
+#: app/templates/schedule_form.html:325
+msgid "Create"
+msgstr "Crear"
+
+#: app/templates/schedule_form.html:330
+msgid "Really delete schedule?"
+msgstr "Realmente eliminar programacion?"
+
+#: app/templates/schedule_form.html:332
+msgid "Delete"
+msgstr "Eliminar"
+
+#: app/templates/settings.html:11
+msgid "Language"
+msgstr "Idioma"
+
+#: app/templates/settings.html:33
+msgid "Save Language"
+msgstr "Guardar idioma"
+
+#: app/templates/settings.html:40
+msgid "TV Configuration"
+msgstr "Configuracion del TV"
+
+#: app/templates/partials/tv_diagnostics.html:20 app/templates/settings.html:46
+msgid "TV Type"
+msgstr "Tipo de TV"
+
+#: app/templates/settings.html:57
+msgid "TV IP Address"
+msgstr "Direccion IP del TV"
+
+#: app/templates/settings.html:69
+msgid "TV MAC Address (for Wake-on-LAN)"
+msgstr "Direccion MAC del TV (para Wake-on-LAN)"
+
+#: app/templates/settings.html:91
+msgid "Find TV"
+msgstr "Buscar TV"
+
+#: app/templates/settings.html:190
+msgid "TV Diagnostics"
+msgstr "Diagnosticos del TV"
+
+#: app/templates/settings.html:193
+msgid "Shows all available TV information (API data, UPnP status, apps)."
+msgstr "Muestra toda la informacion disponible del TV (datos API, estado UPnP, apps)."
+
+#: app/templates/settings.html:205
+msgid "Fetch TV Information"
+msgstr "Obtener informacion del TV"
+
+#: app/templates/settings.html:213
+msgid "TV Pairing"
+msgstr "Emparejamiento del TV"
+
+#: app/templates/partials/tv_diagnostics.html:24
+#: app/templates/settings.html:217
+msgid "Paired"
+msgstr "Emparejado"
+
+#: app/templates/settings.html:217
+msgid "No token - pairing required"
+msgstr "Sin token - emparejamiento requerido"
+
+#: app/templates/settings.html:235 app/templates/settings.html:249
+msgid "Re-pair"
+msgstr "Re-emparejar"
+
+#: app/templates/settings.html:235 app/templates/settings.html:249
+msgid "Start pairing"
+msgstr "Iniciar emparejamiento"
+
+#: app/templates/settings.html:238
+msgid ""
+"During pairing, a connection to the TV is established. Confirm the "
+"request on the TV screen."
+msgstr ""
+"Durante el emparejamiento se establece una conexion con el TV. Confirme "
+"la solicitud en la pantalla del TV."
+
+#: app/templates/settings.html:253
+msgid ""
+"For Philips pairing, a PIN will be displayed on the TV screen. Enter this"
+" PIN here."
+msgstr ""
+"Para el emparejamiento Philips, se mostrara un PIN en la pantalla del TV. "
+"Introduzca este PIN aqui."
+
+#: app/templates/settings.html:259
+msgid "Philips TV PIN"
+msgstr "PIN del TV Philips"
+
+#: app/templates/settings.html:260
+msgid "Please enter the PIN displayed on your TV:"
+msgstr "Por favor introduzca el PIN mostrado en su TV:"
+
+#: app/templates/settings.html:272
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: app/templates/settings.html:277
+msgid "Confirm"
+msgstr "Confirmar"
+
+#: app/templates/settings.html:426 app/templates/settings.html:463
+msgid "Change Password"
+msgstr "Cambiar contrasena"
+
+#: app/templates/settings.html:430
+msgid "Current Password"
+msgstr "Contrasena actual"
+
+#: app/templates/settings.html:440
+msgid "New Password"
+msgstr "Nueva contrasena"
+
+#: app/templates/settings.html:451
+msgid "Confirm New Password"
+msgstr "Confirmar nueva contrasena"
+
+#: app/templates/settings.html:472
+msgid "Activity Log"
+msgstr "Registro de actividad"
+
+#: app/templates/settings.html:484
+msgid "Active Sessions"
+msgstr "Sesiones activas"
+
+#: app/templates/settings.html:497
+msgid "TV Timezone"
+msgstr "Zona horaria del TV"
+
+#: app/templates/settings.html:498
+msgid ""
+"Timezone used for scheduled actions (e.g., turning the TV on/off at "
+"specific times)."
+msgstr ""
+"Zona horaria usada para acciones programadas (ej. encender/apagar el TV "
+"a horas especificas)."
+
+#: app/views/settings.py
+msgid "Invalid IP address format."
+msgstr "Formato de direccion IP invalido."
+
+#: app/views/settings.py
+msgid "Invalid MAC address format."
+msgstr "Formato de direccion MAC invalido."
+
+#: app/templates/settings.html
+msgid "Search timezone..."
+msgstr "Buscar zona horaria..."
+
+#: app/templates/settings.html
+msgid "No matches"
+msgstr "Sin coincidencias"
+
+#: app/templates/settings.html:516
+msgid "Save Timezone"
+msgstr "Guardar zona horaria"
+
+#: app/templates/settings.html:523
+msgid "System"
+msgstr "Sistema"
+
+#: app/templates/settings.html:527
+msgid "Version"
+msgstr "Version"
+
+#: app/templates/settings.html:531
+msgid "Log Retention"
+msgstr "Retencion de registros"
+
+#: app/templates/settings.html:532
+#, python-format
+msgid "%(num)d day"
+msgid_plural "%(num)d days"
+msgstr[0] "%(num)d dia"
+msgstr[1] "%(num)d dias"
+
+#: app/templates/partials/schedule_list.html:15
+msgid "Disable"
+msgstr "Desactivar"
+
+#: app/templates/partials/schedule_list.html:15
+msgid "Enable"
+msgstr "Activar"
+
+#: app/templates/partials/schedule_list.html:23
+msgid "Disabled"
+msgstr "Desactivado"
+
+#: app/templates/partials/schedule_list.html:26
+msgid "Next:"
+msgstr "Siguiente:"
+
+#: app/templates/partials/schedule_list.html:31
+msgid "daily"
+msgstr "diario"
+
+#: app/templates/partials/schedule_list.html:39
+msgid "TV Turn On"
+msgstr "Encendido del TV"
+
+#: app/templates/partials/schedule_list.html:66
+msgid "Run now"
+msgstr "Ejecutar ahora"
+
+#: app/templates/partials/schedule_list.html:92
+msgid "No schedules"
+msgstr "Sin programaciones"
+
+#: app/templates/partials/schedule_list.html:94
+msgid "Create first schedule"
+msgstr "Crear primera programacion"
+
+#: app/templates/partials/tv_diagnostics.html:7
+msgid "TV reachable and responding"
+msgstr "TV accesible y respondiendo"
+
+#: app/templates/partials/tv_diagnostics.html:7
+msgid "TV not reachable"
+msgstr "TV no accesible"
+
+#: app/templates/partials/tv_diagnostics.html:18
+msgid "Connection"
+msgstr "Conexion"
+
+#: app/templates/partials/tv_diagnostics.html:22
+msgid "Ping"
+msgstr "Ping"
+
+#: app/templates/partials/tv_diagnostics.html:23
+msgid "OK"
+msgstr "OK"
+
+#: app/templates/partials/tv_diagnostics.html:23
+msgid "Failed"
+msgstr "Fallido"
+
+#: app/templates/partials/tv_diagnostics.html:25
+#: app/templates/partials/tv_diagnostics.html:68
+#: app/templates/partials/tv_diagnostics.html:73
+msgid "Yes"
+msgstr "Si"
+
+#: app/templates/partials/tv_diagnostics.html:25
+#: app/templates/partials/tv_diagnostics.html:68
+#: app/templates/partials/tv_diagnostics.html:73
+msgid "No"
+msgstr "No"
+
+#: app/templates/partials/tv_diagnostics.html:26
+msgid "IP"
+msgstr "IP"
+
+#: app/templates/partials/tv_diagnostics.html:28
+msgid "MAC"
+msgstr "MAC"
+
+#: app/templates/partials/tv_diagnostics.html:36
+msgid "TV Information"
+msgstr "Informacion del TV"
+
+#: app/templates/partials/tv_diagnostics.html:40
+msgid "Model"
+msgstr "Modelo"
+
+#: app/templates/partials/tv_diagnostics.html:42
+msgid "Model ID"
+msgstr "ID del modelo"
+
+#: app/templates/partials/tv_diagnostics.html:44
+msgid "Firmware"
+msgstr "Firmware"
+
+#: app/templates/partials/tv_diagnostics.html:46
+msgid "Operating System"
+msgstr "Sistema operativo"
+
+#: app/templates/partials/tv_diagnostics.html:48
+msgid "Resolution"
+msgstr "Resolucion"
+
+#: app/templates/partials/tv_diagnostics.html:50
+msgid "Power Status"
+msgstr "Estado de energia"
+
+#: app/templates/partials/tv_diagnostics.html:56
+msgid "UUID"
+msgstr "UUID"
+
+#: app/templates/partials/tv_diagnostics.html:67
+msgid "Available"
+msgstr "Disponible"
+
+#: app/templates/partials/tv_diagnostics.html:72
+msgid "Muted"
+msgstr "Silenciado"
+
+#: app/templates/partials/tv_diagnostics.html:76
+msgid "Error"
+msgstr "Error"
+
+#: app/templates/partials/tv_diagnostics.html:86
+msgid "Philips Features"
+msgstr "Funciones Philips"
+
+#: app/templates/partials/tv_diagnostics.html:104
+msgid "Raw API Response"
+msgstr "Respuesta API sin procesar"
+
+#: app/templates/partials/tv_diagnostics.html:107
+#: app/templates/partials/tv_diagnostics.html:121
+msgid "Show/Hide"
+msgstr "Mostrar/Ocultar"
+
+#: app/templates/partials/tv_diagnostics.html:118
+msgid "Installed Apps"
+msgstr "Apps instaladas"
+
+#: app/templates/partials/tv_diagnostics.html:130
+msgid "Retrieved:"
+msgstr "Obtenido:"
+
+#: app/templates/partials/tv_status.html:48
+msgid "Starting..."
+msgstr "Iniciando..."
+
+#: app/templates/partials/tv_status.html:50
+msgid "Hardware shutting down"
+msgstr "Hardware apagandose"
+
+#: app/templates/partials/tv_status.html:52
+msgid "Shutting down..."
+msgstr "Apagando..."
+
+#: app/templates/partials/tv_status.html:55
+msgid "Powered On"
+msgstr "Encendido"
+
+#: app/templates/partials/tv_status.html:62
+msgid "Powered Off"
+msgstr "Apagado"
+
+#: app/templates/partials/tv_status.html:82
+msgid "Please wait..."
+msgstr "Por favor espere..."
+
+#: app/templates/partials/tv_status.html:129
+msgid "Channel"
+msgstr "Canal"
+
+#: app/templates/partials/tv_status.html:133
+msgid "Estimated values based on sent commands"
+msgstr "Valores estimados basados en comandos enviados"
+
+#: app/views/settings.py:108
+msgid "Invalid language selected."
+msgstr "Idioma seleccionado invalido."
+
+#: app/views/settings.py:116
+msgid "Language changed"
+msgstr "Idioma cambiado"
+
+#: app/views/settings.py:121
+msgid "Language changed successfully."
+msgstr "Idioma cambiado exitosamente."
+
+#: app/views/settings.py:133
+msgid "Invalid timezone selected."
+msgstr "Zona horaria seleccionada invalida."
+
+#: app/views/settings.py:141
+msgid "Timezone changed"
+msgstr "Zona horaria cambiada"
+
+#: app/views/settings.py:146
+msgid "Timezone changed successfully."
+msgstr "Zona horaria cambiada exitosamente."
+
+#: app/templates/errors/404.html:3
+msgid "Not Found"
+msgstr "No encontrado"
+
+#: app/templates/errors/500.html:3
+msgid "Error"
+msgstr "Error"
+
+#: app/templates/errors/429.html:3
+msgid "Too Many Requests"
+msgstr "Demasiadas solicitudes"
+
+#: app/templates/errors/429.html:8
+msgid "Please wait a moment before trying again."
+msgstr "Por favor espere un momento antes de intentar de nuevo."
+
+#: app/templates/errors/429.html:10
+msgid "Back to Home"
+msgstr "Volver al inicio"
+
+#: app/templates/setup.html:3
+msgid "Setup"
+msgstr "Configuracion inicial"
+
+#: app/templates/setup.html:28
+msgid "This is the initial setup for remoteRemote."
+msgstr "Esta es la configuracion inicial para remoteRemote."
+
+#: app/templates/base.html:14
+msgid "Smart TV Remote Control"
+msgstr "Control Remoto Smart TV"
+
+#: app/templates/logs.html
+msgid "Category"
+msgstr "Categoria"
+
+#: app/templates/logs.html
+msgid "All"
+msgstr "Todo"
+
+#: app/templates/logs.html
+msgid "Authentication"
+msgstr "Autenticacion"
+
+#: app/templates/logs.html
+msgid "Actions"
+msgstr "Acciones"
+
+#: app/templates/logs.html
+msgid "Configuration"
+msgstr "Configuracion"
+
+#: app/templates/logs.html
+msgid "Level"
+msgstr "Nivel"
+
+#: app/templates/logs.html
+msgid "Warning"
+msgstr "Advertencia"
+
+#: app/templates/logs.html
+msgid "Search messages..."
+msgstr "Buscar mensajes..."
+
+#: app/templates/logs.html
+msgid "Loading logs..."
+msgstr "Cargando registros..."
+
+#: app/templates/logs.html
+msgid "Load more"
+msgstr "Cargar mas"
+
+#: app/templates/logs.html
+msgid "Export as JSON"
+msgstr "Exportar como JSON"
+
+#: app/templates/logs.html
+msgid "Failed to load"
+msgstr "Error al cargar"
+
+#: app/templates/sessions.html
+msgid "Here you can see all devices with persistent login sessions."
+msgstr "Aqui puede ver todos los dispositivos con sesiones persistentes."
+
+#: app/templates/sessions.html
+msgid "Sessions are automatically terminated after 90 days of inactivity."
+msgstr "Las sesiones se terminan automaticamente despues de 90 dias de inactividad."
+
+#: app/templates/sessions.html
+msgid "Really end all other sessions?"
+msgstr "Realmente finalizar todas las otras sesiones?"
+
+#: app/templates/sessions.html
+msgid "End all other sessions"
+msgstr "Finalizar todas las otras sesiones"
+
+#: app/templates/sessions.html
+msgid "Current"
+msgstr "Actual"
+
+#: app/templates/sessions.html
+msgid "Unknown"
+msgstr "Desconocido"
+
+#: app/templates/sessions.html
+msgid "Last active:"
+msgstr "Ultima actividad:"
+
+#: app/templates/sessions.html
+msgid "Created:"
+msgstr "Creado:"
+
+#: app/templates/sessions.html
+msgid "Really end this session?"
+msgstr "Realmente finalizar esta sesion?"
+
+#: app/templates/sessions.html
+msgid "Show details"
+msgstr "Mostrar detalles"
+
+#: app/templates/sessions.html
+msgid "No persistent sessions"
+msgstr "Sin sesiones persistentes"
+
+#: app/templates/partials/log_entries.html
+msgid "No entries found"
+msgstr "No se encontraron entradas"
+
+#: app/templates/sessions.html
+msgid "Enable \"Remember me\" when logging in."
+msgstr "Activar \"Recordarme\" al iniciar sesion."
+
+#: app/templates/setup.html
+msgid "Welcome"
+msgstr "Bienvenido"
+
+#: app/templates/setup.html
+msgid "Set up your password"
+msgstr "Configure su contrasena"
+
+#: app/templates/setup.html
+msgid "Set a secure password to protect access."
+msgstr "Establezca una contrasena segura para proteger el acceso."
+
+#: app/templates/setup.html
+msgid "At least 8 characters"
+msgstr "Al menos 8 caracteres"
+
+#: app/templates/setup.html
+msgid "Confirm password"
+msgstr "Confirmar contrasena"
+
+#: app/templates/setup.html
+msgid "Repeat password"
+msgstr "Repetir contrasena"
+
+#: app/templates/setup.html
+msgid "Complete setup"
+msgstr "Completar configuracion"
+
+#: app/templates/setup.html
+msgid "Password is stored securely encrypted"
+msgstr "La contrasena se almacena encriptada de forma segura"
+
+#: app/templates/errors/500.html
+msgid "An error occurred"
+msgstr "Ha ocurrido un error"
+
+#: app/templates/errors/500.html
+msgid "Please try again later."
+msgstr "Por favor intente de nuevo mas tarde."
+
+#: app/templates/schedule_form.html
+msgid "Time"
+msgstr "Hora"
+
+#: app/templates/settings.html
+msgid "Fetching TV information..."
+msgstr "Obteniendo informacion del TV..."
+
+#: app/templates/settings.html
+msgid "Failed to fetch TV information. Please try again."
+msgstr "Error al obtener informacion del TV. Por favor intente de nuevo."
+
+#: app/templates/partials/tv_status.html
+msgid "Startup failed"
+msgstr "Fallo en el arranque"
+
+#: app/templates/partials/tv_status.html
+msgid "TV did not respond"
+msgstr "El TV no respondio"
+
+#: app/templates/partials/tv_status.html
+msgid "Check the following:"
+msgstr "Verifique lo siguiente:"
+
+#: app/templates/partials/tv_status.html
+msgid "MAC address configured in Settings"
+msgstr "Direccion MAC configurada en Ajustes"
+
+#: app/templates/partials/tv_status.html
+msgid "TV has network standby enabled"
+msgstr "TV tiene modo espera de red activado"
+
+#: app/templates/partials/tv_status.html
+msgid "TV and server on same network"
+msgstr "TV y servidor en la misma red"
+
+#: app/templates/partials/tv_status.html
+msgid "Check Settings"
+msgstr "Verificar ajustes"
+
+#: app/views/api.py
+msgid "Command failed"
+msgstr "Comando fallido"
+
+#: app/views/api.py
+msgid "Connection timeout - check if TV is on"
+msgstr "Tiempo de conexion agotado - verifique si el TV esta encendido"
+
+#: app/views/api.py
+msgid "Pairing required"
+msgstr "Emparejamiento requerido"
+
+#: app/templates/partials/tv_status.html
+msgid "Connection timed out. The TV may be off or not responding."
+msgstr "Tiempo de conexion agotado. El TV puede estar apagado o sin responder."
+
+#: app/templates/partials/tv_status.html
+msgid "Check if TV is turned on"
+msgstr "Verifique si el TV esta encendido"
+
+#: app/templates/partials/tv_status.html
+msgid "TV may need to be re-paired"
+msgstr "El TV puede necesitar re-emparejamiento"
+
+#: app/templates/partials/tv_status.html
+msgid "Re-pair TV"
+msgstr "Re-emparejar TV"
+
+#: app/templates/partials/tv_status.html
+msgid "Authentication failed. The TV needs to be paired again."
+msgstr "Autenticacion fallida. El TV necesita ser emparejado de nuevo."
+
+#: app/templates/partials/tv_status.html
+msgid "Could not connect to TV. Check network connection."
+msgstr "No se pudo conectar al TV. Verifique la conexion de red."
+
+#: app/templates/partials/tv_status.html
+msgid "Check TV IP address in Settings"
+msgstr "Verifique la direccion IP del TV en Ajustes"
+
+#: app/templates/partials/tv_status.html
+msgid "An error occurred while sending the command."
+msgstr "Ocurrio un error al enviar el comando."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "not configured"
+msgstr "no configurado"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Please enter and save the TV IP address first."
+msgstr "Por favor ingrese y guarde primero la direccion IP del TV."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "The TV at"
+msgstr "El TV en"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "is not reachable. Please check:"
+msgstr "no es accesible. Por favor verifique:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is the TV turned on?"
+msgstr "Esta el TV encendido?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is the IP address correct?"
+msgstr "Es correcta la direccion IP?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Are TV and server on the same network?"
+msgstr "Estan el TV y el servidor en la misma red?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "No Samsung TV found"
+msgstr "No se encontro TV Samsung"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "The device at"
+msgstr "El dispositivo en"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "does not respond like a Samsung TV. Please check:"
+msgstr "no responde como un TV Samsung. Por favor verifique:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is it really a Samsung Smart TV?"
+msgstr "Es realmente un Samsung Smart TV?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is the TV in network standby instead of completely off?"
+msgstr "Esta el TV en modo espera de red en lugar de completamente apagado?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "For Philips TVs please select \"Philips\" as TV type."
+msgstr "Para TVs Philips por favor seleccione \"Philips\" como tipo de TV."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "is not reachable."
+msgstr "no es accesible."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Please check:"
+msgstr "Por favor verifique:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Connection test failed:"
+msgstr "Prueba de conexion fallida:"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "does not respond like a Philips TV."
+msgstr "no responde como un TV Philips."
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "Is it really a Philips Smart TV?"
+msgstr "Es realmente un Philips Smart TV?"
+
+#: app/views/settings.py (pairing pre-checks)
+msgid "For Samsung TVs please select \"Samsung\" as TV type."
+msgstr "Para TVs Samsung por favor seleccione \"Samsung\" como tipo de TV."
+

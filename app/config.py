@@ -40,7 +40,7 @@ class Config:
     # Babel (i18n)
     BABEL_DEFAULT_LOCALE = 'en'
     BABEL_TRANSLATION_DIRECTORIES = 'translations'
-    LANGUAGES = ['en', 'de']
+    LANGUAGES = ['en', 'de', 'es', 'fr']
 
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \

@@ -28,7 +28,7 @@ A web-based remote control for Samsung and Philips Smart TVs. Control your TV fr
 - Connection state tracking
 
 ### Internationalization
-- English and German language support
+- Multi-language support: English, German, Spanish, French
 - Timezone selection
 
 ## Supported TVs
