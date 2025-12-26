@@ -465,22 +465,23 @@
     .btn-remote {
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        transition: box-shadow 0.1s ease-out;
     }
 
     .btn-remote:active,
     .btn-remote.btn-pressed {
-        filter: brightness(0.7);
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
     }
 
-    /* Single smooth pulse animation on success */
+    /* Single smooth pulse animation on success - shadow only, no brightness flicker */
     @keyframes btn-pulse {
-        0% { filter: brightness(0.7); box-shadow: none; }
-        50% { filter: brightness(1.3); box-shadow: 0 0 16px rgba(99, 102, 241, 0.7); }
-        100% { filter: brightness(1); box-shadow: none; }
+        0% { box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4); }
+        50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 40px rgba(99, 102, 241, 0.4); }
+        100% { box-shadow: none; }
     }
 
     .btn-remote.btn-pulse {
-        animation: btn-pulse 0.3s ease-out forwards;
+        animation: btn-pulse 0.35s ease-out forwards;
     }
 
     .volume-slider-vertical {
@@ -544,6 +545,18 @@
             void btn.offsetWidth; // Force reflow to restart animation
             btn.classList.add('btn-pulse');
             // Clean up after animation completes
+            setTimeout(() => btn.classList.remove('btn-pulse'), 350);
+        }
+    });
+
+    // Handle non-HTMX buttons (Alpine.js volume controls, etc.)
+    document.addEventListener('click', function(evt) {
+        const btn = evt.target.closest('.btn-remote');
+        if (btn && !btn.hasAttribute('hx-post') && !btn.hasAttribute('hx-get')) {
+            // Non-HTMX button - trigger pulse animation directly
+            btn.classList.remove('btn-pulse');
+            void btn.offsetWidth;
+            btn.classList.add('btn-pulse');
             setTimeout(() => btn.classList.remove('btn-pulse'), 350);
         }
     });
