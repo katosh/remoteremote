@@ -440,6 +440,7 @@
                 loading: false,
                 lastError: null,
                 startupFailed: false,    // Show troubleshooting tips
+                confirmedOnAt: 0,        // Timestamp when 'on' was confirmed (prevents flicker to off)
                 pollInterval: null,
                 transitionTimeout: null,
                 startupFailedTimeout: null,
@@ -466,6 +467,7 @@
                     macConfigured: 'MAC address configured in Settings',
                     networkStandby: 'TV has network standby enabled',
                     sameNetwork: 'TV and server on same network',
+                    waitAfterShutdown: 'Wait a few seconds after shutdown before trying again',
                     checkSettings: 'Check Settings',
                     commandFailed: 'Command failed',
                     tvIsOff: 'The TV is off. Turn it on first to send commands.'
@@ -506,6 +508,7 @@
                             macConfigured: el.dataset.i18nMacConfigured || 'MAC address configured in Settings',
                             networkStandby: el.dataset.i18nNetworkStandby || 'TV has network standby enabled',
                             sameNetwork: el.dataset.i18nSameNetwork || 'TV and server on same network',
+                            waitAfterShutdown: el.dataset.i18nWaitAfterShutdown || 'Wait a few seconds after shutdown before trying again',
                             checkSettings: el.dataset.i18nCheckSettings || 'Check Settings',
                             commandFailed: el.dataset.i18nCommandFailed || 'Command failed',
                             tvIsOff: el.dataset.i18nTvIsOff || 'The TV is off. Turn it on first to send commands.'
@@ -566,8 +569,19 @@
                                 this.state = 'standby';
                             }
                         } else if (!this.isTransitioning) {
-                            // Not in transition - show actual state
-                            this.state = this.actualState;
+                            // Not in transition - update state
+                            // Prevent flicker: if we recently confirmed 'on', don't immediately trust 'off'
+                            const timeSinceConfirmedOn = Date.now() - this.confirmedOnAt;
+                            if (this.actualState === 'off' && this.state === 'on' && timeSinceConfirmedOn < 10000) {
+                                // Recently confirmed on, but got 'off' - likely network blip, keep showing 'on'
+                                console.log('Ignoring brief off state, TV was on recently');
+                            } else {
+                                // If transitioning to 'on', record the confirmation time
+                                if (this.actualState === 'on' && this.state !== 'on') {
+                                    this.confirmedOnAt = Date.now();
+                                }
+                                this.state = this.actualState;
+                            }
                         }
                     } catch (e) {
                         console.log('Could not fetch TV status:', e);
@@ -619,6 +633,7 @@
                     // Immediate visual feedback
                     this.state = 'turning_off';
                     this.lastError = null;
+                    this.confirmedOnAt = 0; // Clear so we don't block showing 'off' state
                     this.startTransitionTimeout(20000, false); // 20s timeout
                     this.startPolling(2000); // Poll faster during transition
 
@@ -658,6 +673,9 @@
                                 if (this.actualState === targetState ||
                                     (this.state === 'turning_off' && (this.actualState === 'standby' || this.actualState === 'off'))) {
                                     // Transition complete
+                                    if (this.actualState === 'on') {
+                                        this.confirmedOnAt = Date.now();
+                                    }
                                     this.state = this.actualState;
                                     this.clearTransitionTimeout();
                                     this.startPolling(5000);
@@ -715,6 +733,7 @@
                     } else if (action === 'off') {
                         this.state = 'turning_off';
                         this.lastError = null;
+                        this.confirmedOnAt = 0; // Clear so we don't block showing 'off' state
                         this.startTransitionTimeout(20000, false);
                         this.startPolling(2000);
                     }

@@ -1281,3 +1281,7 @@ msgstr "Pour les TV Samsung, veuillez selectionner \"Samsung\" comme type de TV.
 msgid "The TV is off. Turn it on first to send commands."
 msgstr "La TV est eteinte. Allumez-la d'abord pour envoyer des commandes."
 
+#: app/templates/partials/tv_status.html
+msgid "Wait a few seconds after shutdown before trying again"
+msgstr "Attendez quelques secondes après l'arrêt avant de réessayer"
+

@@ -15,6 +15,7 @@
      data-i18n-mac-configured="{{ _('MAC address configured in Settings') }}"
      data-i18n-network-standby="{{ _('TV has network standby enabled') }}"
      data-i18n-same-network="{{ _('TV and server on same network') }}"
+     data-i18n-wait-after-shutdown="{{ _('Wait a few seconds after shutdown before trying again') }}"
      data-i18n-check-settings="{{ _('Check Settings') }}"
      data-i18n-command-failed="{{ _('Command failed') }}"
      data-i18n-tv-is-off="{{ _('The TV is off. Turn it on first to send commands.') }}"
@@ -133,6 +134,10 @@
                     <li class="flex items-start gap-2">
                         <span class="text-red-400/60">&#8226;</span>
                         <span x-text="i18n.sameNetwork">{{ _('TV and server on same network') }}</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-red-400/60">&#8226;</span>
+                        <span x-text="i18n.waitAfterShutdown">{{ _('Wait a few seconds after shutdown before trying again') }}</span>
                     </li>
                 </ul>
                 <a :href="settingsUrl + '#tv-config'" class="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 mt-3">

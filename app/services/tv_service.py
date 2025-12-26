@@ -497,7 +497,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                             _status_cache['info'] = None
                             _status_cache['last_check'] = now
                             _status_cache['just_confirmed'] = True
-                            _status_cache['confirmed_at'] = now
+                            _status_cache['confirmed_at'] = 0  # Clear to prevent "on" fallback after shutdown
                             _status_cache['unreachable_since'] = 0  # Reset tracker
                             return {
                                 'connected': False,
@@ -688,7 +688,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     _status_cache['info'] = None
                     _status_cache['last_check'] = now
                     _status_cache['just_confirmed'] = True
-                    _status_cache['confirmed_at'] = now
+                    _status_cache['confirmed_at'] = 0  # Clear to prevent "on" fallback after shutdown
                     return {
                         'connected': False,
                         'power_state': 'off',
@@ -725,7 +725,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     _status_cache['info'] = None
                     _status_cache['last_check'] = now
                     _status_cache['just_confirmed'] = True
-                    _status_cache['confirmed_at'] = now
+                    _status_cache['confirmed_at'] = 0  # Clear to prevent "on" fallback after shutdown
                     return {
                         'connected': False,
                         'power_state': 'off',
@@ -793,6 +793,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
             _status_cache['power_state'] = 'off'
             _status_cache['connected'] = False
             _status_cache['last_check'] = now
+            _status_cache['confirmed_at'] = 0  # Clear to prevent "on" fallback
             _status_cache['startup_failed'] = True
             _status_cache['startup_failed_at'] = now
             return {
