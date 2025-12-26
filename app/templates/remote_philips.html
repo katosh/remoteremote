@@ -23,7 +23,7 @@
     </div>
 
     <!-- TV Status Card - Alpine.js powered, polls every 5s -->
-    <div id="tv-status-card" class="bg-tv-dark rounded-xl p-4 mb-4">
+    <div id="tv-status-card" class="bg-tv-dark rounded-xl p-4 mb-6">
         {% with should_poll=true %}
         {% include 'partials/tv_status.html' %}
         {% endwith %}
@@ -65,33 +65,6 @@
                 </button>
             </div>
         </div>
-    </div>
-
-    <!-- Quick Power Actions (manual fallback) -->
-    <div class="grid grid-cols-2 gap-3 mb-6">
-        <button hx-post="{{ url_for('remote.power') }}"
-                hx-vals='{"action": "on"}'
-                hx-swap="none"
-                hx-disabled-elt="this"
-                class="btn-remote py-3 flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-            </svg>
-            <span class="text-sm">{{ _('Turn On') }}</span>
-        </button>
-        <button hx-post="{{ url_for('remote.power') }}"
-                hx-vals='{"action": "off"}'
-                hx-swap="none"
-                hx-disabled-elt="this"
-                {% if not tv_has_token %}disabled{% endif %}
-                class="btn-remote btn-power py-3 flex items-center justify-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-            </svg>
-            <span class="text-sm">{{ _('Turn Off') }}</span>
-        </button>
     </div>
 
     <!-- Normal Mode Controls -->
@@ -259,10 +232,73 @@
                     hx-disabled-elt="this"
                     class="btn-remote h-10 rounded-lg bg-blue-600 hover:bg-blue-500">&nbsp;</button>
         </div>
+
+        <!-- Media Controls -->
+        <div class="grid grid-cols-4 gap-3">
+            <button hx-post="{{ url_for('remote.send_key', key='REWIND') }}"
+                    hx-swap="none"
+                    hx-disabled-elt="this"
+                    class="btn-remote h-12 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='PLAY') }}"
+                    hx-swap="none"
+                    hx-disabled-elt="this"
+                    class="btn-remote h-12 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='PAUSE') }}"
+                    hx-swap="none"
+                    hx-disabled-elt="this"
+                    class="btn-remote h-12 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+            </button>
+            <button hx-post="{{ url_for('remote.send_key', key='FASTFORWARD') }}"
+                    hx-swap="none"
+                    hx-disabled-elt="this"
+                    class="btn-remote h-12 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     <!-- Expert Mode Controls -->
     <div x-show="expertMode" x-cloak class="space-y-6">
+        <!-- Power Buttons (manual fallback) -->
+        <div class="grid grid-cols-2 gap-3">
+            <button hx-post="{{ url_for('remote.power') }}"
+                    hx-vals='{"action": "on"}'
+                    hx-swap="none"
+                    hx-disabled-elt="this"
+                    class="btn-remote py-3 flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+                </svg>
+                <span class="text-sm">{{ _('Turn On') }}</span>
+            </button>
+            <button hx-post="{{ url_for('remote.power') }}"
+                    hx-vals='{"action": "off"}'
+                    hx-swap="none"
+                    hx-disabled-elt="this"
+                    {% if not tv_has_token %}disabled{% endif %}
+                    class="btn-remote btn-power py-3 flex items-center justify-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
+                </svg>
+                <span class="text-sm">{{ _('Turn Off') }}</span>
+            </button>
+        </div>
+
         <!-- Number Pad -->
         <div class="grid grid-cols-3 gap-3">
             {% for num in range(1, 10) %}

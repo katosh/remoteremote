@@ -22,34 +22,7 @@
             {{ _('TV control not available. Please') }} <a href="{{ url_for('settings.settings_view') }}" class="underline">{{ _('pair TV') }}</a> {{ _('first.') }}
         </p>
         {% endif %}
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <!-- Wake-on-LAN always available -->
-            <button hx-post="{{ url_for('remote.power') }}"
-                    hx-vals='{"action": "on"}'
-                    hx-swap="none"
-                    hx-disabled-elt="this"
-                    class="btn-remote py-4 flex flex-col items-center gap-2 bg-green-700 hover:bg-green-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-                </svg>
-                <span class="text-sm">{{ _('Turn On') }}</span>
-            </button>
-
-            <!-- Power off (requires token) -->
-            <button hx-post="{{ url_for('remote.power') }}"
-                    hx-vals='{"action": "off"}'
-                    hx-swap="none"
-                    hx-disabled-elt="this"
-                    {% if not tv_has_token %}disabled{% endif %}
-                    class="btn-remote btn-power py-4 flex flex-col items-center gap-2 {% if not tv_has_token %}opacity-50 cursor-not-allowed{% endif %}">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/>
-                </svg>
-                <span class="text-sm">{{ _('Turn Off') }}</span>
-            </button>
-
+        <div class="grid grid-cols-2 gap-3">
             <button hx-post="{{ url_for('remote.send_key', key='KEY_MUTE') }}"
                     hx-swap="none"
                     hx-disabled-elt="this"
