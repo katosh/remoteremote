@@ -70,7 +70,8 @@ MIN_TRANSITION_SECONDS = 0.5
 # Minimum time unreachable during shutdown before marking as fully off
 # This is the ONLY timeout-based state assumption: if TV is in standby and becomes
 # unreachable for this duration, we mark it as fully off (since we can't ping a powered-off TV)
-MIN_SHUTTING_DOWN_SECONDS = 3
+# Needs to be long enough for the TV to fully power down and be ready for Wake-on-LAN
+MIN_SHUTTING_DOWN_SECONDS = 8
 
 
 class MockSamsungTV:
