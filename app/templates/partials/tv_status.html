@@ -20,8 +20,8 @@
      data-i18n-tv-is-off="{{ _('The TV is off. Turn it on first to send commands.') }}"
      class="tv-status-component">
 
-<div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-4 min-w-0">
         <!-- Status Icons - all pre-rendered, visibility controlled by x-show -->
 
         <!-- Transition State (Yellow pulsing) -->
@@ -60,9 +60,9 @@
             </svg>
         </div>
 
-        <div>
-            <h2 class="text-xl font-semibold" x-text="tvName || '{{ tv_name or 'TV' }}'">{{ tv_name or 'TV' }}</h2>
-            <p :class="{
+        <div class="min-w-0">
+            <h2 class="text-xl font-semibold truncate" x-text="tvName || '{{ tv_name or 'TV' }}'">{{ tv_name or 'TV' }}</h2>
+            <p class="truncate" :class="{
                 'text-yellow-400': isTransitioning,
                 'text-green-400': state === 'on',
                 'text-orange-400': state === 'standby',
@@ -75,7 +75,7 @@
     </div>
 
     <!-- Power Controls -->
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-shrink-0">
         <!-- During transition - show disabled button with spinner -->
         <div x-show="isTransitioning" x-cloak
              class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 flex items-center gap-2">
