@@ -185,7 +185,11 @@
             </svg>
             <div class="flex-1">
                 <h4 class="text-red-400 font-medium mb-2">{{ _('Command failed') }}</h4>
-                {% if last_error.error_type == 'timeout' %}
+                {% if last_error.error_type == 'timeout' and power_state != 'on' %}
+                {# TV is off - simple message, no need to check settings #}
+                <p class="text-sm text-gray-400">{{ _('The TV is off. Turn it on first to send commands.') }}</p>
+                {% elif last_error.error_type == 'timeout' %}
+                {# TV should be on but timed out - might be a real issue #}
                 <p class="text-sm text-gray-400 mb-3">{{ _('Connection timed out. The TV may be off or not responding.') }}</p>
                 <ul class="text-sm text-gray-400 space-y-1.5">
                     <li class="flex items-start gap-2">

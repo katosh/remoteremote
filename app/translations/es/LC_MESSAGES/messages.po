@@ -1277,3 +1277,7 @@ msgstr "Es realmente un Philips Smart TV?"
 msgid "For Samsung TVs please select \"Samsung\" as TV type."
 msgstr "Para TVs Samsung por favor seleccione \"Samsung\" como tipo de TV."
 
+#: app/templates/partials/tv_status.html
+msgid "The TV is off. Turn it on first to send commands."
+msgstr "El TV esta apagado. Enciendalo primero para enviar comandos."
+
