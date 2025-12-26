@@ -26,7 +26,7 @@
         {% endwith %}
     </div>
 
-    <!-- Quick Power Actions -->
+    <!-- Quick Power Actions (manual fallback) -->
     <div class="grid grid-cols-2 gap-3 mb-6">
         <button hx-post="{{ url_for('remote.power') }}"
                 hx-vals='{"action": "on"}'

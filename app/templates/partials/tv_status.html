@@ -5,6 +5,7 @@
      data-i18n-shutting-down="{{ _('Shutting down...') }}"
      data-i18n-powered-on="{{ _('Powered On') }}"
      data-i18n-standby="{{ _('Standby') }}"
+     data-i18n-hardware-shutting-down="{{ _('Hardware shutting down') }}"
      data-i18n-powered-off="{{ _('Powered Off') }}"
      data-i18n-turn-on="{{ _('Turn On') }}"
      data-i18n-turn-off="{{ _('Turn Off') }}"
@@ -67,6 +68,9 @@
                 'text-orange-400': state === 'standby',
                 'text-gray-500': state === 'off' || state === 'unknown'
             }" x-text="statusText">{{ _('Powered Off') }}</p>
+            <p x-show="state === 'standby'" x-cloak
+               class="text-xs text-orange-400/70 mt-0.5"
+               x-text="i18n.hardwareShuttingDown">{{ _('Hardware shutting down') }}</p>
         </div>
     </div>
 
@@ -93,8 +97,8 @@
             <span x-text="i18n.turnOff">{{ _('Turn Off') }}</span>
         </button>
 
-        <!-- Turn On button - show when TV is off, standby, or unknown -->
-        <button x-show="(state === 'off' || state === 'standby' || state === 'unknown') && !isTransitioning" x-cloak
+        <!-- Turn On button - show when TV is off (NOT standby, WoL doesn't work in standby) -->
+        <button x-show="(state === 'off' || state === 'unknown') && !isTransitioning" x-cloak
                 @click="powerOn()"
                 class="btn-remote bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

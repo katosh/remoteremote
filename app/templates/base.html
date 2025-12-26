@@ -450,27 +450,25 @@
                 powerUrl: '',
                 settingsUrl: '',
 
-                // i18n (read from data attributes)
-                get i18n() {
-                    const el = this.$el;
-                    return {
-                        starting: el?.dataset.i18nStarting || 'Starting...',
-                        shuttingDown: el?.dataset.i18nShuttingDown || 'Shutting down...',
-                        poweredOn: el?.dataset.i18nPoweredOn || 'Powered On',
-                        standby: el?.dataset.i18nStandby || 'Standby',
-                        poweredOff: el?.dataset.i18nPoweredOff || 'Powered Off',
-                        turnOn: el?.dataset.i18nTurnOn || 'Turn On',
-                        turnOff: el?.dataset.i18nTurnOff || 'Turn Off',
-                        pleaseWait: el?.dataset.i18nPleaseWait || 'Please wait...',
-                        tvDidNotRespond: el?.dataset.i18nTvDidNotRespond || 'TV did not respond',
-                        checkFollowing: el?.dataset.i18nCheckFollowing || 'Check the following:',
-                        macConfigured: el?.dataset.i18nMacConfigured || 'MAC address configured in Settings',
-                        networkStandby: el?.dataset.i18nNetworkStandby || 'TV has network standby enabled',
-                        sameNetwork: el?.dataset.i18nSameNetwork || 'TV and server on same network',
-                        checkSettings: el?.dataset.i18nCheckSettings || 'Check Settings',
-                        commandFailed: el?.dataset.i18nCommandFailed || 'Command failed',
-                        tvIsOff: el?.dataset.i18nTvIsOff || 'The TV is off. Turn it on first to send commands.'
-                    };
+                // i18n translations (initialized in start() from data attributes)
+                i18n: {
+                    starting: 'Starting...',
+                    shuttingDown: 'Shutting down...',
+                    poweredOn: 'Powered On',
+                    standby: 'Standby',
+                    hardwareShuttingDown: 'Hardware shutting down',
+                    poweredOff: 'Powered Off',
+                    turnOn: 'Turn On',
+                    turnOff: 'Turn Off',
+                    pleaseWait: 'Please wait...',
+                    tvDidNotRespond: 'TV did not respond',
+                    checkFollowing: 'Check the following:',
+                    macConfigured: 'MAC address configured in Settings',
+                    networkStandby: 'TV has network standby enabled',
+                    sameNetwork: 'TV and server on same network',
+                    checkSettings: 'Check Settings',
+                    commandFailed: 'Command failed',
+                    tvIsOff: 'The TV is off. Turn it on first to send commands.'
                 },
 
                 // Computed
@@ -490,6 +488,29 @@
 
                 // Lifecycle - start() is called from x-init AFTER config is set
                 start() {
+                    // Read i18n translations from data attributes (element is now available)
+                    const el = this.$el;
+                    if (el && el.dataset) {
+                        this.i18n = {
+                            starting: el.dataset.i18nStarting || 'Starting...',
+                            shuttingDown: el.dataset.i18nShuttingDown || 'Shutting down...',
+                            poweredOn: el.dataset.i18nPoweredOn || 'Powered On',
+                            standby: el.dataset.i18nStandby || 'Standby',
+                            hardwareShuttingDown: el.dataset.i18nHardwareShuttingDown || 'Hardware shutting down',
+                            poweredOff: el.dataset.i18nPoweredOff || 'Powered Off',
+                            turnOn: el.dataset.i18nTurnOn || 'Turn On',
+                            turnOff: el.dataset.i18nTurnOff || 'Turn Off',
+                            pleaseWait: el.dataset.i18nPleaseWait || 'Please wait...',
+                            tvDidNotRespond: el.dataset.i18nTvDidNotRespond || 'TV did not respond',
+                            checkFollowing: el.dataset.i18nCheckFollowing || 'Check the following:',
+                            macConfigured: el.dataset.i18nMacConfigured || 'MAC address configured in Settings',
+                            networkStandby: el.dataset.i18nNetworkStandby || 'TV has network standby enabled',
+                            sameNetwork: el.dataset.i18nSameNetwork || 'TV and server on same network',
+                            checkSettings: el.dataset.i18nCheckSettings || 'Check Settings',
+                            commandFailed: el.dataset.i18nCommandFailed || 'Command failed',
+                            tvIsOff: el.dataset.i18nTvIsOff || 'The TV is off. Turn it on first to send commands.'
+                        };
+                    }
                     this.fetchStatus();
                     if (this.shouldPoll) {
                         this.startPolling(5000);
@@ -516,18 +537,36 @@
                         this.tvName = data.tv_name || '';
                         this.reachable = data.reachable;
 
+                        // Check if server reports a transition state
+                        const serverTransition = data.in_transition;
+                        const serverTransitionType = data.transition_type;
+
                         // Determine actual state from API
-                        // Trust power_state first (handles temporary network blips when recently confirmed on)
                         if (data.power_state === 'on') {
                             this.actualState = 'on';
-                        } else if (data.reachable) {
+                        } else if (data.power_state === 'standby' || (data.reachable && data.power_state !== 'off')) {
                             this.actualState = 'standby';
+                        } else if (data.power_state === 'turning_on') {
+                            this.actualState = 'turning_on';
+                        } else if (data.power_state === 'turning_off' || data.power_state === 'shutting_down') {
+                            this.actualState = 'turning_off';
                         } else {
                             this.actualState = 'off';
                         }
 
-                        // Only update display state if not transitioning
-                        if (!this.isTransitioning) {
+                        // Sync with server transition state
+                        if (serverTransition && serverTransitionType) {
+                            // Server is in transition - sync our state
+                            if (serverTransitionType === 'turning_on') {
+                                this.state = 'turning_on';
+                            } else if (serverTransitionType === 'turning_off') {
+                                this.state = 'turning_off';
+                            } else if (serverTransitionType === 'shutting_down') {
+                                // Show standby during hardware shutdown phase
+                                this.state = 'standby';
+                            }
+                        } else if (!this.isTransitioning) {
+                            // Not in transition - show actual state
                             this.state = this.actualState;
                         }
                     } catch (e) {
@@ -538,6 +577,8 @@
 
                 async powerOn() {
                     if (this.isTransitioning) return;
+                    // Don't attempt power on from standby - WoL doesn't work in standby
+                    if (this.state === 'standby') return;
 
                     // Immediate visual feedback
                     this.state = 'turning_on';
@@ -664,6 +705,8 @@
                     if (this.isTransitioning) return;
 
                     if (action === 'on') {
+                        // Don't attempt power on from standby - WoL doesn't work in standby
+                        if (this.state === 'standby') return;
                         this.state = 'turning_on';
                         this.startupFailed = false;
                         this.lastError = null;

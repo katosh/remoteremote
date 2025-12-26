@@ -141,7 +141,9 @@ def tv_status_json():
     return jsonify({
         'power_state': cached['power_state'],
         'reachable': cached['connected'],
-        'tv_name': tv_name
+        'tv_name': tv_name,
+        'in_transition': cached.get('in_transition', False),
+        'transition_type': cached.get('transition_type')
     })
 
 
