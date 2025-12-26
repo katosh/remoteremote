@@ -360,20 +360,31 @@
             });
         }
 
-        // Update nav clock using browser locale format but TV timezone
-        function updateNavClock() {
-            const clock = document.getElementById('nav-clock');
-            if (clock) {
+        // Update all live clocks using browser locale format but specified timezone
+        function updateLiveClocks() {
+            const now = new Date();
+            // Update nav clock
+            const navClock = document.getElementById('nav-clock');
+            if (navClock) {
+                const tz = navClock.getAttribute('data-timezone');
+                const options = { hour: '2-digit', minute: '2-digit' };
+                if (tz) {
+                    options.timeZone = tz;
+                }
+                navClock.textContent = now.toLocaleTimeString(undefined, options);
+            }
+            // Update all other live clocks (same format)
+            document.querySelectorAll('.live-clock').forEach(function(clock) {
                 const tz = clock.getAttribute('data-timezone');
                 const options = { hour: '2-digit', minute: '2-digit' };
                 if (tz) {
                     options.timeZone = tz;
                 }
-                clock.textContent = new Date().toLocaleTimeString(undefined, options);
-            }
+                clock.textContent = now.toLocaleTimeString(undefined, options);
+            });
         }
-        updateNavClock();
-        setInterval(updateNavClock, 1000);
+        updateLiveClocks();
+        setInterval(updateLiveClocks, 1000);
 
         // Format all elements with data-locale-time attribute
         // Uses browser locale for format (12h/24h) but keeps displayed timezone
