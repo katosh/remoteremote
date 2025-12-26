@@ -50,28 +50,43 @@ _last_error: dict = {
     'timestamp': 0,
     'action': None  # What was being attempted
 }
-ERROR_DISPLAY_SECONDS = 15  # How long to show errors
 
 # Track if token is known to be invalid (detected from errors)
 _token_invalid: bool = False
-CACHE_TTL_SECONDS = 10  # Cache TV status for 10 seconds (shorter for responsiveness)
 
-# Maximum transition duration for turning OFF - after this, check actual state
-MAX_TRANSITION_SECONDS = 60
 
-# Maximum transition duration for turning ON - if TV doesn't respond, return to off
-# Shorter timeout so user can try again quickly if WoL fails
-MAX_STARTUP_SECONDS = 10
+# Helper functions to get config values (with defaults for outside app context)
+def _get_config(key: str, default):
+    """Get config value from Flask app or return default."""
+    try:
+        return current_app.config.get(key, default)
+    except RuntimeError:
+        # Outside app context
+        return default
 
-# Minimum time to show transition state before checking API
-# Keep this short to not miss standby phase, but long enough to avoid immediate flicker
-MIN_TRANSITION_SECONDS = 0.5
 
-# Minimum time unreachable during shutdown before marking as fully off
-# This is the ONLY timeout-based state assumption: if TV is in standby and becomes
-# unreachable for this duration, we mark it as fully off (since we can't ping a powered-off TV)
-# Needs to be long enough for the TV to fully power down and be ready for Wake-on-LAN
-MIN_SHUTTING_DOWN_SECONDS = 8
+def get_error_display_seconds() -> int:
+    return _get_config('TV_ERROR_DISPLAY_SECONDS', 15)
+
+
+def get_cache_ttl_seconds() -> int:
+    return _get_config('TV_STATUS_CACHE_TTL', 10)
+
+
+def get_max_transition_seconds() -> int:
+    return _get_config('TV_MAX_TRANSITION_SECONDS', 60)
+
+
+def get_max_startup_seconds() -> int:
+    return _get_config('TV_MAX_STARTUP_SECONDS', 10)
+
+
+def get_min_transition_seconds() -> float:
+    return _get_config('TV_MIN_TRANSITION_SECONDS', 0.5)
+
+
+def get_min_shutting_down_seconds() -> int:
+    return _get_config('TV_MIN_SHUTTING_DOWN_SECONDS', 8)
 
 
 class MockSamsungTV:
@@ -287,7 +302,7 @@ def get_last_error() -> dict:
         return None
 
     age = time.time() - _last_error['timestamp']
-    if age > ERROR_DISPLAY_SECONDS:
+    if age > get_error_display_seconds():
         # Error expired, clear it
         _last_error['message'] = None
         _last_error['error_type'] = None
@@ -368,7 +383,7 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
         _status_cache['startup_failed'] = False  # Clear any previous failure
         _status_cache['startup_failed_at'] = 0
         if is_transition:
-            _status_cache['transition_until'] = now + MAX_STARTUP_SECONDS
+            _status_cache['transition_until'] = now + get_max_startup_seconds()
             _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_on'
     elif power_state in ('off', 'standby', 'turning_off'):
@@ -378,7 +393,7 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
         _status_cache['info'] = None
         _status_cache['target_state'] = 'off'  # Remember expected end state
         if is_transition:
-            _status_cache['transition_until'] = now + MAX_TRANSITION_SECONDS
+            _status_cache['transition_until'] = now + get_max_transition_seconds()
             _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_off'
 
@@ -440,7 +455,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
         else:
             # During the first few seconds, don't check API - just show transition state
             # This prevents flickering on slow connections where command hasn't taken effect
-            if transition_age < MIN_TRANSITION_SECONDS:
+            if transition_age < get_min_transition_seconds():
                 return {
                     'connected': False,
                     'power_state': transition_type,
@@ -464,13 +479,13 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                         unreachable_since = _status_cache.get('unreachable_since', 0)
                         if unreachable_since == 0:
                             # First time we noticed it's unreachable - start tracking
-                            print(f"[TV Service] TV became unreachable during shutdown - waiting {MIN_SHUTTING_DOWN_SECONDS}s before marking off", flush=True)
+                            print(f"[TV Service] TV became unreachable during shutdown - waiting {get_min_shutting_down_seconds()}s before marking off", flush=True)
                             _status_cache['unreachable_since'] = now
                             unreachable_since = now
 
                         unreachable_duration = now - unreachable_since
 
-                        if unreachable_duration >= MIN_SHUTTING_DOWN_SECONDS:
+                        if unreachable_duration >= get_min_shutting_down_seconds():
                             # Been unreachable long enough - now it's truly off
                             if _status_cache.get('transition_type') in ('turning_off', 'shutting_down'):
                                 print(f"[TV Service] TV is now OFF (unreachable for {unreachable_duration:.1f}s) - fully powered down", flush=True)
@@ -496,7 +511,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                             }
                         else:
                             # Still in the waiting period - show standby
-                            remaining_wait = MIN_SHUTTING_DOWN_SECONDS - unreachable_duration
+                            remaining_wait = get_min_shutting_down_seconds() - unreachable_duration
                             return {
                                 'connected': False,
                                 'power_state': 'standby',
@@ -825,7 +840,7 @@ def get_cached_status(force_refresh: bool = False) -> dict:
         _status_cache['startup_failed'] = False
 
     # Return memory cached status if still valid
-    if not force_refresh and cache_age < CACHE_TTL_SECONDS and _status_cache['connected'] is not None:
+    if not force_refresh and cache_age < get_cache_ttl_seconds() and _status_cache['connected'] is not None:
         power_state = _status_cache['power_state']
         # Normalize standby to off for UI consistency
         if power_state == 'standby':

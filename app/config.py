@@ -85,6 +85,14 @@ class Config:
     TV_MAC = os.environ.get('TV_MAC', '')
     TV_TOKEN_FILE = os.environ.get('TV_TOKEN_FILE') or os.path.join(instance_dir, 'tv_token')
 
+    # TV Service Timing Constants
+    TV_STATUS_CACHE_TTL = 10  # Seconds to cache TV status
+    TV_ERROR_DISPLAY_SECONDS = 15  # How long to show errors in UI
+    TV_MAX_TRANSITION_SECONDS = 60  # Max duration for power-off transition
+    TV_MAX_STARTUP_SECONDS = 10  # Max duration for power-on (WoL) transition
+    TV_MIN_TRANSITION_SECONDS = 0.5  # Min time before checking API during transition
+    TV_MIN_SHUTTING_DOWN_SECONDS = 8  # Time unreachable before marking as fully off
+
     # Timezone (default, configurable via UI)
     TIMEZONE = 'Europe/Berlin'
 
