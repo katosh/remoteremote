@@ -545,15 +545,17 @@
                         const serverTransitionType = data.transition_type;
 
                         // Determine actual state from API
+                        // States: on (API says on), standby (API says standby), off (no ping)
                         if (data.power_state === 'on') {
                             this.actualState = 'on';
-                        } else if (data.power_state === 'standby' || (data.reachable && data.power_state !== 'off')) {
+                        } else if (data.power_state === 'standby') {
                             this.actualState = 'standby';
                         } else if (data.power_state === 'turning_on') {
                             this.actualState = 'turning_on';
                         } else if (data.power_state === 'turning_off' || data.power_state === 'shutting_down') {
-                            this.actualState = 'turning_off';
+                            this.actualState = 'standby'; // During shutdown, show standby until fully off
                         } else {
+                            // No ping response or power_state is 'off'
                             this.actualState = 'off';
                         }
 
@@ -570,18 +572,16 @@
                             }
                         } else if (!this.isTransitioning) {
                             // Not in transition - update state
-                            // Prevent flicker: if we recently confirmed 'on', don't immediately trust 'off'
-                            const timeSinceConfirmedOn = Date.now() - this.confirmedOnAt;
-                            if (this.actualState === 'off' && this.state === 'on' && timeSinceConfirmedOn < 10000) {
-                                // Recently confirmed on, but got 'off' - likely network blip, keep showing 'on'
-                                console.log('Ignoring brief off state, TV was on recently');
-                            } else {
-                                // If transitioning to 'on', record the confirmation time
-                                if (this.actualState === 'on' && this.state !== 'on') {
-                                    this.confirmedOnAt = Date.now();
-                                }
-                                this.state = this.actualState;
+                            // If transitioning to 'on', record the confirmation time
+                            if (this.actualState === 'on' && this.state !== 'on') {
+                                this.confirmedOnAt = Date.now();
                             }
+                            // If server explicitly confirms 'off' (not in transition), clear confirmedOnAt
+                            // This handles TV turned off via physical remote
+                            if (this.actualState === 'off' && !serverTransition) {
+                                this.confirmedOnAt = 0;
+                            }
+                            this.state = this.actualState;
                         }
                     } catch (e) {
                         console.log('Could not fetch TV status:', e);

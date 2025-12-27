@@ -652,6 +652,30 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                         'transition_type': 'shutting_down',  # Different type for UI
                         'transition_remaining': int(_status_cache['transition_until'] - now)
                     }
+                elif transition_type == 'shutting_down' and info and info.power_state == 'on':
+                    # TV turned back on during shutdown (user pressed button or WoL)
+                    # Cancel shutdown transition and show as on
+                    print(f"[TV Service] TV turned ON during shutdown - cancelling transition", flush=True)
+                    _status_cache['transition_until'] = 0
+                    _status_cache['transition_type'] = None
+                    _status_cache['target_state'] = None
+                    _status_cache['connected'] = True
+                    _status_cache['power_state'] = 'on'
+                    _status_cache['info'] = info
+                    _status_cache['last_check'] = now
+                    _status_cache['just_confirmed'] = True
+                    _status_cache['confirmed_at'] = now
+                    _status_cache['unreachable_since'] = 0
+                    return {
+                        'connected': True,
+                        'power_state': 'on',
+                        'info': info,
+                        'cached': False,
+                        'cache_age': 0,
+                        'in_transition': False,
+                        'transition_type': None,
+                        'just_confirmed': True
+                    }
                 elif transition_type == 'shutting_down' and info and info.power_state != 'on':
                     # Still in standby - but check if another request already detected off
                     if _status_cache.get('power_state') == 'off':
