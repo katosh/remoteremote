@@ -544,43 +544,36 @@
                         const serverTransition = data.in_transition;
                         const serverTransitionType = data.transition_type;
 
-                        // Determine actual state from API
-                        // States: on (API says on), standby (API says standby), off (no ping)
+                        // Determine state directly from TV API response
+                        // Rules: on = PowerState 'on', standby = PowerState 'standby', off = no ping
                         if (data.power_state === 'on') {
                             this.actualState = 'on';
                         } else if (data.power_state === 'standby') {
                             this.actualState = 'standby';
-                        } else if (data.power_state === 'turning_on') {
-                            this.actualState = 'turning_on';
-                        } else if (data.power_state === 'turning_off' || data.power_state === 'shutting_down') {
-                            this.actualState = 'standby'; // During shutdown, show standby until fully off
                         } else {
                             // No ping response or power_state is 'off'
                             this.actualState = 'off';
                         }
 
-                        // Sync with server transition state
-                        if (serverTransition && serverTransitionType) {
-                            // Server is in transition - sync our state
-                            if (serverTransitionType === 'turning_on') {
-                                this.state = 'turning_on';
-                            } else if (serverTransitionType === 'turning_off') {
-                                this.state = 'turning_off';
-                            } else if (serverTransitionType === 'shutting_down') {
-                                // Show standby during hardware shutdown phase
-                                this.state = 'standby';
-                            }
-                        } else if (!this.isTransitioning) {
-                            // Not in transition - update state
-                            // If transitioning to 'on', record the confirmation time
-                            if (this.actualState === 'on' && this.state !== 'on') {
+                        // Update display state
+                        // Only show transition animation if we initiated it AND actual state hasn't changed yet
+                        if (this.isTransitioning) {
+                            // We're in a user-initiated transition
+                            if (this.state === 'turning_on' && this.actualState === 'on') {
+                                // Turn-on complete
+                                this.state = 'on';
                                 this.confirmedOnAt = Date.now();
+                                this.clearTransitionTimeout();
+                                this.startPolling(5000);
+                            } else if (this.state === 'turning_off' && this.actualState !== 'on') {
+                                // Turn-off progressing (standby or off)
+                                this.state = this.actualState;
+                                this.clearTransitionTimeout();
+                                this.startPolling(5000);
                             }
-                            // If server explicitly confirms 'off' (not in transition), clear confirmedOnAt
-                            // This handles TV turned off via physical remote
-                            if (this.actualState === 'off' && !serverTransition) {
-                                this.confirmedOnAt = 0;
-                            }
+                            // Otherwise keep showing transition state
+                        } else {
+                            // Not in transition - show actual state directly
                             this.state = this.actualState;
                         }
                     } catch (e) {
@@ -665,23 +658,8 @@
                 startPolling(interval) {
                     this.stopPolling();
                     this.pollInterval = setInterval(() => {
-                        this.fetchStatus().then(() => {
-                            // During transition, check if state changed
-                            if (this.isTransitioning && this.actualState !== 'unknown') {
-                                const targetState = this.state === 'turning_on' ? 'on' : 'off';
-                                // Accept standby as success for turning off
-                                if (this.actualState === targetState ||
-                                    (this.state === 'turning_off' && (this.actualState === 'standby' || this.actualState === 'off'))) {
-                                    // Transition complete
-                                    if (this.actualState === 'on') {
-                                        this.confirmedOnAt = Date.now();
-                                    }
-                                    this.state = this.actualState;
-                                    this.clearTransitionTimeout();
-                                    this.startPolling(5000);
-                                }
-                            }
-                        });
+                        this.fetchStatus();
+                        // Note: transition completion is now handled in fetchStatus()
                     }, interval);
                 },
 

@@ -375,8 +375,8 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
     now = time.time()
 
     if power_state == 'on' or power_state == 'turning_on':
-        # TV is turning on - set transition state with shorter timeout
-        _status_cache['power_state'] = 'turning_on' if is_transition else 'on'
+        # TV is turning on - keep current power_state (don't change to transition state)
+        # power_state should only reflect actual TV API state (on/standby/off)
         _status_cache['connected'] = False  # Not connected yet
         _status_cache['info'] = None
         _status_cache['target_state'] = 'on'  # Remember expected end state
@@ -386,9 +386,10 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
             _status_cache['transition_until'] = now + get_max_startup_seconds()
             _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_on'
+        else:
+            _status_cache['power_state'] = 'on'
     elif power_state in ('off', 'standby', 'turning_off'):
-        # TV is turning off - set transition state
-        _status_cache['power_state'] = 'turning_off' if is_transition else 'off'
+        # TV is turning off - keep current power_state (don't change to transition state)
         _status_cache['connected'] = False
         _status_cache['info'] = None
         _status_cache['target_state'] = 'off'  # Remember expected end state
@@ -396,6 +397,8 @@ def set_cached_power_state(power_state: str, is_transition: bool = True):
             _status_cache['transition_until'] = now + get_max_transition_seconds()
             _status_cache['transition_started'] = now
             _status_cache['transition_type'] = 'turning_off'
+        else:
+            _status_cache['power_state'] = 'off'
 
     _status_cache['last_check'] = now
 
@@ -456,9 +459,14 @@ def get_cached_status(force_refresh: bool = False) -> dict:
             # During the first few seconds, don't check API - just show transition state
             # This prevents flickering on slow connections where command hasn't taken effect
             if transition_age < get_min_transition_seconds():
+                # Return last known power_state, not the transition type
+                last_power_state = _status_cache.get('power_state') or 'off'
+                # Normalize transition states to actual states
+                if last_power_state in ('turning_on', 'turning_off'):
+                    last_power_state = 'off'
                 return {
                     'connected': False,
-                    'power_state': transition_type,
+                    'power_state': last_power_state,
                     'info': None,
                     'cached': True,
                     'cache_age': 0,
@@ -524,9 +532,10 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                             }
                     elif target_state == 'on' or transition_type == 'turning_on':
                         # Target was on but TV not reachable - still booting
+                        # power_state is 'off' (no ping), but we're in transition
                         return {
                             'connected': False,
-                            'power_state': 'turning_on',
+                            'power_state': 'off',
                             'info': None,
                             'cached': True,
                             'cache_age': cache_age,
@@ -582,10 +591,10 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     }
                 elif transition_type == 'turning_on' and info and info.power_state != 'on':
                     # TV is responding but not fully on yet (still booting)
-                    # Keep showing transition state
+                    # Return actual state (standby), with transition info
                     return {
                         'connected': True,
-                        'power_state': 'turning_on',
+                        'power_state': info.power_state,  # Actual TV state
                         'info': info,
                         'cached': False,
                         'cache_age': 0,
@@ -595,10 +604,10 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     }
                 elif transition_type == 'turning_on' and info is None:
                     # TV not responding yet during turn-on - still booting
-                    # Keep showing transition state
+                    # Return 'off' (no ping), with transition info
                     return {
                         'connected': False,
-                        'power_state': 'turning_on',
+                        'power_state': 'off',  # No ping = off
                         'info': None,
                         'cached': False,
                         'cache_age': 0,
@@ -608,10 +617,10 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     }
                 elif transition_type == 'turning_off' and info and info.power_state == 'on':
                     # TV still reports as on - power-off command hasn't taken effect yet
-                    # Keep showing transition state to prevent flickering
+                    # Return actual state (on), with transition info
                     return {
                         'connected': True,
-                        'power_state': 'turning_off',
+                        'power_state': 'on',  # Actual TV state
                         'info': info,
                         'cached': False,
                         'cache_age': 0,
@@ -725,9 +734,10 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     }
                 elif info is None and (target_state == 'on' or transition_type == 'turning_on'):
                     # TV not responding during turn-on - still booting
+                    # Return 'off' (no ping), with transition info
                     return {
                         'connected': False,
-                        'power_state': 'turning_on',
+                        'power_state': 'off',  # No ping = off
                         'info': None,
                         'cached': False,
                         'cache_age': 0,
@@ -787,14 +797,18 @@ def get_cached_status(force_refresh: bool = False) -> dict:
                     'just_confirmed': _status_cache.get('just_confirmed', False)
                 }
 
-            # Still in transition - return transition state based on target_state for safety
+            # Still in transition - return last known actual state with transition info
             current_transition = _status_cache.get('transition_type') or transition_type
             if current_transition is None:
                 # Derive from target_state if we still don't know
                 current_transition = 'turning_on' if target_state == 'on' else 'turning_off' if target_state == 'off' else 'turning_off'
+            # Get last known actual power state (not transition state)
+            last_power_state = _status_cache.get('power_state') or 'off'
+            if last_power_state in ('turning_on', 'turning_off'):
+                last_power_state = 'off'
             return {
                 'connected': False,
-                'power_state': current_transition,
+                'power_state': last_power_state,  # Actual state, not transition
                 'info': None,
                 'cached': True,
                 'cache_age': cache_age,
