@@ -293,15 +293,30 @@ def _execute_key_action(action_data: dict):
 
 def _execute_power_action(action_data: dict):
     """Power on (Wake-on-LAN) oder Power off ausführen"""
-    from .tv_service import get_tv_service, set_cached_power_state
+    from .tv_service import get_tv_service, set_cached_power_state, reinit_tv_service
+    from .logger import log_event
 
     action = action_data.get('action', 'on')
+
+    # Reinitialize TV service to ensure fresh connection (important for scheduled tasks)
+    reinit_tv_service()
     tv = get_tv_service()
 
     print(f"[Power Action] Executing power action: {action}", flush=True)
 
     if action == 'on':
         # Wake-on-LAN - funktioniert ohne Token
+        # Log MAC address for debugging
+        mac = getattr(tv, 'mac', None)
+        print(f"[Power Action] Sending Wake-on-LAN to MAC: {mac or 'NOT SET'}", flush=True)
+        if not mac:
+            log_event(
+                level='WARNING',
+                category='schedule',
+                message='No MAC address configured - WoL will fail',
+                details={'action': action},
+                source='schedule'
+            )
         tv.power_on()
         set_cached_power_state('on')
         print(f"[Power Action] Power ON sent via Wake-on-LAN", flush=True)
@@ -310,7 +325,7 @@ def _execute_power_action(action_data: dict):
         if not tv.is_paired:
             print(f"[Power Action] WARNING: No token - power off may fail", flush=True)
         tv.power_off()
-        set_cached_power_state('standby')
+        set_cached_power_state('off')
         print(f"[Power Action] Power OFF sent", flush=True)
     else:
         print(f"[Power Action] Unknown action: {action}", flush=True)
@@ -322,23 +337,40 @@ def _execute_startup_action(action_data: dict):
     Wartet nach dem Einschalten, bis TV bereit ist.
     Supports both Samsung and Philips TVs.
     """
-    from .tv_service import get_tv_service, set_cached_power_state, get_current_tv_type
+    from .tv_service import get_tv_service, set_cached_power_state, get_current_tv_type, reinit_tv_service
     from .logger import log_event
 
+    # Reinitialize TV service to ensure fresh connection (important for scheduled tasks)
+    reinit_tv_service()
     tv = get_tv_service()
     tv_type = get_current_tv_type()
     wait_time = action_data.get('wait', 15)
     channel = action_data.get('channel')
     volume = action_data.get('volume')
 
-    # 1. TV einschalten (Wake-on-LAN)
-    print(f"[Startup] Schalte TV ein ({tv_type})...", flush=True)
-    tv.power_on()
+    # 1. TV einschalten (Wake-on-LAN) - use close_menu=True for Samsung to exit Smart Hub
+    mac = getattr(tv, 'mac', None)
+    print(f"[Startup] Schalte TV ein ({tv_type}), MAC: {mac or 'NOT SET'}...", flush=True)
+    if not mac:
+        log_event(
+            level='WARNING',
+            category='schedule',
+            message='No MAC address configured - WoL may fail',
+            details={'tv_type': tv_type},
+            source='schedule'
+        )
+    if tv_type == 'samsung':
+        # For Samsung: use close_menu=True to exit Smart Hub after boot
+        # This matches the behavior expected by users
+        tv.power_on(close_menu=True, wait_time=wait_time)
+    else:
+        tv.power_on()
     set_cached_power_state('on')
 
-    # 2. Warten bis TV bereit ist
-    print(f"[Startup] Warte {wait_time}s bis TV bereit ist...", flush=True)
-    time.sleep(wait_time)
+    # 2. Warten bis TV bereit ist (only for non-Samsung, since Samsung waits in power_on)
+    if tv_type != 'samsung':
+        print(f"[Startup] Warte {wait_time}s bis TV bereit ist...", flush=True)
+        time.sleep(wait_time)
 
     # 3. For Philips: Switch to TV mode first (starts in Home screen)
     if tv_type == 'philips' and channel is not None:
