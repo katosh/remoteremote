@@ -558,8 +558,8 @@
         <form method="POST" action="{{ url_for('settings.change_language') }}" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-            <div class="flex gap-3">
-                <label class="flex-1">
+            <div class="flex flex-wrap gap-3">
+                <label class="flex-1 min-w-[80px]">
                     <input type="radio" name="language" value="auto"
                            {{ 'checked' if language_auto else '' }}
                            class="sr-only peer">
@@ -570,7 +570,7 @@
                     </div>
                 </label>
                 {% for code, name in languages.items() %}
-                <label class="flex-1">
+                <label class="flex-1 min-w-[80px]">
                     <input type="radio" name="language" value="{{ code }}"
                            {{ 'checked' if not language_auto and current_language == code else '' }}
                            class="sr-only peer">
