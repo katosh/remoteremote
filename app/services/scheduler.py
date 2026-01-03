@@ -201,8 +201,10 @@ def calculate_next_run(cron_expression: str) -> Optional[datetime]:
         return None
 
     try:
-        trigger = CronTrigger.from_crontab(cron_expression)
-        return trigger.get_next_fire_time(None, datetime.now())
+        timezone = get_configured_timezone()
+        trigger = CronTrigger.from_crontab(cron_expression, timezone=timezone)
+        now = datetime.now(timezone)
+        return trigger.get_next_fire_time(None, now)
     except Exception:
         return None
 
@@ -246,6 +248,10 @@ def execute_schedule(schedule):
         # Nächste Ausführungszeit aktualisieren
         if schedule.cron_expression:
             schedule.next_run = calculate_next_run(schedule.cron_expression)
+            # Also sync with APScheduler job's actual next run time
+            job = _scheduler.get_job(f'schedule_{schedule.id}') if _scheduler else None
+            if job and job.next_run_time:
+                schedule.next_run = job.next_run_time.replace(tzinfo=None)  # Store as naive UTC
         else:
             # Einmalige Ausführung - deaktivieren
             schedule.enabled = False
