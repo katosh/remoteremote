@@ -331,17 +331,38 @@ def _execute_power_action(action_data: dict):
 
         if show_warning and schedule_id:
             # Show warning on TV and wait for user response
-            cancelled = _show_shutdown_warning(tv, schedule_id, warning_seconds)
-            if cancelled:
-                print(f"[Power Action] Shutdown cancelled by user", flush=True)
-                log_event(
-                    level='INFO',
-                    category='schedule',
-                    message='Shutdown cancelled by user via TV warning',
-                    details={'schedule_id': schedule_id},
-                    source='schedule'
-                )
-                return
+            # Run in background thread to avoid blocking gunicorn workers
+            import threading
+            from flask import current_app
+
+            # Capture app for thread context
+            app = current_app._get_current_object()
+
+            def warning_then_shutdown():
+                with app.app_context():
+                    cancelled = _show_shutdown_warning(tv, schedule_id, warning_seconds)
+                    if cancelled:
+                        print(f"[Power Action] Shutdown cancelled by user", flush=True)
+                        log_event(
+                            level='INFO',
+                            category='schedule',
+                            message='Shutdown cancelled by user via TV warning',
+                            details={'schedule_id': schedule_id},
+                            source='schedule'
+                        )
+                        return
+                    # Proceed with shutdown after warning
+                    try:
+                        tv.power_off()
+                        set_cached_power_state('off')
+                        print(f"[Power Action] Power OFF sent after warning", flush=True)
+                    except Exception as e:
+                        print(f"[Power Action] Power OFF failed: {e}", flush=True)
+
+            thread = threading.Thread(target=warning_then_shutdown, daemon=True)
+            thread.start()
+            print(f"[Power Action] Warning started in background thread", flush=True)
+            return  # Don't block - shutdown happens after warning in thread
 
         # Power off requires WebSocket connection
         if not tv.is_paired:
@@ -401,6 +422,9 @@ def _show_shutdown_warning(tv, schedule_id: int, warning_seconds: int) -> bool:
     """
     Show shutdown warning on TV and wait for user response.
     Returns True if shutdown was cancelled, False otherwise.
+
+    Note: Even if the browser cannot be opened on the TV (some TVs don't support this),
+    the warning period still runs and users can cancel via the web interface.
     """
     from flask import current_app
     from .warning_token import generate_warning_token, is_shutdown_cancelled, clear_cancellation
@@ -409,59 +433,91 @@ def _show_shutdown_warning(tv, schedule_id: int, warning_seconds: int) -> bool:
 
     print(f"[Warning] Showing shutdown warning for {warning_seconds}s...", flush=True)
 
+    browser_opened = False
+    warning_url = None
+
     try:
         # Generate secure token for the warning page
         token = generate_warning_token(schedule_id, expires_in_seconds=warning_seconds + 30)
 
         # Build the warning URL
         server_url = _get_server_url()
-
         warning_url = f"{server_url}/schedule/warning/{token}"
-        print(f"[Warning] Opening warning page: {warning_url}", flush=True)
+        print(f"[Warning] Warning page URL: {warning_url}", flush=True)
 
-        # Open the browser on the TV
-        if hasattr(tv, 'open_browser'):
-            # Debug: check TV IP
-            tv_ip = getattr(tv, 'ip', None)
-            print(f"[Warning] TV IP: {tv_ip}", flush=True)
-            if not tv_ip:
-                print(f"[Warning] TV IP is empty - cannot open browser", flush=True)
-                return False
-            tv.open_browser(warning_url)
+        # Try to open the browser on the TV (best effort)
+        tv_ip = getattr(tv, 'ip', None)
+        print(f"[Warning] TV IP: {tv_ip}", flush=True)
+
+        if not tv_ip:
+            print(f"[Warning] TV IP is empty - cannot open browser", flush=True)
+        elif hasattr(tv, 'open_browser'):
+            # Try standard open_browser first (passes URL via API)
+            try:
+                result = tv.open_browser(warning_url)
+                print(f"[Warning] open_browser result: {result}", flush=True)
+                browser_opened = bool(result)
+            except Exception as e:
+                print(f"[Warning] open_browser failed: {e}", flush=True)
+
+            # If browser opened but URL might not have been passed (2020+ Samsung TVs),
+            # try the text input workaround
+            if not browser_opened and hasattr(tv, 'open_browser_with_text'):
+                try:
+                    print(f"[Warning] Trying text input workaround...", flush=True)
+                    result = tv.open_browser_with_text(warning_url, wait_time=3.0)
+                    print(f"[Warning] open_browser_with_text result: {result}", flush=True)
+                    browser_opened = bool(result)
+                except Exception as e:
+                    print(f"[Warning] open_browser_with_text failed: {e}", flush=True)
         else:
-            print(f"[Warning] TV does not support opening browser - skipping warning", flush=True)
-            return False
+            print(f"[Warning] TV does not support opening browser", flush=True)
 
-        # Wait for the warning period, checking periodically if cancelled
-        check_interval = 2  # Check every 2 seconds
-        elapsed = 0
-
-        while elapsed < warning_seconds:
-            time.sleep(check_interval)
-            elapsed += check_interval
-
-            # Check if user cancelled
-            if is_shutdown_cancelled(schedule_id):
-                clear_cancellation(schedule_id)
-                print(f"[Warning] User cancelled shutdown!", flush=True)
-                return True
-
-        # Clear any stale cancellation data
-        clear_cancellation(schedule_id)
-        print(f"[Warning] Warning period expired - proceeding with shutdown", flush=True)
-        return False
+        if not browser_opened:
+            # Log that browser couldn't be opened, but continue with warning period
+            log_event(
+                level='INFO',
+                category='schedule',
+                message='Browser could not be opened on TV - warning period still active via web interface',
+                details={
+                    'schedule_id': schedule_id,
+                    'warning_url': warning_url,
+                    'warning_seconds': warning_seconds
+                },
+                source='schedule'
+            )
+            print(f"[Warning] Browser not opened on TV - warning period still active", flush=True)
+            print(f"[Warning] Cancel via web interface: {warning_url}", flush=True)
 
     except Exception as e:
-        print(f"[Warning] Error showing warning: {e}", flush=True)
+        print(f"[Warning] Error preparing warning: {e}", flush=True)
         log_event(
             level='WARNING',
             category='schedule',
-            message=f'Failed to show shutdown warning: {e}',
+            message=f'Error preparing shutdown warning: {e}',
             details={'schedule_id': schedule_id, 'error': str(e)},
             source='schedule'
         )
-        # On error, proceed with shutdown (fail-safe)
-        return False
+
+    # Always wait for the warning period and check for cancellations
+    # (even if browser couldn't be opened - user may cancel via web interface)
+    check_interval = 2  # Check every 2 seconds
+    elapsed = 0
+
+    while elapsed < warning_seconds:
+        time.sleep(check_interval)
+        elapsed += check_interval
+
+        # Check if user cancelled
+        if is_shutdown_cancelled(schedule_id):
+            clear_cancellation(schedule_id)
+            print(f"[Warning] User cancelled shutdown!", flush=True)
+            return True
+
+    # Clear any stale cancellation data
+    clear_cancellation(schedule_id)
+    print(f"[Warning] Warning period expired - proceeding with shutdown", flush=True)
+    return False
 
 
 def _execute_startup_action(action_data: dict):

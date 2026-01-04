@@ -420,7 +420,7 @@ class SamsungTV:
 
         return ssock, response
 
-    def _rest_request(self, endpoint: str = "", method: str = "GET", port: int = 8001, timeout: float = 5.0) -> Optional[Dict]:
+    def _rest_request(self, endpoint: str = "", method: str = "GET", port: int = 8001, timeout: float = 5.0, body: str = None, fire_and_forget: bool = False) -> Optional[Dict]:
         """
         Make a REST API request to the TV.
 
@@ -429,6 +429,8 @@ class SamsungTV:
             method: HTTP method (GET, POST, PUT, DELETE)
             port: Port number (8001 for REST API)
             timeout: Request timeout in seconds
+            body: Optional request body
+            fire_and_forget: If True, don't wait for response (for app launches that time out)
         """
         import http.client
         import urllib.parse
@@ -440,15 +442,44 @@ class SamsungTV:
                 conn = http.client.HTTPConnection(self.ip, port, timeout=timeout)
 
             url = f"/api/v2/{endpoint}"
-            conn.request(method, url)
+            headers = {}
+            if body:
+                headers['Content-Type'] = 'text/plain'
+                conn.request(method, url, body=body, headers=headers)
+            else:
+                conn.request(method, url)
+
+            if fire_and_forget:
+                # Don't wait for response - some TVs open apps but don't respond
+                try:
+                    conn.sock.settimeout(0.5)
+                    response = conn.getresponse()
+                    conn.close()
+                    return {"status": "ok", "http_status": response.status}
+                except:
+                    conn.close()
+                    return {"status": "ok", "fire_and_forget": True}
+
             response = conn.getresponse()
+            status = response.status
             data = response.read().decode('utf-8')
             conn.close()
 
-            if response.status == 200:
-                return json.loads(data)
+            # For app launch, various status codes indicate success
+            # 200 OK, 201 Created, 204 No Content are all success
+            if status in (200, 201, 204):
+                try:
+                    return json.loads(data) if data.strip() else {"status": "ok"}
+                except json.JSONDecodeError:
+                    return {"status": "ok", "raw": data}
+            # Some Samsung TVs return other codes for app operations
+            elif method == "POST" and status < 400:
+                return {"status": "ok", "http_status": status}
             return None
-        except Exception:
+        except Exception as e:
+            if fire_and_forget:
+                # For fire_and_forget, assume success on timeout
+                return {"status": "ok", "fire_and_forget": True, "note": str(e)}
             return None
 
     def get_info(self) -> Optional[TVInfo]:
@@ -756,9 +787,44 @@ class SamsungTV:
             raise RuntimeError(f"Failed to move cursor: {e}")
 
     def open_browser(self, url: str) -> bool:
-        """Open the TV's built-in browser with the specified URL."""
+        """
+        Open the TV's built-in browser with the specified URL.
+
+        Tries multiple methods since Samsung changed APIs across TV generations:
+        1. REST API (works on many 2019+ TVs)
+        2. ms.application.start WebSocket method (Control Channel)
+        3. ed.apps.launch WebSocket method (Remote Channel)
+
+        Also tries multiple browser app IDs as these vary by TV model/year.
+        """
+        # Known Samsung browser app IDs (varies by TV model/year)
+        browser_app_ids = [
+            "org.tizen.browser",           # Standard Tizen browser
+            "com.samsung.tv.inapp-browser", # In-app browser
+            "Internet",                     # Some models use this name
+        ]
+
+        errors = []
+
+        # Method 1: Try REST API to launch browser (most reliable on 2019+ TVs)
+        # Use fire_and_forget because some TVs don't respond but still open the browser
+        browser_launched_via_rest = False
+        for app_id in browser_app_ids:
+            try:
+                print(f"[SamsungTV] Trying REST API with app_id={app_id}", flush=True)
+                result = self._rest_request(f"applications/{app_id}", method="POST", port=8001, fire_and_forget=True)
+                if result is not None:
+                    print(f"[SamsungTV] REST API launch sent for {app_id}", flush=True)
+                    browser_launched_via_rest = True
+                    time.sleep(0.5)  # Give browser time to start
+                    break
+            except Exception as e:
+                errors.append(f"REST {app_id}: {e}")
+
+        # Method 2 & 3: WebSocket methods (require token)
         if not self._token:
-            raise RuntimeError("Not paired - call pair() first")
+            print(f"[SamsungTV] No token - skipping WebSocket methods", flush=True)
+            raise RuntimeError(f"Failed to open browser. Errors: {errors}")
 
         try:
             ssock, response = self._create_connection()
@@ -771,27 +837,313 @@ class SamsungTV:
 
             time.sleep(0.2)
 
-            # Launch browser with URL via ed.apps.launch
-            payload = json.dumps({
-                "method": "ms.channel.emit",
-                "params": {
-                    "event": "ed.apps.launch",
-                    "to": "host",
-                    "data": {
-                        "appId": "org.tizen.browser",
-                        "action_type": "NATIVE_LAUNCH",
-                        "metaTag": url
-                    }
-                }
-            })
-            ssock.send(self._make_ws_frame(payload))
+            # Method 2: Try ms.application.start (Control Channel method)
+            for app_id in browser_app_ids:
+                try:
+                    print(f"[SamsungTV] Trying ms.application.start with app_id={app_id}", flush=True)
+                    payload = json.dumps({
+                        "method": "ms.application.start",
+                        "params": {
+                            "id": app_id,
+                            "metaTag": url
+                        }
+                    })
+                    ssock.send(self._make_ws_frame(payload))
+                    time.sleep(0.5)
+
+                    # Check for response
+                    try:
+                        ssock.settimeout(1)
+                        resp_data = ssock.recv(4096)
+                        resp_frames = self._parse_ws_frames(resp_data)
+                        for rf in resp_frames:
+                            if rf.get('event') == 'ms.application.start':
+                                print(f"[SamsungTV] ms.application.start succeeded", flush=True)
+                                ssock.close()
+                                return True
+                    except socket.timeout:
+                        pass  # No response, try next method
+                except Exception as e:
+                    errors.append(f"ms.application.start {app_id}: {e}")
+
+            # Method 3: Try ed.apps.launch with different action types
+            action_types = ["NATIVE_LAUNCH", "DEEP_LINK"]
+            for app_id in browser_app_ids:
+                for action_type in action_types:
+                    try:
+                        print(f"[SamsungTV] Trying ed.apps.launch with app_id={app_id}, action_type={action_type}", flush=True)
+                        payload = json.dumps({
+                            "method": "ms.channel.emit",
+                            "params": {
+                                "event": "ed.apps.launch",
+                                "to": "host",
+                                "data": {
+                                    "appId": app_id,
+                                    "action_type": action_type,
+                                    "metaTag": url
+                                }
+                            }
+                        })
+                        ssock.send(self._make_ws_frame(payload))
+                        time.sleep(0.3)
+                    except Exception as e:
+                        errors.append(f"ed.apps.launch {app_id}/{action_type}: {e}")
 
             time.sleep(0.3)
+            ssock.close()
+
+            # We sent the commands - can't know for sure if they worked
+            print(f"[SamsungTV] Sent all browser launch commands", flush=True)
+            return True
+
+        except Exception as e:
+            errors.append(f"WebSocket: {e}")
+            raise RuntimeError(f"Failed to open browser: {errors}")
+
+    def open_browser_with_text(self, url: str, wait_time: float = 3.0) -> bool:
+        """
+        Open browser and navigate to URL by typing it.
+
+        Workaround for 2020+ Samsung TVs where URL can't be passed via API.
+        This method:
+        1. Launches the browser app
+        2. Waits for it to load
+        3. Opens address bar and types the URL
+        4. Presses Enter to navigate
+
+        Args:
+            url: The URL to navigate to
+            wait_time: Seconds to wait for browser to load (default: 3)
+        """
+        print(f"[SamsungTV] Opening browser with text input workaround", flush=True)
+
+        # Step 1: Launch browser (fire_and_forget because TV may not respond)
+        browser_launched = False
+        for app_id in ["org.tizen.browser", "com.samsung.tv.inapp-browser", "Internet"]:
+            try:
+                result = self._rest_request(f"applications/{app_id}", method="POST", port=8001, fire_and_forget=True)
+                if result is not None:
+                    print(f"[SamsungTV] Browser launch sent via REST: {app_id}", flush=True)
+                    browser_launched = True
+                    break
+            except Exception:
+                pass
+
+        if not browser_launched:
+            # Try WebSocket launch without URL
+            try:
+                ssock, response = self._create_connection()
+                payload = json.dumps({
+                    "method": "ms.channel.emit",
+                    "params": {
+                        "event": "ed.apps.launch",
+                        "to": "host",
+                        "data": {
+                            "appId": "org.tizen.browser",
+                            "action_type": "NATIVE_LAUNCH"
+                        }
+                    }
+                })
+                ssock.send(self._make_ws_frame(payload))
+                time.sleep(0.3)
+                ssock.close()
+                browser_launched = True
+                print(f"[SamsungTV] Browser launched via WebSocket", flush=True)
+            except Exception as e:
+                print(f"[SamsungTV] Failed to launch browser: {e}", flush=True)
+                return False
+
+        # Step 2: Wait for browser to load
+        print(f"[SamsungTV] Waiting {wait_time}s for browser to load...", flush=True)
+        time.sleep(wait_time)
+
+        # Step 3: Try to focus address bar and type URL
+        # Samsung browser address bar focus varies by model - try multiple methods
+        try:
+            # The Samsung browser typically shows the homepage or last page
+            # Address bar is at the top - we need to navigate there and activate it
+
+            # Method 1: Try pressing UP multiple times to reach address bar
+            print(f"[SamsungTV] Navigating to address bar (UP x3)...", flush=True)
+            for _ in range(3):
+                self.send_key(Key.UP)
+                time.sleep(0.3)
+
+            # Press ENTER to activate/focus the address bar
+            print(f"[SamsungTV] Activating address bar (ENTER)...", flush=True)
+            self.send_key(Key.ENTER)
+            time.sleep(0.8)
+
+            # Step 4: Type the URL
+            print(f"[SamsungTV] Typing URL: {url}", flush=True)
+            self.send_text(url)
+            time.sleep(0.5)
+
+            # Step 5: Press Enter to navigate
+            print(f"[SamsungTV] Pressing Enter to navigate", flush=True)
+            self.send_key(Key.ENTER)
+
+            return True
+
+        except Exception as e:
+            print(f"[SamsungTV] Failed to type URL: {e}", flush=True)
+            return False
+
+    def open_browser_manual_entry(self, url: str, wait_time: float = 3.0,
+                                   up_presses: int = 3, extra_enter: bool = True) -> bool:
+        """
+        Open browser and navigate to URL with configurable key sequence.
+
+        This is a customizable version for testing different key sequences
+        to focus the address bar on different Samsung TV models.
+
+        Args:
+            url: The URL to navigate to
+            wait_time: Seconds to wait for browser to load
+            up_presses: Number of UP key presses to reach address bar
+            extra_enter: Whether to press ENTER before typing (to activate input)
+        """
+        print(f"[SamsungTV] Opening browser with manual entry (up={up_presses}, enter={extra_enter})", flush=True)
+
+        # Launch browser via REST API (fire_and_forget because TV may not respond)
+        try:
+            result = self._rest_request("applications/org.tizen.browser", method="POST", port=8001, fire_and_forget=True)
+            print(f"[SamsungTV] Browser launch sent", flush=True)
+        except Exception as e:
+            print(f"[SamsungTV] Browser launch error: {e}", flush=True)
+            return False
+
+        # Wait for browser to load
+        print(f"[SamsungTV] Waiting {wait_time}s...", flush=True)
+        time.sleep(wait_time)
+
+        try:
+            # Navigate to address bar
+            print(f"[SamsungTV] Pressing UP {up_presses} times...", flush=True)
+            for i in range(up_presses):
+                self.send_key(Key.UP)
+                time.sleep(0.3)
+
+            if extra_enter:
+                print(f"[SamsungTV] Pressing ENTER to activate...", flush=True)
+                self.send_key(Key.ENTER)
+                time.sleep(0.8)
+
+            # Type URL
+            print(f"[SamsungTV] Typing URL...", flush=True)
+            self.send_text(url)
+            time.sleep(0.5)
+
+            # Navigate
+            print(f"[SamsungTV] Pressing ENTER to navigate...", flush=True)
+            self.send_key(Key.ENTER)
+
+            return True
+
+        except Exception as e:
+            print(f"[SamsungTV] Error: {e}", flush=True)
+            return False
+
+    def click(self, x: int, y: int) -> bool:
+        """
+        Click at specific screen coordinates.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+        """
+        if not self._token:
+            raise RuntimeError("Not paired - call pair() first")
+
+        try:
+            ssock, response = self._create_connection()
+
+            frames = self._parse_ws_frames(response)
+            for frame in frames:
+                if frame.get('event') == 'ms.channel.unauthorized':
+                    ssock.close()
+                    raise PermissionError("Unauthorized")
+
+            time.sleep(0.1)
+
+            # Move to position
+            move_payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "Cmd": "Move",
+                    "Position": {"x": x, "y": y, "Time": "0"},
+                    "TypeOfRemote": "ProcessMouseDevice"
+                }
+            })
+            ssock.send(self._make_ws_frame(move_payload))
+            time.sleep(0.1)
+
+            # Click
+            click_payload = json.dumps({
+                "method": "ms.remote.control",
+                "params": {
+                    "Cmd": "LeftClick",
+                    "TypeOfRemote": "ProcessMouseDevice"
+                }
+            })
+            ssock.send(self._make_ws_frame(click_payload))
+
+            time.sleep(0.1)
             ssock.close()
             return True
 
         except Exception as e:
-            raise RuntimeError(f"Failed to open browser: {e}")
+            print(f"[SamsungTV] Click failed: {e}", flush=True)
+            return False
+
+    def open_browser_with_click(self, url: str, wait_time: float = 3.0,
+                                 address_bar_x: int = 960, address_bar_y: int = 50) -> bool:
+        """
+        Open browser and navigate to URL by clicking on the address bar.
+
+        Uses mouse click at coordinates instead of keyboard navigation.
+        Default coordinates assume 1920x1080 resolution with address bar at top center.
+
+        Args:
+            url: The URL to navigate to
+            wait_time: Seconds to wait for browser to load
+            address_bar_x: X coordinate of address bar (default: center of 1920 screen)
+            address_bar_y: Y coordinate of address bar (default: near top)
+        """
+        print(f"[SamsungTV] Opening browser with click method", flush=True)
+
+        # Launch browser via REST API (fire_and_forget because TV may not respond)
+        try:
+            self._rest_request("applications/org.tizen.browser", method="POST", port=8001, fire_and_forget=True)
+            print(f"[SamsungTV] Browser launch sent", flush=True)
+        except Exception as e:
+            print(f"[SamsungTV] Browser launch error: {e}", flush=True)
+            return False
+
+        # Wait for browser to load
+        print(f"[SamsungTV] Waiting {wait_time}s...", flush=True)
+        time.sleep(wait_time)
+
+        try:
+            # Click on address bar
+            print(f"[SamsungTV] Clicking on address bar at ({address_bar_x}, {address_bar_y})...", flush=True)
+            self.click(address_bar_x, address_bar_y)
+            time.sleep(0.8)
+
+            # Type URL
+            print(f"[SamsungTV] Typing URL...", flush=True)
+            self.send_text(url)
+            time.sleep(0.5)
+
+            # Press Enter
+            print(f"[SamsungTV] Pressing ENTER...", flush=True)
+            self.send_key(Key.ENTER)
+
+            return True
+
+        except Exception as e:
+            print(f"[SamsungTV] Error: {e}", flush=True)
+            return False
 
     # Convenience methods
 
