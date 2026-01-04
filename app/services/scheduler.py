@@ -347,33 +347,60 @@ def _execute_startup_action(action_data: dict):
     wait_time = action_data.get('wait', 15)
     channel = action_data.get('channel')
     volume = action_data.get('volume')
+    skip_if_on = action_data.get('skip_if_on', False)
 
-    # 1. TV einschalten (Wake-on-LAN) - use close_menu=True for Samsung to exit Smart Hub
-    mac = getattr(tv, 'mac', None)
-    print(f"[Startup] Schalte TV ein ({tv_type}), MAC: {mac or 'NOT SET'}...", flush=True)
-    if not mac:
+    # Check if TV is already on
+    tv_already_on = False
+    try:
+        info = tv.get_info()
+        if info and getattr(info, 'power_state', None) == 'on':
+            tv_already_on = True
+            print(f"[Startup] TV is already ON", flush=True)
+    except Exception as e:
+        print(f"[Startup] Could not check TV state: {e}", flush=True)
+
+    # If skip_if_on is enabled and TV is already on, skip entire action
+    if skip_if_on and tv_already_on:
+        print(f"[Startup] Skipping - TV already on and skip_if_on is enabled", flush=True)
         log_event(
-            level='WARNING',
+            level='INFO',
             category='schedule',
-            message='No MAC address configured - WoL may fail',
-            details={'tv_type': tv_type},
+            message='Startup skipped - TV already on',
+            details={'skip_if_on': True},
             source='schedule'
         )
-    if tv_type == 'samsung':
-        # For Samsung: use close_menu=True to exit Smart Hub after boot
-        # This matches the behavior expected by users
-        tv.power_on(close_menu=True, wait_time=wait_time)
-    else:
-        tv.power_on()
-    set_cached_power_state('on')
+        return
 
-    # 2. Warten bis TV bereit ist (only for non-Samsung, since Samsung waits in power_on)
-    if tv_type != 'samsung':
-        print(f"[Startup] Warte {wait_time}s bis TV bereit ist...", flush=True)
-        time.sleep(wait_time)
+    # Only do power-on sequence if TV is not already on
+    if not tv_already_on:
+        # 1. TV einschalten (Wake-on-LAN) - use close_menu=True for Samsung to exit Smart Hub
+        mac = getattr(tv, 'mac', None)
+        print(f"[Startup] Schalte TV ein ({tv_type}), MAC: {mac or 'NOT SET'}...", flush=True)
+        if not mac:
+            log_event(
+                level='WARNING',
+                category='schedule',
+                message='No MAC address configured - WoL may fail',
+                details={'tv_type': tv_type},
+                source='schedule'
+            )
+        if tv_type == 'samsung':
+            # For Samsung: use close_menu=True to exit Smart Hub after boot
+            # This matches the behavior expected by users
+            tv.power_on(close_menu=True, wait_time=wait_time)
+        else:
+            tv.power_on()
+        set_cached_power_state('on')
+
+        # 2. Warten bis TV bereit ist (only for non-Samsung, since Samsung waits in power_on)
+        if tv_type != 'samsung':
+            print(f"[Startup] Warte {wait_time}s bis TV bereit ist...", flush=True)
+            time.sleep(wait_time)
+    else:
+        print(f"[Startup] TV already on - skipping power-on and wait", flush=True)
 
     # 3. For Philips: Switch to TV mode first (starts in Home screen)
-    if tv_type == 'philips' and channel is not None:
+    if tv_type == 'philips' and channel is not None and not tv_already_on:
         print(f"[Startup] Philips: Wechsle zu TV-Modus...", flush=True)
         try:
             if hasattr(tv, 'switch_to_tv'):

@@ -1285,3 +1285,11 @@ msgstr "La TV est eteinte. Allumez-la d'abord pour envoyer des commandes."
 msgid "Wait a few seconds after shutdown before trying again"
 msgstr "Attendez quelques secondes après l'arrêt avant de réessayer"
 
+#: app/templates/schedule_form.html
+msgid "Skip if TV is already on"
+msgstr "Ignorer si la TV est déjà allumée"
+
+#: app/templates/schedule_form.html
+msgid "When enabled, the schedule will not run if the TV is already powered on."
+msgstr "Lorsqu'activé, la programmation ne s'exécutera pas si la TV est déjà allumée."
+

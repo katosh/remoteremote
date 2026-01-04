@@ -1287,3 +1287,11 @@ msgstr "Der TV ist ausgeschaltet. Schalten Sie ihn zuerst ein, um Befehle zu sen
 msgid "Wait a few seconds after shutdown before trying again"
 msgstr "Warten Sie nach dem Ausschalten einige Sekunden, bevor Sie es erneut versuchen"
 
+#: app/templates/schedule_form.html
+msgid "Skip if TV is already on"
+msgstr "Überspringen, wenn TV bereits an ist"
+
+#: app/templates/schedule_form.html
+msgid "When enabled, the schedule will not run if the TV is already powered on."
+msgstr "Wenn aktiviert, wird der Zeitplan nicht ausgeführt, wenn der TV bereits eingeschaltet ist."
+

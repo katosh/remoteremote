@@ -104,11 +104,13 @@ def create():
             channel = request.form.get('startup_channel')
             volume = request.form.get('startup_volume')
             wait = request.form.get('startup_wait', '15')
+            skip_if_on = request.form.get('startup_skip_if_on') == 'on'
             if channel:
                 action_data['channel'] = int(channel)
             if volume:
                 action_data['volume'] = int(volume)
             action_data['wait'] = int(wait)
+            action_data['skip_if_on'] = skip_if_on
         elif action_type == 'power':
             action_data['action'] = request.form.get('power_action', 'on')
         elif action_type == 'key':
@@ -206,11 +208,13 @@ def edit(schedule_id: int):
             channel = request.form.get('startup_channel')
             volume = request.form.get('startup_volume')
             wait = request.form.get('startup_wait', '15')
+            skip_if_on = request.form.get('startup_skip_if_on') == 'on'
             if channel:
                 action_data['channel'] = int(channel)
             if volume:
                 action_data['volume'] = int(volume)
             action_data['wait'] = int(wait)
+            action_data['skip_if_on'] = skip_if_on
         elif action_type == 'power':
             action_data['action'] = request.form.get('power_action', 'on')
         elif action_type == 'key':

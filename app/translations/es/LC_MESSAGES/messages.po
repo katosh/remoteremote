@@ -1285,3 +1285,11 @@ msgstr "El TV esta apagado. Enciendalo primero para enviar comandos."
 msgid "Wait a few seconds after shutdown before trying again"
 msgstr "Espere unos segundos después de apagar antes de intentar de nuevo"
 
+#: app/templates/schedule_form.html
+msgid "Skip if TV is already on"
+msgstr "Omitir si el TV ya está encendido"
+
+#: app/templates/schedule_form.html
+msgid "When enabled, the schedule will not run if the TV is already powered on."
+msgstr "Cuando está activado, la programación no se ejecutará si el TV ya está encendido."
+
