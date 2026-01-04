@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="{{ g.locale }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('TV Shutdown Warning') }} - remoteRemote</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* TV Remote-friendly focus styles */
+        *:focus {
+            outline: 4px solid #6366f1 !important;
+            outline-offset: 4px;
+        }
+
+        /* Large touch targets for TV remote navigation */
+        .tv-button {
+            min-height: 80px;
+            font-size: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .tv-button:hover, .tv-button:focus {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Countdown animation */
+        @keyframes pulse-warning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-warning {
+            animation: pulse-warning 1s ease-in-out infinite;
+        }
+
+        /* Auto-scroll to focused element (helps TV navigation) */
+        :focus {
+            scroll-margin: 100px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-8">
+    <div class="max-w-2xl w-full text-center space-y-8">
+        <!-- Warning Icon -->
+        <div class="pulse-warning">
+            <svg class="w-32 h-32 mx-auto text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+        </div>
+
+        <!-- Warning Message -->
+        <div class="space-y-4">
+            <h1 class="text-4xl font-bold text-yellow-500">{{ _('Auto Shutdown') }}</h1>
+            <p class="text-2xl text-gray-300">
+                {{ _('TV will turn off in') }}
+                <span id="countdown" class="font-mono text-yellow-400 text-3xl">{{ remaining_seconds }}</span>
+                {{ _('seconds') }}
+            </p>
+            {% if schedule_name %}
+            <p class="text-lg text-gray-400">
+                {{ _('Scheduled by:') }} {{ schedule_name }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Buttons - TV Remote Friendly (large, spaced, focusable) -->
+        <div class="space-y-4 pt-8">
+            <!-- Cancel Button (Primary - auto-focused) -->
+            <button id="cancelBtn"
+                    onclick="cancelShutdown()"
+                    autofocus
+                    class="tv-button w-full bg-green-600 hover:bg-green-500 text-white font-bold py-6 px-8 rounded-2xl">
+                {{ _('Cancel Shutdown') }}
+            </button>
+
+            <!-- Secondary Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <button onclick="cancelAndDisable()"
+                        class="tv-button bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 px-6 rounded-xl">
+                    {{ _('Cancel & Disable Schedule') }}
+                </button>
+
+                <button onclick="window.location.href='{{ url_for('schedule.index') }}'"
+                        class="tv-button bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl">
+                    {{ _('Manage Schedules') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" class="hidden text-xl font-medium py-4 rounded-xl"></div>
+    </div>
+
+    <script>
+        const csrfToken = '{{ csrf_token() }}';
+        const token = '{{ token }}';
+        const scheduleId = {{ schedule_id }};
+        let remainingSeconds = {{ remaining_seconds }};
+        let countdownInterval;
+
+        // Start countdown
+        function startCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            countdownInterval = setInterval(() => {
+                remainingSeconds--;
+                countdownEl.textContent = remainingSeconds;
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownInterval);
+                    showStatus('{{ _("Shutting down...") }}', 'yellow');
+                    // Page will close when TV shuts down
+                }
+            }, 1000);
+        }
+
+        function showStatus(message, color) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `text-xl font-medium py-4 rounded-xl bg-${color}-900/50 text-${color}-400`;
+            statusEl.classList.remove('hidden');
+        }
+
+        async function cancelShutdown() {
+            clearInterval(countdownInterval);
+            showStatus('{{ _("Cancelling...") }}', 'blue');
+
+            try {
+                const response = await fetch(`/schedule/warning/${token}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('{{ _("Shutdown cancelled! Returning to TV...") }}', 'green');
+                    // Return to previous app after short delay
+                    setTimeout(() => {
+                        fetch('/remote/key', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: 'key=KEY_EXIT'
+                        });
+                    }, 1500);
+                } else {
+                    showStatus(data.error || '{{ _("Failed to cancel") }}', 'red');
+                    startCountdown(); // Resume countdown on failure
+                }
+            } catch (e) {
+                showStatus('{{ _("Network error") }}', 'red');
+                startCountdown(); // Resume countdown on error
+            }
+        }
+
+        async function cancelAndDisable() {
+            clearInterval(countdownInterval);
+            showStatus('{{ _("Cancelling and disabling schedule...") }}', 'blue');
+
+            try {
+                const response = await fetch(`/schedule/warning/${token}/cancel-and-disable`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('{{ _("Shutdown cancelled and schedule disabled! Returning to TV...") }}', 'green');
+                    setTimeout(() => {
+                        fetch('/remote/key', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: 'key=KEY_EXIT'
+                        });
+                    }, 1500);
+                } else {
+                    showStatus(data.error || '{{ _("Failed") }}', 'red');
+                    startCountdown();
+                }
+            } catch (e) {
+                showStatus('{{ _("Network error") }}', 'red');
+                startCountdown();
+            }
+        }
+
+        // Handle TV remote navigation - ensure button focus is visible
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                // Let the focused button handle it
+                return;
+            }
+            // Arrow keys work naturally with focusable elements
+        });
+
+        // Start the countdown
+        startCountdown();
+
+        // Auto-focus cancel button
+        document.getElementById('cancelBtn').focus();
+    </script>
+</body>
+</html>

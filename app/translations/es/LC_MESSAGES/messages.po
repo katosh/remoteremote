@@ -1293,3 +1293,119 @@ msgstr "Omitir si el TV ya está encendido"
 msgid "When enabled, the schedule will not run if the TV is already powered on."
 msgstr "Cuando está activado, la programación no se ejecutará si el TV ya está encendido."
 
+
+#: app/templates/shutdown_warning.html
+msgid "TV Shutdown Warning"
+msgstr "Advertencia de apagado de TV"
+
+#: app/templates/shutdown_warning.html
+msgid "Auto Shutdown"
+msgstr "Apagado automático"
+
+#: app/templates/shutdown_warning.html
+msgid "TV will turn off in"
+msgstr "El TV se apagará en"
+
+#: app/templates/shutdown_warning.html
+msgid "seconds"
+msgstr "segundos"
+
+#: app/templates/shutdown_warning.html
+msgid "Scheduled by:"
+msgstr "Programado por:"
+
+#: app/templates/shutdown_warning.html
+msgid "Cancel Shutdown"
+msgstr "Cancelar apagado"
+
+#: app/templates/shutdown_warning.html
+msgid "Cancel & Disable Schedule"
+msgstr "Cancelar y desactivar programación"
+
+#: app/templates/shutdown_warning.html
+msgid "Manage Schedules"
+msgstr "Gestionar programaciones"
+
+#: app/templates/shutdown_warning.html
+msgid "Shutting down..."
+msgstr "Apagando..."
+
+#: app/templates/shutdown_warning.html
+msgid "Cancelling..."
+msgstr "Cancelando..."
+
+#: app/templates/shutdown_warning.html
+msgid "Shutdown cancelled! Returning to TV..."
+msgstr "¡Apagado cancelado! Volviendo a la TV..."
+
+#: app/templates/shutdown_warning.html
+msgid "Failed to cancel"
+msgstr "Error al cancelar"
+
+#: app/templates/shutdown_warning.html
+msgid "Network error"
+msgstr "Error de red"
+
+#: app/templates/shutdown_warning.html
+msgid "Cancelling and disabling schedule..."
+msgstr "Cancelando y desactivando programación..."
+
+#: app/templates/shutdown_warning.html
+msgid "Shutdown cancelled and schedule disabled! Returning to TV..."
+msgstr "¡Apagado cancelado y programación desactivada! Volviendo a la TV..."
+
+#: app/templates/shutdown_warning.html
+msgid "Failed"
+msgstr "Error"
+
+#: app/templates/shutdown_warning_expired.html
+msgid "Warning Expired"
+msgstr "Advertencia expirada"
+
+#: app/templates/shutdown_warning_expired.html
+msgid "This shutdown warning has expired or is no longer valid."
+msgstr "Esta advertencia de apagado ha expirado o ya no es válida."
+
+#: app/templates/shutdown_warning_expired.html
+msgid "Go to Dashboard"
+msgstr "Ir al panel"
+
+#: app/templates/schedule_form.html
+msgid "Show warning on TV before shutdown"
+msgstr "Mostrar advertencia en TV antes del apagado"
+
+#: app/templates/schedule_form.html
+msgid "Warning time (seconds)"
+msgstr "Tiempo de advertencia (segundos)"
+
+#: app/templates/schedule_form.html
+msgid "Time in seconds the warning is shown before shutdown (10-300)"
+msgstr "Tiempo en segundos que se muestra la advertencia antes del apagado (10-300)"
+
+#: app/templates/settings.html
+msgid "Server URL"
+msgstr "URL del servidor"
+
+#: app/templates/settings.html
+msgid "URL used for shutdown warning pages displayed on TV. Required for the \"Show warning before shutdown\" feature in schedules."
+msgstr "URL utilizada para las páginas de advertencia de apagado mostradas en el TV. Requerida para la función \"Mostrar advertencia antes del apagado\" en las programaciones."
+
+#: app/templates/settings.html
+msgid "Enter the URL where this app is accessible from your TV (e.g., http://192.168.178.50:5000)"
+msgstr "Ingrese la URL donde esta aplicación es accesible desde su TV (ej: http://192.168.178.50:5000)"
+
+#: app/templates/settings.html
+msgid "Save Server URL"
+msgstr "Guardar URL del servidor"
+
+#: app/views/settings.py
+msgid "Invalid URL format. Use http:// or https://"
+msgstr "Formato de URL inválido. Use http:// o https://"
+
+#: app/views/settings.py
+msgid "Server URL changed"
+msgstr "URL del servidor cambiada"
+
+#: app/views/settings.py
+msgid "Server URL saved successfully."
+msgstr "URL del servidor guardada correctamente."

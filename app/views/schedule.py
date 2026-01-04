@@ -10,6 +10,7 @@ import pytz
 from ..models import db, Schedule, Config
 from ..services.logger import log_event
 from ..services.scheduler import calculate_next_run, add_schedule, update_schedule, remove_schedule
+from ..services.warning_token import validate_warning_token, cancel_shutdown
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
@@ -113,6 +114,12 @@ def create():
             action_data['skip_if_on'] = skip_if_on
         elif action_type == 'power':
             action_data['action'] = request.form.get('power_action', 'on')
+            # Warning options for power off
+            if action_data['action'] == 'off':
+                action_data['show_warning'] = request.form.get('power_show_warning') == 'on'
+                if action_data['show_warning']:
+                    warning_seconds = request.form.get('power_warning_seconds', '60')
+                    action_data['warning_seconds'] = max(10, min(300, int(warning_seconds)))
         elif action_type == 'key':
             action_data['key'] = request.form.get('key')
         elif action_type == 'sequence':
@@ -217,6 +224,12 @@ def edit(schedule_id: int):
             action_data['skip_if_on'] = skip_if_on
         elif action_type == 'power':
             action_data['action'] = request.form.get('power_action', 'on')
+            # Warning options for power off
+            if action_data['action'] == 'off':
+                action_data['show_warning'] = request.form.get('power_show_warning') == 'on'
+                if action_data['show_warning']:
+                    warning_seconds = request.form.get('power_warning_seconds', '60')
+                    action_data['warning_seconds'] = max(10, min(300, int(warning_seconds)))
         elif action_type == 'key':
             action_data['key'] = request.form.get('key')
         elif action_type == 'sequence':
@@ -338,3 +351,102 @@ def run_now(schedule_id: int):
         return jsonify({'success': True, 'message': f'"{schedule.name}" wurde ausgeführt.'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================================
+# Shutdown Warning Page (Token-authenticated, no login required)
+# ============================================================================
+
+@schedule_bp.route('/warning/<token>')
+def warning_page(token: str):
+    """
+    Display shutdown warning page on TV.
+    Authenticated via token in URL, no login required.
+    """
+    # Validate token
+    payload = validate_warning_token(token)
+    if not payload:
+        return render_template('shutdown_warning_expired.html'), 403
+
+    schedule_id = payload.get('schedule_id')
+    expires_at = payload.get('expires_at')
+    created_at = payload.get('created_at')
+
+    # Get schedule info
+    schedule = Schedule.query.get(schedule_id)
+    schedule_name = schedule.name if schedule else None
+
+    # Calculate remaining seconds
+    import time
+    remaining_seconds = max(0, int(expires_at - time.time()))
+
+    return render_template(
+        'shutdown_warning.html',
+        token=token,
+        schedule_id=schedule_id,
+        schedule_name=schedule_name,
+        remaining_seconds=remaining_seconds,
+        expires_at=expires_at
+    )
+
+
+@schedule_bp.route('/warning/<token>/cancel', methods=['POST'])
+def cancel_warning(token: str):
+    """
+    Cancel the pending shutdown.
+    Called when user clicks Cancel on the warning page.
+    """
+    # Validate token
+    payload = validate_warning_token(token)
+    if not payload:
+        return jsonify({'success': False, 'error': 'Token expired or invalid'}), 403
+
+    schedule_id = payload.get('schedule_id')
+
+    # Record the cancellation
+    cancel_shutdown(schedule_id, token)
+
+    log_event(
+        level='INFO',
+        category='schedule',
+        message=f'Shutdown cancelled via warning page',
+        details={'schedule_id': schedule_id},
+        source='tv_warning'
+    )
+
+    return jsonify({'success': True, 'message': 'Shutdown cancelled'})
+
+
+@schedule_bp.route('/warning/<token>/cancel-and-disable', methods=['POST'])
+def cancel_and_disable(token: str):
+    """
+    Cancel the pending shutdown AND disable the schedule.
+    """
+    # Validate token
+    payload = validate_warning_token(token)
+    if not payload:
+        return jsonify({'success': False, 'error': 'Token expired or invalid'}), 403
+
+    schedule_id = payload.get('schedule_id')
+
+    # Record the cancellation
+    cancel_shutdown(schedule_id, token)
+
+    # Disable the schedule
+    schedule = Schedule.query.get(schedule_id)
+    if schedule:
+        schedule.enabled = False
+        db.session.commit()
+
+        # Remove from scheduler
+        remove_schedule(schedule_id)
+
+        log_event(
+            level='INFO',
+            category='schedule',
+            message=f'Shutdown cancelled and schedule disabled: {schedule.name}',
+            details={'schedule_id': schedule_id},
+            source='tv_warning'
+        )
+
+    return jsonify({'success': True, 'message': 'Shutdown cancelled and schedule disabled'})

@@ -212,11 +212,14 @@
             </div>
 
             <!-- Power Selection -->
-            <div x-show="actionType === 'power'" x-cloak>
+            <div x-show="actionType === 'power'" x-cloak x-data="{
+                powerAction: '{{ schedule.get_action_data().get('action', 'on') if schedule and schedule.action_type == 'power' else 'on' }}',
+                showWarning: {{ 'true' if schedule and schedule.action_type == 'power' and schedule.get_action_data().get('show_warning', False) else 'false' }}
+            }">
                 <label class="block text-sm text-gray-400 mb-2">{{ _('Power Action') }}</label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="relative">
-                        <input type="radio" name="power_action" value="on" {{ 'checked' if not schedule or schedule.action_type != 'power' or schedule.get_action_data().get('action', 'on') == 'on' else '' }} class="sr-only peer">
+                        <input type="radio" name="power_action" value="on" x-model="powerAction" {{ 'checked' if not schedule or schedule.action_type != 'power' or schedule.get_action_data().get('action', 'on') == 'on' else '' }} class="sr-only peer">
                         <div class="p-4 bg-gray-800 border-2 border-gray-700 rounded-xl text-center cursor-pointer
                                     peer-checked:border-tv-accent peer-checked:bg-tv-accent/20 transition-colors">
                             <svg class="w-8 h-8 mx-auto mb-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +231,7 @@
                         </div>
                     </label>
                     <label class="relative">
-                        <input type="radio" name="power_action" value="off" {{ 'checked' if schedule and schedule.action_type == 'power' and schedule.get_action_data().get('action') == 'off' else '' }} class="sr-only peer">
+                        <input type="radio" name="power_action" value="off" x-model="powerAction" {{ 'checked' if schedule and schedule.action_type == 'power' and schedule.get_action_data().get('action') == 'off' else '' }} class="sr-only peer">
                         <div class="p-4 bg-gray-800 border-2 border-gray-700 rounded-xl text-center cursor-pointer
                                     peer-checked:border-tv-accent peer-checked:bg-tv-accent/20 transition-colors">
                             <svg class="w-8 h-8 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,6 +242,33 @@
                             <p class="text-xs text-gray-400 mt-1">Power off</p>
                         </div>
                     </label>
+                </div>
+
+                <!-- Warning Options (only for power off) -->
+                <div x-show="powerAction === 'off'" x-cloak class="mt-4 space-y-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox"
+                               name="power_show_warning"
+                               id="power_show_warning"
+                               x-model="showWarning"
+                               {{ 'checked' if schedule and schedule.action_type == 'power' and schedule.get_action_data().get('show_warning', False) else '' }}
+                               class="w-5 h-5 rounded bg-gray-800 border-gray-600 text-tv-accent focus:ring-tv-accent focus:ring-offset-gray-900">
+                        <label for="power_show_warning" class="text-sm text-gray-300">
+                            {{ _('Show warning on TV before shutdown') }}
+                        </label>
+                    </div>
+
+                    <div x-show="showWarning" x-cloak>
+                        <label class="block text-sm text-gray-400 mb-2">{{ _('Warning time (seconds)') }}</label>
+                        <input type="number"
+                               name="power_warning_seconds"
+                               min="10"
+                               max="300"
+                               value="{{ schedule.get_action_data().get('warning_seconds', 60) if schedule and schedule.action_type == 'power' else 60 }}"
+                               class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white
+                                      focus:outline-none focus:ring-2 focus:ring-tv-accent">
+                        <p class="text-xs text-gray-500 mt-1">{{ _('Time in seconds the warning is shown before shutdown (10-300)') }}</p>
+                    </div>
                 </div>
             </div>
 

@@ -757,8 +757,41 @@ class SamsungTV:
 
     def open_browser(self, url: str) -> bool:
         """Open the TV's built-in browser with the specified URL."""
-        return self.run_app("org.tizen.browser")
-        # Note: URL passing requires WebSocket app launch with metaTag
+        if not self._token:
+            raise RuntimeError("Not paired - call pair() first")
+
+        try:
+            ssock, response = self._create_connection()
+
+            frames = self._parse_ws_frames(response)
+            for frame in frames:
+                if frame.get('event') == 'ms.channel.unauthorized':
+                    ssock.close()
+                    raise PermissionError("Unauthorized - token may be expired")
+
+            time.sleep(0.2)
+
+            # Launch browser with URL via ed.apps.launch
+            payload = json.dumps({
+                "method": "ms.channel.emit",
+                "params": {
+                    "event": "ed.apps.launch",
+                    "to": "host",
+                    "data": {
+                        "appId": "org.tizen.browser",
+                        "action_type": "NATIVE_LAUNCH",
+                        "metaTag": url
+                    }
+                }
+            })
+            ssock.send(self._make_ws_frame(payload))
+
+            time.sleep(0.3)
+            ssock.close()
+            return True
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to open browser: {e}")
 
     # Convenience methods
 

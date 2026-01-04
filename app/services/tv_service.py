@@ -984,15 +984,19 @@ def _create_tv_instance() -> TVInstance:
     # Get TV type from config (default: samsung for backward compatibility)
     try:
         _tv_type = ConfigModel.get('tv_type') or 'samsung'
-        tv_ip = ConfigModel.get('tv_ip') or current_app.config['TV_IP']
-        tv_mac = ConfigModel.get('tv_mac') or current_app.config['TV_MAC']
+        tv_ip = ConfigModel.get('tv_ip') or current_app.config.get('TV_IP', '')
+        tv_mac = ConfigModel.get('tv_mac') or current_app.config.get('TV_MAC', '')
     except RuntimeError:
         # Outside app context
         _tv_type = os.environ.get('TV_TYPE', 'samsung')
-        tv_ip = os.environ.get('TV_IP', '192.168.178.103')
-        tv_mac = os.environ.get('TV_MAC', '80:47:86:E9:B2:17')
+        tv_ip = os.environ.get('TV_IP', '')
+        tv_mac = os.environ.get('TV_MAC', '')
 
-    print(f"[TV Service] Creating {_tv_type.upper()} TV instance: ip={tv_ip}, mac={tv_mac or 'NOT SET'}", flush=True)
+    # Warn if TV IP is not configured
+    if not tv_ip:
+        print(f"[TV Service] WARNING: TV IP not configured! Set it in Settings.", flush=True)
+
+    print(f"[TV Service] Creating {_tv_type.upper()} TV instance: ip={tv_ip or 'NOT SET'}, mac={tv_mac or 'NOT SET'}", flush=True)
 
     if _tv_type == 'philips':
         return _create_philips_instance(tv_ip, tv_mac)

@@ -230,6 +230,9 @@ def execute_schedule(schedule):
 
     try:
         action_data = schedule.get_action_data()
+        # Add schedule info for actions that need it (e.g., warning display)
+        action_data['_schedule_id'] = schedule.id
+        action_data['_schedule_name'] = schedule.name
 
         if schedule.action_type == 'startup':
             _execute_startup_action(action_data)
@@ -321,6 +324,25 @@ def _execute_power_action(action_data: dict):
         set_cached_power_state('on')
         print(f"[Power Action] Power ON sent via Wake-on-LAN", flush=True)
     elif action == 'off':
+        # Check if warning should be shown before shutdown
+        show_warning = action_data.get('show_warning', False)
+        warning_seconds = action_data.get('warning_seconds', 60)
+        schedule_id = action_data.get('_schedule_id')
+
+        if show_warning and schedule_id:
+            # Show warning on TV and wait for user response
+            cancelled = _show_shutdown_warning(tv, schedule_id, warning_seconds)
+            if cancelled:
+                print(f"[Power Action] Shutdown cancelled by user", flush=True)
+                log_event(
+                    level='INFO',
+                    category='schedule',
+                    message='Shutdown cancelled by user via TV warning',
+                    details={'schedule_id': schedule_id},
+                    source='schedule'
+                )
+                return
+
         # Power off requires WebSocket connection
         if not tv.is_paired:
             print(f"[Power Action] WARNING: No token - power off may fail", flush=True)
@@ -329,6 +351,117 @@ def _execute_power_action(action_data: dict):
         print(f"[Power Action] Power OFF sent", flush=True)
     else:
         print(f"[Power Action] Unknown action: {action}", flush=True)
+
+
+def _get_server_url() -> str:
+    """
+    Get the server URL for the warning page.
+    Tries config first, then auto-detects local IP.
+    """
+    from ..models import Config
+    from flask import current_app
+    import socket
+
+    # First try user-configured URL
+    server_url = Config.get('server_url')
+    if server_url:
+        return server_url
+
+    # Auto-detect local IP address (not localhost)
+    try:
+        # Create a socket to determine which interface would be used to reach an external IP
+        # This doesn't actually connect, just determines the route
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        # Fallback: try to get any non-loopback IP
+        try:
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+            # If we got 127.x.x.x, try to find a better one
+            if local_ip.startswith('127.'):
+                # Last resort: scan interfaces
+                for ip in socket.getaddrinfo(hostname, None, socket.AF_INET):
+                    addr = ip[4][0]
+                    if not addr.startswith('127.'):
+                        local_ip = addr
+                        break
+        except Exception:
+            local_ip = '127.0.0.1'
+
+    # Get port from config or default
+    port = current_app.config.get('SERVER_PORT', 5000)
+
+    return f'http://{local_ip}:{port}'
+
+
+def _show_shutdown_warning(tv, schedule_id: int, warning_seconds: int) -> bool:
+    """
+    Show shutdown warning on TV and wait for user response.
+    Returns True if shutdown was cancelled, False otherwise.
+    """
+    from flask import current_app
+    from .warning_token import generate_warning_token, is_shutdown_cancelled, clear_cancellation
+    from .logger import log_event
+    from ..models import Config
+
+    print(f"[Warning] Showing shutdown warning for {warning_seconds}s...", flush=True)
+
+    try:
+        # Generate secure token for the warning page
+        token = generate_warning_token(schedule_id, expires_in_seconds=warning_seconds + 30)
+
+        # Build the warning URL
+        server_url = _get_server_url()
+
+        warning_url = f"{server_url}/schedule/warning/{token}"
+        print(f"[Warning] Opening warning page: {warning_url}", flush=True)
+
+        # Open the browser on the TV
+        if hasattr(tv, 'open_browser'):
+            # Debug: check TV IP
+            tv_ip = getattr(tv, 'ip', None)
+            print(f"[Warning] TV IP: {tv_ip}", flush=True)
+            if not tv_ip:
+                print(f"[Warning] TV IP is empty - cannot open browser", flush=True)
+                return False
+            tv.open_browser(warning_url)
+        else:
+            print(f"[Warning] TV does not support opening browser - skipping warning", flush=True)
+            return False
+
+        # Wait for the warning period, checking periodically if cancelled
+        check_interval = 2  # Check every 2 seconds
+        elapsed = 0
+
+        while elapsed < warning_seconds:
+            time.sleep(check_interval)
+            elapsed += check_interval
+
+            # Check if user cancelled
+            if is_shutdown_cancelled(schedule_id):
+                clear_cancellation(schedule_id)
+                print(f"[Warning] User cancelled shutdown!", flush=True)
+                return True
+
+        # Clear any stale cancellation data
+        clear_cancellation(schedule_id)
+        print(f"[Warning] Warning period expired - proceeding with shutdown", flush=True)
+        return False
+
+    except Exception as e:
+        print(f"[Warning] Error showing warning: {e}", flush=True)
+        log_event(
+            level='WARNING',
+            category='schedule',
+            message=f'Failed to show shutdown warning: {e}',
+            details={'schedule_id': schedule_id, 'error': str(e)},
+            source='schedule'
+        )
+        # On error, proceed with shutdown (fail-safe)
+        return False
 
 
 def _execute_startup_action(action_data: dict):

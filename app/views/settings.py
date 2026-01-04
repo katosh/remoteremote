@@ -38,12 +38,16 @@ def settings_view():
     # Get timezone from database, fallback to config
     current_timezone = Config.get('timezone', current_app.config.get('TIMEZONE', 'Europe/Berlin'))
 
+    # Get server URL for scheduled warning pages
+    server_url = Config.get('server_url', '')
+
     return render_template(
         'settings.html',
         config={
             'tv_type': Config.get('tv_type', 'samsung'),
             'tv_ip': Config.get('tv_ip', current_app.config.get('TV_IP', '')),
-            'tv_mac': Config.get('tv_mac', current_app.config.get('TV_MAC', ''))
+            'tv_mac': Config.get('tv_mac', current_app.config.get('TV_MAC', '')),
+            'server_url': server_url
         },
         tv_info=tv_info,
         has_token=has_token,
@@ -85,6 +89,38 @@ def change_language():
         flash(_('Language changed successfully.'), 'success')
     else:
         flash(_('Invalid language selected.'), 'error')
+    return redirect(url_for('settings.settings_view'))
+
+
+@settings_bp.route('/server-url', methods=['POST'])
+@login_required
+def change_server_url():
+    """Change server URL for scheduled warning pages"""
+    import re
+
+    server_url = request.form.get('server_url', '').strip()
+
+    # Validate URL format (basic validation)
+    if server_url:
+        url_pattern = re.compile(r'^https?://[^\s/$.?#].[^\s]*$', re.IGNORECASE)
+        if not url_pattern.match(server_url):
+            flash(_('Invalid URL format. Use http:// or https://'), 'error')
+            return redirect(url_for('settings.settings_view'))
+
+        # Remove trailing slash
+        server_url = server_url.rstrip('/')
+
+    Config.set('server_url', server_url)
+
+    log_event(
+        level='INFO',
+        category='config',
+        message=_('Server URL changed'),
+        details={'server_url': server_url or '(cleared)'},
+        source='manual'
+    )
+
+    flash(_('Server URL saved successfully.'), 'success')
     return redirect(url_for('settings.settings_view'))
 
 

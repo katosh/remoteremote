@@ -8,37 +8,39 @@ import pytest
 class TestTVStateCaching:
     """Test TV status caching behavior"""
 
-    def test_set_cached_power_state_turning_on(self, app):
-        """Test that power on sets turning_on transition state"""
+    def test_set_cached_power_state_on_sets_transition(self, app):
+        """Test that power on sets transition info"""
         from app.services.tv_service import set_cached_power_state, _status_cache
 
         with app.app_context():
             set_cached_power_state('on')
 
-            assert _status_cache['power_state'] == 'turning_on'
+            # Transition info is set
             assert _status_cache['transition_type'] == 'turning_on'
+            assert _status_cache['target_state'] == 'on'
             assert _status_cache['transition_until'] > time.time()
 
-    def test_set_cached_power_state_turning_off(self, app):
-        """Test that power off sets turning_off transition state"""
+    def test_set_cached_power_state_off_sets_transition(self, app):
+        """Test that power off sets transition info"""
         from app.services.tv_service import set_cached_power_state, _status_cache
 
         with app.app_context():
             set_cached_power_state('off')
 
-            assert _status_cache['power_state'] == 'turning_off'
+            # Transition info is set
             assert _status_cache['transition_type'] == 'turning_off'
+            assert _status_cache['target_state'] == 'off'
             assert _status_cache['transition_until'] > time.time()
 
-    def test_set_cached_power_state_standby_treated_as_off(self, app):
-        """Test that standby is treated same as off"""
+    def test_set_cached_power_state_without_transition(self, app):
+        """Test that power state can be set directly without transition"""
         from app.services.tv_service import set_cached_power_state, _status_cache
 
         with app.app_context():
-            set_cached_power_state('standby')
+            set_cached_power_state('on', is_transition=False)
 
-            assert _status_cache['power_state'] == 'turning_off'
-            assert _status_cache['transition_type'] == 'turning_off'
+            # Power state set directly
+            assert _status_cache['power_state'] == 'on'
 
     def test_invalidate_cache(self, app):
         """Test cache invalidation resets last_check"""
@@ -53,28 +55,29 @@ class TestTVStateCaching:
 class TestTVStateTransitions:
     """Test TV state transition behavior"""
 
-    def test_transition_state_returned_during_transition(self, app):
-        """Test that transition state is returned while in transition"""
+    def test_transition_info_in_status(self, app):
+        """Test that transition info is included in status during transition"""
         from app.services.tv_service import set_cached_power_state, get_cached_status
 
         with app.app_context():
             set_cached_power_state('on')
             status = get_cached_status()
 
+            # Transition info should be present
             assert status['in_transition'] is True
             assert status['transition_type'] == 'turning_on'
-            assert status['power_state'] == 'turning_on'
 
-    def test_transition_has_remaining_time(self, app):
-        """Test that transition includes remaining time"""
+    def test_status_includes_transition_fields(self, app):
+        """Test that status includes transition fields for client-side use"""
         from app.services.tv_service import set_cached_power_state, get_cached_status
 
         with app.app_context():
             set_cached_power_state('on')
             status = get_cached_status()
 
-            assert 'transition_remaining' in status
-            assert status['transition_remaining'] > 0
+            # These fields should exist for client-side Alpine.js handling
+            assert 'in_transition' in status
+            assert 'transition_type' in status
 
     def test_no_transition_when_not_transitioning(self, app):
         """Test that no transition state when not transitioning"""
