@@ -2,7 +2,7 @@
 name = "tvremote"
 version = "1.0.0"
 description = "Web-based TV remote control for Samsung and Philips Smart TVs"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     # Flask and extensions
     "flask>=2.3.0",

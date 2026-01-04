@@ -3,6 +3,8 @@ Warning Token Service
 
 Generates and validates secure time-limited tokens for TV shutdown warning pages.
 """
+from __future__ import annotations
+
 import hmac
 import hashlib
 import time
