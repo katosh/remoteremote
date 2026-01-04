@@ -202,7 +202,7 @@
                     <input type="checkbox"
                            name="startup_skip_if_on"
                            id="startup_skip_if_on"
-                           {{ 'checked' if schedule and schedule.action_type == 'startup' and schedule.get_action_data().get('skip_if_on') else '' }}
+                           {{ 'checked' if not schedule or (schedule.action_type == 'startup' and schedule.get_action_data().get('skip_if_on', True)) else '' }}
                            class="w-5 h-5 rounded bg-gray-800 border-gray-600 text-tv-accent focus:ring-tv-accent focus:ring-offset-gray-900">
                     <label for="startup_skip_if_on" class="text-sm text-gray-300">
                         {{ _('Skip if TV is already on') }}
