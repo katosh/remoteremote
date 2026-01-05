@@ -354,14 +354,26 @@ def _send_text_async(text: str):
     """Send text in background thread."""
     def _send():
         tv = get_tv_service()
-        tv.send_text(text)
-        log_event(
-            level='INFO',
-            category='action',
-            message=f'Text gesendet: {text[:20]}...' if len(text) > 20 else f'Text gesendet: {text}',
-            details={'text_length': len(text), 'async': True},
-            source='manual'
-        )
+        print(f"[Text] Sending text: {text[:30]}...", flush=True)
+        try:
+            result = tv.send_text(text)
+            print(f"[Text] send_text result: {result}", flush=True)
+            log_event(
+                level='INFO',
+                category='action',
+                message=f'Text gesendet: {text[:20]}...' if len(text) > 20 else f'Text gesendet: {text}',
+                details={'text_length': len(text), 'async': True},
+                source='manual'
+            )
+        except Exception as e:
+            print(f"[Text] send_text error: {e}", flush=True)
+            log_event(
+                level='ERROR',
+                category='action',
+                message=f'Text senden fehlgeschlagen: {e}',
+                details={'text': text[:50], 'error': str(e)},
+                source='manual'
+            )
 
     _run_async(_send)
 
