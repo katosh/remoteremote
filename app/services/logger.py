@@ -34,6 +34,19 @@ def log_event(
         client_ip = _get_client_ip()
         user_agent = request.headers.get('User-Agent', '')[:500]  # Begrenzen
 
+    # Add session/user info to details for session-based changes
+    if details is None:
+        details = {}
+
+    if has_request_context():
+        try:
+            from flask_login import current_user
+            if current_user.is_authenticated:
+                details['_user'] = current_user.username
+                details['_session_id'] = request.cookies.get('session', '')[:16]
+        except Exception:
+            pass  # No user context available
+
     log_entry = Log(
         level=level,
         category=category,
