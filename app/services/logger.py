@@ -41,9 +41,12 @@ def log_event(
     if has_request_context():
         try:
             from flask_login import current_user
+            from flask import g
             if current_user.is_authenticated:
                 details['_user'] = current_user.username
-                details['_session_id'] = request.cookies.get('session', '')[:16]
+                # Get session ID from g.current_session (set by auth.load_logged_in_user)
+                if hasattr(g, 'current_session') and g.current_session:
+                    details['_session_id'] = g.current_session.id
         except Exception:
             pass  # No user context available
 

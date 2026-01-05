@@ -81,6 +81,7 @@
                         </div>
 
                         <div class="text-sm text-gray-400 mt-1 space-y-0.5">
+                            <p class="font-mono text-xs text-gray-500">ID: {{ session.id }}</p>
                             <p>IP: {{ session.client_ip or _('Unknown') }}</p>
                             <p>{{ _('Last active:') }} {% if session.last_used %}<span data-locale-time="{{ session.last_used.isoformat() }}" data-timezone="{{ tv_timezone }}" data-format="datetime">{{ session.last_used.strftime('%d.%m.%Y %H:%M') }}</span>{% else %}{{ _('Unknown') }}{% endif %}</p>
                             <p>{{ _('Created:') }} {% if session.created_at %}<span data-locale-time="{{ session.created_at.isoformat() }}" data-timezone="{{ tv_timezone }}" data-format="datetime">{{ session.created_at.strftime('%d.%m.%Y %H:%M') }}</span>{% else %}{{ _('Unknown') }}{% endif %}</p>
