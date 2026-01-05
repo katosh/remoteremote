@@ -15,8 +15,9 @@ class TestTVStateCaching:
         with app.app_context():
             set_cached_power_state('on')
 
-            assert _status_cache['power_state'] == 'turning_on'
+            # transition_type is set, power_state is not changed during transition
             assert _status_cache['transition_type'] == 'turning_on'
+            assert _status_cache['target_state'] == 'on'
             assert _status_cache['transition_until'] > time.time()
 
     def test_set_cached_power_state_turning_off(self, app):
@@ -26,8 +27,9 @@ class TestTVStateCaching:
         with app.app_context():
             set_cached_power_state('off')
 
-            assert _status_cache['power_state'] == 'turning_off'
+            # transition_type is set, power_state is not changed during transition
             assert _status_cache['transition_type'] == 'turning_off'
+            assert _status_cache['target_state'] == 'off'
             assert _status_cache['transition_until'] > time.time()
 
     def test_set_cached_power_state_standby_treated_as_off(self, app):
@@ -37,8 +39,8 @@ class TestTVStateCaching:
         with app.app_context():
             set_cached_power_state('standby')
 
-            assert _status_cache['power_state'] == 'turning_off'
             assert _status_cache['transition_type'] == 'turning_off'
+            assert _status_cache['target_state'] == 'off'
 
     def test_invalidate_cache(self, app):
         """Test cache invalidation resets last_check"""
@@ -63,7 +65,8 @@ class TestTVStateTransitions:
 
             assert status['in_transition'] is True
             assert status['transition_type'] == 'turning_on'
-            assert status['power_state'] == 'turning_on'
+            # power_state shows last known state, not transition type
+            # (transition_type indicates the transition)
 
     def test_transition_has_remaining_time(self, app):
         """Test that transition includes remaining time"""
