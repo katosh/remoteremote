@@ -34,12 +34,13 @@ def load_session_from_cookie():
     try:
         # Skip if already authenticated
         if current_user.is_authenticated:
-            # Mark the current session
+            # Mark the current session and store in g
             token = request.cookies.get(SESSION_COOKIE_NAME)
             if token:
                 session = Session.validate_token(token)
                 if session:
                     session.is_current = True
+                    g.current_session = session
             return
 
         # Try to load session from cookie
